@@ -1,0 +1,96 @@
+{
+	"mainMenu": [
+		{
+			"id": "quiz",
+			"title": "Quiz",
+			"href": "/quiz"
+		},
+		{
+			"id": "subjects",
+			"title": "Mis asignaturas",
+			"href": "/manager/subjects",
+			"expandable": true
+		},
+		{
+			"id": "statistics",
+			"title": "Estadísticas",
+			"href": "/manager/statistics",
+			"expandable": true
+		},
+		{
+			"id": "account",
+			"title": "Mi cuenta",
+			"href": "/manager/account"
+		}
+	],
+	"subjects": [
+		{
+			"id": "all",
+			"title": "Todas las asignaturas",
+			"href": "/manager/subjects"
+		},
+		{
+			"id": "core",
+			"acronym": "CORE",
+			"title": "Computación en red",
+			"href": "/manager/subjects/core"
+		},
+		{
+			"id": "ibdn",
+			"acronym": "IBDN",
+			"title": "Ingeniería de Big Data en la Nube",
+			"href": "/manager/subjects/ibdn"
+		},
+		{
+			"id": "prg",
+			"acronym": "PRG",
+			"title": "Programación",
+			"href": "/manager/subjects/prg"
+		},
+		{
+			"id": "cdps",
+			"acronym": "CDPS",
+			"title": "Centros de Datos y Provisión de Servicios",
+			"href": "/manager/subjects/cdps"
+		},
+		{
+			"id": "iweb",
+			"acronym": "IWEB",
+			"title": "Ingeniería Web",
+			"href": "/manager/subjects/iweb"
+		},
+		{
+			"id": "tecw",
+			"acronym": "TECW",
+			"title": "Tecnologías Web",
+			"href": "/manager/subjects/tecw"
+		}
+	],
+	"statistics": [
+		{
+			"id": "all-stats",
+			"title": "Todas las asignaturas",
+			"href": "/manager/statistics"
+		},
+		{
+			"id": "core-stats",
+			"title": "CORE",
+			"href": "/manager/statistics/core"
+		},
+		{
+			"id": "ibdn-stats",
+			"title": "IBDN",
+			"href": "/manager/statistics/ibdn"
+		},
+		{
+			"id": "prg-stats",
+			"title": "PRG",
+			"href": "/manager/statistics/prg"
+		},
+		{
+			"id": "cdps-stats",
+			"title": "CDPS",
+			"href": "/manager/statistics/cdps"
+		}
+	]
+}

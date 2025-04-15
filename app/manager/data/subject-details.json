@@ -1,0 +1,65 @@
+{
+	"id": "core",
+	"title": "Computación en red (CORE)",
+	"acronym": "CORE",
+	"description": "Una red de computadoras, red de ordenadores o red informática es un conjunto de equipos nodos y software conectados entre sí por medio de dispositivos físicos que envían y reciben impulsos eléctricos, ondas electromagnéticas o cualquier otro medio para el transporte de datos, con la finalidad de compartir información, recursos y ofrecer servicios.",
+	"topics": [
+		{
+			"id": "http",
+			"title": "HTTP",
+			"description": "El protocolo de transferencia de hipertexto (en inglés: Hypertext Transfer (...)) Ver descripción",
+			"subtopics": [
+				{ "id": "urls", "title": "URLs" },
+				{ "id": "format", "title": "Formato peticiones HTTP" },
+				{ "id": "headers", "title": "Cabeceras HTTP" },
+				{
+					"id": "methods",
+					"title": "Métodos POST, PUT GET, DELETE, HEAD"
+				},
+				{ "id": "codes", "title": "Códigos de respuesta" },
+				{ "id": "cache", "title": "Caché web" },
+				{
+					"id": "state",
+					"title": "Gestión de estado: parámetros ocultos, cookies, sesión"
+				}
+			]
+		},
+		{
+			"id": "html",
+			"title": "HTML",
+			"description": "HTML es un lenguaje de marcado que posibilita definir la estructura de (...)",
+			"subtopics": [
+				{ "id": "vars", "title": "Declaración de variables" },
+				{
+					"id": "types",
+					"title": "Tipos de datos operadores y expresiones"
+				},
+				{ "id": "conditionals", "title": "Bucles y condicionales" },
+				{ "id": "break", "title": "Uso de break y continue" },
+				{ "id": "classes", "title": "Clases y objetos" },
+				{ "id": "try", "title": "Comandos try, catch y finally" },
+				{ "id": "exceptions", "title": "Manejo de excepciones" }
+			]
+		},
+		{
+			"id": "css",
+			"title": "CSS",
+			"description": "CSS es un lenguaje de diseño gráfico para definir y crear la presentación de documentos.",
+			"subtopics": []
+		}
+	],
+	"professors": [
+		{
+			"id": "1",
+			"name": "Carlos González",
+			"email": "cgonzalez@upm.es",
+			"role": "Admin"
+		},
+		{
+			"id": "2",
+			"name": "Marina Yeros",
+			"email": "myeros@upm.es",
+			"role": "Admin"
+		}
+	]
+}

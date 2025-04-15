@@ -1,0 +1,62 @@
+[
+	{
+		"id": "1",
+		"title": "Programación",
+		"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et doloralin (...)",
+		"administrator": "Carlos Gonzalez",
+		"topics": [
+			"Java",
+			"Bucles y condicionales",
+			"Clases y objetos",
+			"Break and continue"
+		]
+	},
+	{
+		"id": "2",
+		"title": "Computación en red (CORE)",
+		"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et doloralin (...)",
+		"administrator": "Carlos Gonzalez",
+		"topics": [
+			"Java",
+			"Bucles y condicionales",
+			"Clases y objetos",
+			"Break and continue"
+		]
+	},
+	{
+		"id": "3",
+		"title": "Programación",
+		"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et doloralin (...)",
+		"administrator": "Carlos Gonzalez",
+		"topics": [
+			"Java",
+			"Bucles y condicionales",
+			"Clases y objetos",
+			"Break and continue"
+		]
+	},
+	{
+		"id": "4",
+		"title": "Programación",
+		"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et doloralin (...)",
+		"administrator": "Carlos Gonzalez",
+		"topics": [
+			"Java",
+			"Bucles y condicionales",
+			"Clases y objetos",
+			"Break and continue"
+		]
+	},
+	{
+		"id": "5",
+		"title": "Programación",
+		"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et doloralin (...)",
+		"administrator": "Carlos Gonzalez",
+		"topics": [
+			"Java",
+			"Bucles y condicionales",
+			"Clases y objetos",
+			"Break and continue"
+		]
+	}
+]
