@@ -1,0 +1,31 @@
+version: '3'
+services:
+  aiquiz-web:
+    container_name: aiquiz-web
+    build:
+        context: .
+    ports: 
+      - 3000:3000
+    depends_on:
+      - aiquiz-mongo
+    networks:
+      - martell
+    restart: unless-stopped
+  aiquiz-mongo:
+    image: mongo:5.0.30
+    container_name: aiquiz-mongo
+    volumes:
+      - data:/data/db
+    ports:
+      - 27017:27017
+    networks:
+      - martell
+    restart: unless-stopped
+
+volumes:
+  data:
+
+networks:
+  martell:
+    external: true
+    name: martell
