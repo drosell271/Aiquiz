@@ -3,7 +3,7 @@
 
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import Header from "../components/Header";
+import Header from "../components/common/Header";
 
 export default function SubjectsLayout({
 	children,

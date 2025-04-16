@@ -1,28 +1,35 @@
-// /app/manager/subjects/[id]/page.tsx (versión con multiidioma)
+// /app/manager/subjects/[id]/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import subjectData from "../../data/subject-details.json";
+
+// Importamos solo los componentes realmente necesarios
+import TopicsTab from "../../components/topics/TopicsTab";
+import ProfessorsTab from "../../components/topics/ProfessorsTab";
+import SettingsTab from "../../components/topics/SettingsTab";
+import InviteModal from "../../components/topics/InviteModal";
+import EditTopicModal from "../../components/topics/EditTopicModal";
 
 // Interfaces
+interface SubTopic {
+	id: string;
+	title: string;
+}
+
 interface Topic {
 	id: string;
 	title: string;
 	description: string;
-	subtopics: Array<{
-		id: string;
-		title: string;
-	}>;
+	subtopics: SubTopic[];
 }
 
 interface Professor {
 	id: string;
 	name: string;
 	email: string;
-	role: string;
 }
 
 interface Subject {
@@ -42,42 +49,130 @@ export default function SubjectDetailPage() {
 	const [subject, setSubject] = useState<Subject | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [activeTab, setActiveTab] = useState("topics");
+	const [copied, setCopied] = useState(false);
 
 	// Datos para la pantalla de ajustes
 	const [editMode, setEditMode] = useState(false);
 	const [editedSubject, setEditedSubject] = useState<Subject | null>(null);
-
-	// Estados para la pantalla de profesores
-	const [showRoleDropdown, setShowRoleDropdown] = useState<string | null>(
-		null
-	);
-	const [newProfessor, setNewProfessor] = useState({
-		name: "",
-		email: "",
-		role: "Admin",
-	});
+	const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
+	const [showInviteModal, setShowInviteModal] = useState(false);
 
 	useEffect(() => {
 		const fetchSubjectDetails = async () => {
 			setLoading(true);
 			try {
-				// TODO: Reemplazar con llamada real a la API cuando esté implementada
-				// const response = await fetch(`/api/subjects/${id}`, {
-				//   headers: {
-				//     'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
-				//   }
-				// });
-				// const data = await response.json();
-
+				// Simulamos la carga de datos
 				console.log(`📤 Simulando petición GET a /api/subjects/${id}`);
 
-				// Usar los datos del JSON
+				// Uso de setTimeout para simular el tiempo de carga
 				setTimeout(() => {
+					// Datos simulados con UUIDs
+					const mockData = {
+						id: "550e8400-e29b-41d4-a716-446655440000",
+						title: "Computación en red (CORE)",
+						acronym: "CORE",
+						description:
+							"Una red de computadoras, red de ordenadores o red informática es un conjunto de equipos nodos y software conectados entre sí por medio de dispositivos físicos que envían y reciben impulsos eléctricos, ondas electromagnéticas o cualquier otro medio para el transporte de datos, con la finalidad de compartir información, recursos y ofrecer servicios.",
+						topics: [
+							{
+								id: "7e9d5eb7-9058-4754-b325-062ace8c2249",
+								title: "HTTP",
+								description:
+									"El protocolo de transferencia de hipertexto (en inglés: Hypertext Transfer (...)) Ver descripción",
+								subtopics: [
+									{
+										id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+										title: "URLs",
+									},
+									{
+										id: "f47ac10b-58cc-4372-a567-0e02b2c3d480",
+										title: "Formato peticiones HTTP",
+									},
+									{
+										id: "f47ac10b-58cc-4372-a567-0e02b2c3d481",
+										title: "Cabeceras HTTP",
+									},
+									{
+										id: "f47ac10b-58cc-4372-a567-0e02b2c3d482",
+										title: "Métodos POST, PUT GET, DELETE, HEAD",
+									},
+									{
+										id: "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+										title: "Códigos de respuesta",
+									},
+									{
+										id: "f47ac10b-58cc-4372-a567-0e02b2c3d484",
+										title: "Caché web",
+									},
+									{
+										id: "f47ac10b-58cc-4372-a567-0e02b2c3d485",
+										title: "Gestión de estado: parámetros ocultos, cookies, sesión",
+									},
+								],
+							},
+							{
+								id: "6b86b273-6e81-4e47-a252-08a2c3d53778",
+								title: "HTML",
+								description:
+									"HTML es un lenguaje de marcado que posibilita definir la estructura de (...)",
+								subtopics: [
+									{
+										id: "d4735e3a-5caa-4bd7-9db8-c40f4c8a3480",
+										title: "Declaración de variables",
+									},
+									{
+										id: "d4735e3a-5caa-4bd7-9db8-c40f4c8a3481",
+										title: "Tipos de datos operadores y expresiones",
+									},
+									{
+										id: "d4735e3a-5caa-4bd7-9db8-c40f4c8a3482",
+										title: "Bucles y condicionales",
+									},
+									{
+										id: "d4735e3a-5caa-4bd7-9db8-c40f4c8a3483",
+										title: "Uso de break y continue",
+									},
+									{
+										id: "d4735e3a-5caa-4bd7-9db8-c40f4c8a3484",
+										title: "Clases y objetos",
+									},
+									{
+										id: "d4735e3a-5caa-4bd7-9db8-c40f4c8a3485",
+										title: "Comandos try, catch y finally",
+									},
+									{
+										id: "d4735e3a-5caa-4bd7-9db8-c40f4c8a3486",
+										title: "Manejo de excepciones",
+									},
+								],
+							},
+							{
+								id: "ef2d127d-ea53-4e70-804d-bff65e45c8a7",
+								title: "CSS",
+								description:
+									"CSS es un lenguaje de diseño gráfico para definir y crear la presentación de documentos.",
+								subtopics: [],
+							},
+						],
+						professors: [
+							{
+								id: "37e1a2c3-d1c0-4f1c-a5d8-f72f3391e32a",
+								name: "Carlos González",
+								email: "cgonzalez@upm.es",
+							},
+							{
+								id: "0cae5fb4-4819-4a06-bba2-aa98b3a8425e",
+								name: "Marina Yeros",
+								email: "myeros@upm.es",
+							},
+						],
+					};
+
 					console.log(
 						`📥 Respuesta simulada recibida para asignatura ${id}`
 					);
-					setSubject(subjectData);
-					setEditedSubject(subjectData);
+					setSubject(mockData);
+					setEditedSubject(mockData);
 					setLoading(false);
 				}, 800);
 			} catch (error) {
@@ -95,9 +190,56 @@ export default function SubjectDetailPage() {
 		setActiveTab(tab);
 	};
 
+	// Función para copiar la URL al portapapeles
+	const copyToClipboard = (text: string) => {
+		if (navigator.clipboard) {
+			navigator.clipboard
+				.writeText(text)
+				.then(() => {
+					setCopied(true);
+					// Reset copied state after 2 seconds
+					setTimeout(() => setCopied(false), 2000);
+				})
+				.catch((error) => {
+					console.error("Error copying to clipboard:", error);
+					setCopied(false);
+				});
+		} else {
+			// Fallback for browsers that don't support clipboard API
+			try {
+				const textArea = document.createElement("textarea");
+				textArea.value = text;
+				textArea.style.position = "fixed";
+				document.body.appendChild(textArea);
+				textArea.focus();
+				textArea.select();
+				const successful = document.execCommand("copy");
+				document.body.removeChild(textArea);
+				setCopied(successful);
+				if (successful) {
+					setTimeout(() => setCopied(false), 2000);
+				}
+			} catch (error) {
+				console.error("Fallback: Error copying to clipboard:", error);
+				setCopied(false);
+			}
+		}
+	};
+
+	const handleCopySubjectUrl = () => {
+		if (subject) {
+			const url = `http://localhost:3000/${subject.acronym}`;
+			copyToClipboard(url);
+		}
+	};
+
 	// Handlers para la pantalla de ajustes
 	const handleEditToggle = () => {
 		setEditMode(!editMode);
+		if (editMode && subject) {
+			// Reset to original values if canceling edit
+			setEditedSubject(subject);
+		}
 	};
 
 	const handleInputChange = (
@@ -121,28 +263,31 @@ export default function SubjectDetailPage() {
 		}, 800);
 	};
 
-	const handleAddProfessor = () => {
+	const handleAddProfessor = (name: string, email: string) => {
 		console.log(
 			`📤 Simulando petición POST a /api/subjects/${id}/professors`
 		);
-		console.log("Datos enviados:", newProfessor);
+		console.log("Datos enviados:", { name, email });
 
 		// Simular añadir profesor
 		setTimeout(() => {
 			console.log(`📥 Respuesta simulada: profesor añadido exitosamente`);
-			if (subject && newProfessor.name && newProfessor.email) {
-				const newProfessorWithId = {
-					...newProfessor,
-					id: `temp-${Date.now()}`,
+			if (subject) {
+				const newProfessor = {
+					id: `professor-${Date.now()}`,
+					name,
+					email,
 				};
 
-				setSubject({
+				const updatedSubject = {
 					...subject,
-					professors: [...subject.professors, newProfessorWithId],
-				});
+					professors: [...subject.professors, newProfessor],
+				};
 
-				// Resetear formulario
-				setNewProfessor({ name: "", email: "", role: "Admin" });
+				setSubject(updatedSubject);
+				if (editedSubject) {
+					setEditedSubject(updatedSubject);
+				}
 			}
 		}, 800);
 	};
@@ -158,33 +303,17 @@ export default function SubjectDetailPage() {
 				`📥 Respuesta simulada: profesor eliminado exitosamente`
 			);
 			if (subject) {
-				setSubject({
+				const updatedSubject = {
 					...subject,
 					professors: subject.professors.filter(
 						(p) => p.id !== professorId
 					),
-				});
-			}
-		}, 800);
-	};
+				};
 
-	const handleChangeRole = (professorId: string, newRole: string) => {
-		console.log(
-			`📤 Simulando petición PATCH a /api/subjects/${id}/professors/${professorId}`
-		);
-		console.log("Nuevo rol:", newRole);
-
-		// Simular cambio de rol
-		setTimeout(() => {
-			console.log(`📥 Respuesta simulada: rol actualizado exitosamente`);
-			if (subject) {
-				setSubject({
-					...subject,
-					professors: subject.professors.map((p) =>
-						p.id === professorId ? { ...p, role: newRole } : p
-					),
-				});
-				setShowRoleDropdown(null);
+				setSubject(updatedSubject);
+				if (editedSubject) {
+					setEditedSubject(updatedSubject);
+				}
 			}
 		}, 800);
 	};
@@ -204,580 +333,44 @@ export default function SubjectDetailPage() {
 					subtopics: [],
 				};
 
-				setSubject({
+				const updatedSubject = {
 					...subject,
 					topics: [...subject.topics, newTopic],
-				});
+				};
+
+				setSubject(updatedSubject);
+				if (editedSubject) {
+					setEditedSubject(updatedSubject);
+				}
 			}
 		}, 800);
 	};
 
-	const renderTopicsTab = () => {
-		if (!subject) return null;
-
-		return (
-			<div>
-				<div className="flex items-center mb-4">
-					<div className="relative w-full max-w-md">
-						<input
-							type="text"
-							placeholder={t("subjectDetail.searchPlaceholder")}
-							className="w-full p-2 pl-10 border rounded-md"
-						/>
-						<div className="absolute inset-y-0 left-0 flex items-center pl-3">
-							<svg
-								className="w-5 h-5 text-gray-400"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth="2"
-									d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-								/>
-							</svg>
-						</div>
-					</div>
-
-					<button
-						onClick={handleAddTopic}
-						className="ml-4 bg-gray-800 text-white py-2 px-4 rounded-md flex items-center"
-					>
-						<svg
-							className="w-5 h-5 mr-1"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth="2"
-								d="M12 4v16m8-8H4"
-							/>
-						</svg>
-						{t("subjectDetail.newTopic")}
-					</button>
-				</div>
-
-				{subject.topics.map((topic) => (
-					<div
-						key={topic.id}
-						className="mb-8 bg-gray-50 p-6 rounded-md"
-					>
-						<div className="flex justify-between mb-2">
-							<h3 className="text-xl font-bold flex items-center">
-								{topic.title}
-								<Link
-									href={`/manager/subjects/${id}/topics/${topic.id}`}
-									className="ml-2"
-								>
-									<svg
-										className="w-5 h-5 text-gray-700"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth="2"
-											d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-										/>
-									</svg>
-								</Link>
-							</h3>
-						</div>
-
-						<p className="text-gray-700 mb-4">
-							{topic.description}
-						</p>
-
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-							{topic.subtopics.map((subtopic) => (
-								<div
-									key={subtopic.id}
-									className="bg-gray-200 py-2 px-4 rounded"
-								>
-									{subtopic.title}
-								</div>
-							))}
-						</div>
-					</div>
-				))}
-			</div>
+	const handleEditTopic = (topicId: string, newTitle: string) => {
+		console.log(
+			`📤 Simulando petición PATCH a /api/subjects/${id}/topics/${topicId}`
 		);
-	};
+		console.log("Datos enviados:", { title: newTitle });
 
-	const renderProfessorsTab = () => {
-		if (!subject) return null;
+		// Simular editar tema
+		setTimeout(() => {
+			console.log(`📥 Respuesta simulada: tema actualizado exitosamente`);
+			if (subject) {
+				const updatedTopics = subject.topics.map((topic) =>
+					topic.id === topicId ? { ...topic, title: newTitle } : topic
+				);
 
-		return (
-			<div>
-				<button
-					className="mb-6 bg-gray-800 text-white py-2 px-4 rounded-md flex items-center"
-					onClick={() => {
-						/* Mostrar modal de invitación */
-					}}
-				>
-					<svg
-						className="w-5 h-5 mr-1"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							strokeWidth="2"
-							d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-						/>
-					</svg>
-					{t("subjectDetail.inviteProfessor")}
-				</button>
+				const updatedSubject = {
+					...subject,
+					topics: updatedTopics,
+				};
 
-				{/* Formulario mejorado para añadir profesor */}
-				<div className="mb-8 p-6 bg-gray-50 rounded-md">
-					<h3 className="text-lg font-medium mb-4">
-						{t("subjectDetail.addProfessor")}
-					</h3>
-					<div className="space-y-4">
-						<div>
-							<label
-								htmlFor="professorName"
-								className="block text-sm font-medium text-gray-700 mb-1"
-							>
-								{t("subjectDetail.name")}
-							</label>
-							<input
-								id="professorName"
-								type="text"
-								placeholder={t("subjectDetail.namePlaceholder")}
-								className="w-full p-2 border rounded-md"
-								value={newProfessor.name}
-								onChange={(e) =>
-									setNewProfessor({
-										...newProfessor,
-										name: e.target.value,
-									})
-								}
-							/>
-						</div>
-
-						<div>
-							<label
-								htmlFor="professorEmail"
-								className="block text-sm font-medium text-gray-700 mb-1"
-							>
-								{t("subjectDetail.email")}
-							</label>
-							<input
-								id="professorEmail"
-								type="email"
-								placeholder={t(
-									"subjectDetail.emailPlaceholder"
-								)}
-								className="w-full p-2 border rounded-md"
-								value={newProfessor.email}
-								onChange={(e) =>
-									setNewProfessor({
-										...newProfessor,
-										email: e.target.value,
-									})
-								}
-							/>
-						</div>
-
-						<div>
-							<label
-								htmlFor="professorRole"
-								className="block text-sm font-medium text-gray-700 mb-1"
-							>
-								{t("subjectDetail.role")}
-							</label>
-							<select
-								id="professorRole"
-								className="w-full p-2 border rounded-md"
-								value={newProfessor.role}
-								onChange={(e) =>
-									setNewProfessor({
-										...newProfessor,
-										role: e.target.value,
-									})
-								}
-							>
-								<option value="Admin">Admin</option>
-								<option value="Viewer">Viewer</option>
-							</select>
-						</div>
-
-						<button
-							className="bg-gray-800 text-white py-2 px-4 rounded-md flex items-center"
-							onClick={handleAddProfessor}
-							disabled={!newProfessor.name || !newProfessor.email}
-						>
-							<svg
-								className="w-5 h-5 mr-1"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth="2"
-									d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-								/>
-							</svg>
-							{t("subjectDetail.addProfessor")}
-						</button>
-					</div>
-				</div>
-
-				{/* Lista de profesores */}
-				<h3 className="text-lg font-medium mb-4">
-					{t("subjectDetail.professors")}
-				</h3>
-				{subject.professors.length === 0 ? (
-					<p className="text-gray-500 italic">
-						No hay profesores asignados a esta asignatura.
-					</p>
-				) : (
-					subject.professors.map((professor) => (
-						<div
-							key={professor.id}
-							className="flex items-center justify-between p-4 border-b last:border-b-0"
-						>
-							<div className="flex-grow">
-								<div className="font-medium">
-									{professor.name}
-								</div>
-								<div className="text-gray-600">
-									{professor.email}
-								</div>
-							</div>
-
-							<div className="relative flex items-center">
-								<div className="mr-4">
-									{showRoleDropdown === professor.id ? (
-										<div className="absolute right-12 top-0 bg-white border rounded-md shadow-lg z-10">
-											<button
-												className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-												onClick={() =>
-													handleChangeRole(
-														professor.id,
-														"Admin"
-													)
-												}
-											>
-												Admin
-											</button>
-											<button
-												className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-												onClick={() =>
-													handleChangeRole(
-														professor.id,
-														"Viewer"
-													)
-												}
-											>
-												Viewer
-											</button>
-										</div>
-									) : (
-										<button
-											className="bg-gray-100 px-3 py-1 rounded-md text-sm"
-											onClick={() =>
-												setShowRoleDropdown(
-													professor.id
-												)
-											}
-										>
-											{professor.role}
-										</button>
-									)}
-								</div>
-
-								<button
-									className="text-gray-500 hover:text-gray-700 mr-2"
-									title={t("subjectDetail.edit")}
-								>
-									<svg
-										className="w-5 h-5"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth="2"
-											d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-										/>
-									</svg>
-								</button>
-
-								<button
-									className="text-red-500 hover:text-red-700"
-									title={t("subjectDetail.delete")}
-									onClick={() =>
-										handleRemoveProfessor(professor.id)
-									}
-								>
-									<svg
-										className="w-5 h-5"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth="2"
-											d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-										/>
-									</svg>
-								</button>
-							</div>
-						</div>
-					))
-				)}
-			</div>
-		);
-	};
-
-	const renderSettingsTab = () => {
-		if (!subject || !editedSubject) return null;
-
-		return (
-			<div>
-				{editMode ? (
-					<div className="flex gap-4 mb-6">
-						<button
-							className="bg-gray-800 text-white py-2 px-4 rounded-md flex items-center"
-							onClick={handleSaveChanges}
-						>
-							<svg
-								className="w-5 h-5 mr-1"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth="2"
-									d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-								/>
-							</svg>
-							{t("subjectDetail.saveChanges")}
-						</button>
-
-						<button
-							className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md"
-							onClick={() => {
-								setEditMode(false);
-								setEditedSubject(subject); // Restaurar valores originales
-							}}
-						>
-							{t("subjectDetail.cancel")}
-						</button>
-					</div>
-				) : (
-					<div className="mb-6">
-						<button
-							className="bg-gray-800 text-white py-2 px-4 rounded-md flex items-center"
-							onClick={handleEditToggle}
-						>
-							<svg
-								className="w-5 h-5 mr-1"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth="2"
-									d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-								/>
-							</svg>
-							{t("subjectDetail.edit")}
-						</button>
-					</div>
-				)}
-
-				<div className="mb-6">
-					<label className="block text-sm font-medium text-gray-700 mb-1">
-						{t("subjectDetail.name")}
-					</label>
-					{editMode ? (
-						<input
-							type="text"
-							name="title"
-							value={editedSubject.title}
-							onChange={handleInputChange}
-							className="w-full p-2 border rounded-md"
-						/>
-					) : (
-						<div className="p-2 bg-gray-100 rounded-md">
-							{subject.title}
-						</div>
-					)}
-				</div>
-
-				<div className="mb-6">
-					<label className="block text-sm font-medium text-gray-700 mb-1">
-						{t("subjectDetail.acronym")}
-					</label>
-					{editMode ? (
-						<input
-							type="text"
-							name="acronym"
-							value={editedSubject.acronym}
-							onChange={handleInputChange}
-							className="w-full p-2 border rounded-md"
-						/>
-					) : (
-						<div className="p-2 bg-gray-100 rounded-md">
-							{subject.acronym}
-						</div>
-					)}
-				</div>
-
-				<div className="mb-6">
-					<label className="block text-sm font-medium text-gray-700 mb-1">
-						{t("subjectDetail.description")}
-					</label>
-					{editMode ? (
-						<textarea
-							name="description"
-							value={editedSubject.description}
-							onChange={handleInputChange}
-							className="w-full p-2 border rounded-md h-32"
-						/>
-					) : (
-						<div className="p-2 bg-gray-100 rounded-md">
-							{subject.description}
-						</div>
-					)}
-				</div>
-
-				{/* Sección de temas */}
-				<div className="mb-10">
-					<h3 className="text-lg font-medium mb-2">
-						{t("subjectDetail.topicsList")}
-					</h3>
-					<div className="grid grid-cols-2 gap-4">
-						{subject.topics.map((topic, index) => (
-							<div
-								key={topic.id}
-								className="p-4 bg-gray-100 rounded-md flex justify-between items-center"
-							>
-								<span>{topic.title}</span>
-								{editMode && (
-									<div className="flex">
-										<button className="text-gray-600 hover:text-gray-800 mr-2">
-											<svg
-												className="w-5 h-5"
-												fill="none"
-												stroke="currentColor"
-												viewBox="0 0 24 24"
-											>
-												<path
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													strokeWidth="2"
-													d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-												/>
-											</svg>
-										</button>
-										<button className="text-red-500 hover:text-red-700">
-											<svg
-												className="w-5 h-5"
-												fill="none"
-												stroke="currentColor"
-												viewBox="0 0 24 24"
-											>
-												<path
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													strokeWidth="2"
-													d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-												/>
-											</svg>
-										</button>
-									</div>
-								)}
-							</div>
-						))}
-						{editMode && (
-							<div className="p-4 bg-gray-100 rounded-md flex justify-center items-center">
-								<button
-									className="text-gray-600 hover:text-gray-800"
-									onClick={handleAddTopic}
-								>
-									<svg
-										className="w-6 h-6"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth="2"
-											d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-										/>
-									</svg>
-								</button>
-							</div>
-						)}
-					</div>
-				</div>
-
-				{/* Sección para eliminar asignatura */}
-				<div className="mt-16 p-6 bg-red-50 rounded-md border border-red-200">
-					<h3 className="text-lg font-medium text-red-800 mb-2">
-						{t("subjectDetail.deleteSubject")}
-					</h3>
-					<p className="text-red-700 mb-4">
-						{t("subjectDetail.deleteWarning")}
-					</p>
-					<button
-						className="bg-red-800 text-white py-2 px-4 rounded-md flex items-center"
-						onClick={() => {
-							console.log(
-								`📤 Simulando petición DELETE a /api/subjects/${id}`
-							);
-							setTimeout(() => {
-								console.log(
-									`📥 Respuesta simulada: asignatura eliminada`
-								);
-								router.push("/manager/subjects");
-							}, 800);
-						}}
-					>
-						<svg
-							className="w-5 h-5 mr-1"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth="2"
-								d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-							/>
-						</svg>
-						{t("subjectDetail.delete")}
-					</button>
-				</div>
-			</div>
-		);
+				setSubject(updatedSubject);
+				if (editedSubject) {
+					setEditedSubject(updatedSubject);
+				}
+			}
+		}, 800);
 	};
 
 	if (loading) {
@@ -834,19 +427,33 @@ export default function SubjectDetailPage() {
 				<div className="flex items-center justify-between">
 					<h1 className="text-3xl font-bold flex items-center">
 						{subject.title}
-						<svg
-							className="ml-2 w-6 h-6 text-gray-500"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
+						<button
+							onClick={handleCopySubjectUrl}
+							className="ml-2 focus:outline-none"
+							title={
+								copied
+									? t("subjectDetail.copied")
+									: t("subjectDetail.copyLink")
+							}
 						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth="2"
-								d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-							/>
-						</svg>
+							<svg
+								className={`w-6 h-6 ${
+									copied
+										? "text-green-500"
+										: "text-gray-500 hover:text-gray-700"
+								}`}
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth="2"
+									d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+								/>
+							</svg>
+						</button>
 					</h1>
 				</div>
 
@@ -895,9 +502,70 @@ export default function SubjectDetailPage() {
 
 			{/* Contenido de las tabs */}
 			<div className="mt-6">
-				{activeTab === "topics" && renderTopicsTab()}
-				{activeTab === "professors" && renderProfessorsTab()}
-				{activeTab === "settings" && renderSettingsTab()}
+				{activeTab === "topics" && (
+					<TopicsTab
+						subjectId={subject.id}
+						topics={subject.topics}
+						handleAddTopic={handleAddTopic}
+					/>
+				)}
+
+				{activeTab === "professors" && (
+					<>
+						<button
+							className="mb-6 bg-gray-800 text-white py-2 px-4 rounded-md flex items-center"
+							onClick={() => setShowInviteModal(true)}
+						>
+							<svg
+								className="w-5 h-5 mr-1"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth="2"
+									d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+								/>
+							</svg>
+							{t("subjectDetail.inviteProfessor")}
+						</button>
+
+						<ProfessorsTab
+							professors={subject.professors}
+							onRemoveProfessor={handleRemoveProfessor}
+						/>
+
+						{showInviteModal && (
+							<InviteModal
+								onClose={() => setShowInviteModal(false)}
+								onInvite={handleAddProfessor}
+							/>
+						)}
+					</>
+				)}
+
+				{activeTab === "settings" && (
+					<SettingsTab
+						subject={subject}
+						editMode={editMode}
+						editedSubject={editedSubject!}
+						onEditToggle={handleEditToggle}
+						onInputChange={handleInputChange}
+						onSaveChanges={handleSaveChanges}
+						onEditTopic={handleEditTopic}
+					/>
+				)}
+
+				{/* Modales */}
+				{editingTopic && (
+					<EditTopicModal
+						topic={editingTopic}
+						onClose={() => setEditingTopic(null)}
+						onSave={handleEditTopic}
+					/>
+				)}
 			</div>
 		</div>
 	);

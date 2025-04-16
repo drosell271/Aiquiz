@@ -4,7 +4,7 @@
 import { useState, useContext, FormEvent, ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
-import LanguageSwitcher from "../components/LanguageSwitcher";
+import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import { ClientSideContext } from "../I18nProvider";
 import Link from "next/link";
 

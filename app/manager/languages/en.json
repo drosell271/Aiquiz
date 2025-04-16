@@ -43,6 +43,7 @@
 		"professors": "Professors",
 		"settings": "Settings",
 		"addTopic": "Add topic",
+		"editTopic": "Edit topic",
 		"editSubject": "Edit subject",
 		"saveChanges": "Save changes",
 		"cancel": "Cancel",
@@ -55,14 +56,17 @@
 		"topicsList": "Topics",
 		"searchPlaceholder": "Search topics...",
 		"newTopic": "New Topic",
+		"noTopicsFound": "No topics found matching your search",
 		"inviteProfessor": "Invite professor",
+		"invite": "Invite",
 		"addProfessor": "Add professor",
 		"namePlaceholder": "Name",
 		"emailPlaceholder": "Email",
 		"edit": "Edit",
 		"subjectNotFound": "Subject not found",
 		"loading": "Loading...",
-		"role": "Role",
-		"noProfessors": "There are no professors assigned to this subject."
+		"noProfessors": "There are no professors assigned to this subject.",
+		"copyLink": "Copy link",
+		"copied": "Link copied!"
 	}
 }

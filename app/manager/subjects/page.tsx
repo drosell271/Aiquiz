@@ -4,7 +4,9 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
-import SubjectCard, { SubjectCardProps } from "../components/SubjectCard";
+import SubjectCard, {
+	SubjectCardProps,
+} from "../components/subject/SubjectCard";
 import mockSubjects from "../data/subjects.json";
 
 interface Subject extends SubjectCardProps {}

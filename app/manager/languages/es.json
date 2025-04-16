@@ -43,6 +43,7 @@
 		"professors": "Profesores",
 		"settings": "Ajustes",
 		"addTopic": "Añadir tema",
+		"editTopic": "Editar tema",
 		"editSubject": "Editar asignatura",
 		"saveChanges": "Guardar cambios",
 		"cancel": "Cancelar",
@@ -55,14 +56,17 @@
 		"topicsList": "Temas",
 		"searchPlaceholder": "Buscar temas...",
 		"newTopic": "Nuevo Tema",
+		"noTopicsFound": "No se encontraron temas que coincidan con la búsqueda",
 		"inviteProfessor": "Invitar profesor",
+		"invite": "Invitar",
 		"addProfessor": "Añadir profesor",
 		"namePlaceholder": "Nombre",
 		"emailPlaceholder": "Email",
 		"edit": "Editar",
 		"subjectNotFound": "Asignatura no encontrada",
 		"loading": "Cargando...",
-		"role": "Rol",
-		"noProfessors": "No hay profesores asignados a esta asignatura."
+		"noProfessors": "No hay profesores asignados a esta asignatura.",
+		"copyLink": "Copiar enlace",
+		"copied": "¡Enlace copiado!"
 	}
 }

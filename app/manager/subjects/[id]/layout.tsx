@@ -3,8 +3,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import SubjectDetailSidebar from "../../components/SubjectDetailSidebar";
-import Header from "../../components/Header";
+import SubjectDetailSidebar from "../../components/topics/SubjectDetailSidebar";
+import Header from "../../components/common/Header";
 import subjectData from "../../data/subject-details.json";
 
 export default function SubjectDetailLayout({
