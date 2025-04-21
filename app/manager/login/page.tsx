@@ -70,13 +70,6 @@ const LoginPage = () => {
 				if (mockResponse.success) {
 					// Guardar token JWT en localStorage
 					localStorage.setItem("jwt_token", mockResponse.token);
-					console.log(
-						"🔐 Token JWT almacenado en localStorage:",
-						mockResponse.token
-					);
-
-					// Redireccionar a la página de asignaturas
-					console.log("🔀 Redireccionando a: /manager/subjects");
 					router.push("/manager/subjects");
 				} else {
 					setError(t("login.loginError"));

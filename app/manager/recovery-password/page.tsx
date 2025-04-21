@@ -21,7 +21,7 @@ const RecoveryPasswordPage = () => {
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
 		setLoading(true);
-		console.log("Email enviado:", email);
+		console.log("📤 Email enviado:", email);
 		// TODO: Implementar llamada real a la API
 		setTimeout(() => {
 			setIsEmailSent(true);
