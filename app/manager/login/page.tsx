@@ -43,7 +43,7 @@ const LoginPage = () => {
 			password: credentials.password,
 		};
 
-		console.log("📤 Enviando datos a la API:", dataToSend);
+		console.log("Enviando datos a la API:", dataToSend);
 		console.log("📍 Endpoint: /api/auth/login (POST)");
 
 		try {
