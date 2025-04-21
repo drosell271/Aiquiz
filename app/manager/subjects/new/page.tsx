@@ -1,3 +1,4 @@
+// /app/manager/subjects/new/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -5,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import Header from "../../components/common/Header";
-import apiService from "../../services/apiService";
+import useApiRequest from "../../hooks/useApiRequest";
 
 interface Professor {
 	id: string;
@@ -37,8 +38,14 @@ const NewSubjectPage = () => {
 		email: "",
 	});
 
-	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
+
+	// Hook para crear asignatura
+	const {
+		makeRequest: createSubject,
+		loading: isLoading,
+		error: apiError,
+	} = useApiRequest("/api/subjects", "POST", null, false);
 
 	// Comprobar autenticación
 	useEffect(() => {
@@ -47,6 +54,15 @@ const NewSubjectPage = () => {
 			router.push("/manager/login");
 		}
 	}, [router]);
+
+	// Actualizar mensaje de error si hay error en la API
+	useEffect(() => {
+		if (apiError) {
+			setError(
+				t("subjects.createError") || "Error al crear la asignatura"
+			);
+		}
+	}, [apiError, t]);
 
 	// Manejadores de formulario
 	const handleInputChange = (
@@ -82,7 +98,6 @@ const NewSubjectPage = () => {
 	// Enviar el formulario
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		setIsLoading(true);
 		setError("");
 
 		// Validar campos requeridos
@@ -91,7 +106,6 @@ const NewSubjectPage = () => {
 				t("subjects.newSubjectError") ||
 					"Nombre y siglas son obligatorios"
 			);
-			setIsLoading(false);
 			return;
 		}
 
@@ -106,13 +120,7 @@ const NewSubjectPage = () => {
 		};
 
 		try {
-			// TODO: Reemplazar con llamada real a la API cuando esté implementada
-			const response = await apiService.simulateApiCall(
-				"/api/subjects",
-				"POST",
-				subjectData
-			);
-
+			const response = await createSubject(subjectData);
 			if (response.success) {
 				router.push("/manager/subjects");
 			} else {
@@ -120,13 +128,11 @@ const NewSubjectPage = () => {
 					t("subjects.createError") || "Error al crear la asignatura"
 				);
 			}
-		} catch (error) {
-			console.error("Error al crear la asignatura:", error);
+		} catch (err) {
+			console.error("Error al crear la asignatura:", err);
 			setError(
 				t("subjects.createError") || "Error al crear la asignatura"
 			);
-		} finally {
-			setIsLoading(false);
 		}
 	};
 

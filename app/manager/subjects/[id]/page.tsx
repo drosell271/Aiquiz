@@ -1,12 +1,13 @@
 // /app/manager/subjects/[id]/page.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import apiService from "../../services/apiService";
-import { Subject, Topic } from "../../contexts/SubjectContext";
+import useApiRequest from "../../hooks/useApiRequest";
+import { useClipboard } from "../../hooks/useClipboard";
+import { Subject, Topic, Professor } from "../../contexts/SubjectContext";
 
 // Importamos los componentes necesarios
 import TopicsTab from "../../components/topics/TopicsTab";
@@ -19,88 +20,64 @@ export default function SubjectDetailPage() {
 	const { id } = useParams();
 	const router = useRouter();
 	const { t } = useTranslation();
-	const dataFetchedRef = useRef(false);
+	const { copied, copyToClipboard } = useClipboard();
 
-	// Estados
-	const [subject, setSubject] = useState<Subject | null>(null);
-	const [loading, setLoading] = useState(true);
+	// Estados para UI
 	const [activeTab, setActiveTab] = useState("topics");
-	const [copied, setCopied] = useState(false);
-
-	// Datos para la pantalla de ajustes
 	const [editMode, setEditMode] = useState(false);
 	const [editedSubject, setEditedSubject] = useState<Subject | null>(null);
 	const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
 	const [showInviteModal, setShowInviteModal] = useState(false);
 
-	// Cargar datos de la asignatura
+	// Datos de la asignatura
+	const {
+		data: subject,
+		loading,
+		error,
+		makeRequest: refetchSubject,
+	} = useApiRequest(`/api/subjects/${id}`, "GET", null, true);
+
+	// Sincronizar estado local cuando llegan los datos
 	useEffect(() => {
-		// Evitar llamadas duplicadas con el ref
-		if (dataFetchedRef.current) return;
+		if (subject) {
+			setEditedSubject(subject);
+		}
+	}, [subject]);
 
-		const fetchSubjectData = async () => {
-			setLoading(true);
-			try {
-				console.log("🔄 Cargando datos de asignatura desde page.tsx");
-				// TODO: Cuando implementes la API real, modifica esta llamada
-				// para usar la ruta correcta y método correspondiente
-				const data = await apiService.simulateApiCall(
-					`/api/subjects/${id}`
-				);
-				setSubject(data);
-				setEditedSubject(data);
-				dataFetchedRef.current = true;
-			} catch (error) {
-				console.error(
-					"Error al cargar detalles de la asignatura:",
-					error
-				);
-			} finally {
-				setLoading(false);
-			}
-		};
+	// API para añadir profesor
+	const { makeRequest: addProfessor, loading: addingProfessor } =
+		useApiRequest(`/api/subjects/${id}/professors`, "POST", null, false);
 
-		fetchSubjectData();
-	}, [id]); // Dependencia solo en id - si cambia el id, se recargará
+	// API para eliminar profesor
+	const { makeRequest: removeProfessor, loading: removingProfessor } =
+		useApiRequest("", "DELETE", null, false);
+
+	// API para añadir tema
+	const { makeRequest: addTopic, loading: addingTopic } = useApiRequest(
+		`/api/subjects/${id}/topics`,
+		"POST",
+		null,
+		false
+	);
+
+	// API para editar tema
+	const { makeRequest: editTopic, loading: editingTopicLoading } =
+		useApiRequest("", "PATCH", null, false);
+
+	// API para guardar cambios de la asignatura
+	const { makeRequest: saveSubject, loading: savingSubject } = useApiRequest(
+		`/api/subjects/${id}`,
+		"PUT",
+		null,
+		false
+	);
+
+	// API para eliminar la asignatura
+	const { makeRequest: deleteSubjectRequest, loading: deletingSubject } =
+		useApiRequest(`/api/subjects/${id}`, "DELETE", null, false);
 
 	const handleTabChange = (tab: string) => {
 		setActiveTab(tab);
-	};
-
-	// Función para copiar la URL al portapapeles
-	const copyToClipboard = (text: string) => {
-		if (navigator.clipboard) {
-			navigator.clipboard
-				.writeText(text)
-				.then(() => {
-					setCopied(true);
-					// Reset copied state after 2 seconds
-					setTimeout(() => setCopied(false), 2000);
-				})
-				.catch((error) => {
-					console.error("Error al copiar al portapapeles:", error);
-					setCopied(false);
-				});
-		} else {
-			// Fallback para navegadores que no soportan clipboard API
-			try {
-				const textArea = document.createElement("textarea");
-				textArea.value = text;
-				textArea.style.position = "fixed";
-				document.body.appendChild(textArea);
-				textArea.focus();
-				textArea.select();
-				const successful = document.execCommand("copy");
-				document.body.removeChild(textArea);
-				setCopied(successful);
-				if (successful) {
-					setTimeout(() => setCopied(false), 2000);
-				}
-			} catch (error) {
-				console.error("Error al copiar al portapapeles:", error);
-				setCopied(false);
-			}
-		}
 	};
 
 	const handleCopySubjectUrl = () => {
@@ -130,16 +107,9 @@ export default function SubjectDetailPage() {
 		if (!editedSubject) return;
 
 		try {
-			// TODO: Cuando implementes la API real, modifica esta llamada
-			// para usar la ruta correcta y método correspondiente
-			const response = await apiService.simulateApiCall(
-				`/api/subjects/${id}`,
-				"PUT",
-				editedSubject
-			);
-
+			const response = await saveSubject(editedSubject);
 			if (response.success) {
-				setSubject(editedSubject);
+				refetchSubject(); // Recargar datos actualizados
 				setEditMode(false);
 			}
 		} catch (error) {
@@ -151,30 +121,10 @@ export default function SubjectDetailPage() {
 		if (!subject) return;
 
 		try {
-			// TODO: Cuando implementes la API real, modifica esta llamada
-			// para usar la ruta correcta y método correspondiente
-			const response = await apiService.simulateApiCall(
-				`/api/subjects/${id}/professors`,
-				"POST",
-				{ name, email }
-			);
-
+			const response = await addProfessor({ name, email });
 			if (response.success) {
-				const newProfessor = {
-					id: response.id,
-					name,
-					email,
-				};
-
-				const updatedSubject = {
-					...subject,
-					professors: [...subject.professors, newProfessor],
-				};
-
-				setSubject(updatedSubject);
-				if (editedSubject) {
-					setEditedSubject(updatedSubject);
-				}
+				refetchSubject(); // Recargar los datos después de añadir
+				setShowInviteModal(false);
 			}
 		} catch (error) {
 			console.error("Error al añadir profesor:", error);
@@ -185,98 +135,53 @@ export default function SubjectDetailPage() {
 		if (!subject) return;
 
 		try {
-			// TODO: Cuando implementes la API real, modifica esta llamada
-			// para usar la ruta correcta y método correspondiente
-			const response = await apiService.simulateApiCall(
-				`/api/subjects/${id}/professors/${professorId}`,
-				"DELETE"
+			const response = await removeProfessor(
+				null,
+				false,
+				`${id}/professors/${professorId}`
 			);
-
 			if (response.success) {
-				const updatedSubject = {
-					...subject,
-					professors: subject.professors.filter(
-						(p) => p.id !== professorId
-					),
-				};
-
-				setSubject(updatedSubject);
-				if (editedSubject) {
-					setEditedSubject(updatedSubject);
-				}
+				refetchSubject(); // Recargar los datos después de eliminar
 			}
 		} catch (error) {
 			console.error("Error al eliminar profesor:", error);
 		}
 	};
 
-	const handleAddTopic = async () => {
+	const handleAddTopicRequest = async () => {
 		if (!subject) return;
 
 		try {
-			// TODO: Cuando implementes la API real, modifica esta llamada
-			// para usar la ruta correcta y método correspondiente
 			const newTopic = {
 				title: t("subjectDetail.newTopic"),
 				description: "",
 			};
 
-			const response = await apiService.simulateApiCall(
-				`/api/subjects/${id}/topics`,
-				"POST",
-				newTopic,
-				800,
-				true // Forzar para evitar duplicidad
-			);
-
+			const response = await addTopic(newTopic, true); // Forzar nueva llamada
 			if (response.success) {
-				const topicWithId: Topic = {
-					...newTopic,
-					id: response.id || `topic-${Date.now()}`,
-					subtopics: [],
-				};
-
-				const updatedSubject = {
-					...subject,
-					topics: [...subject.topics, topicWithId],
-				};
-
-				setSubject(updatedSubject);
-				if (editedSubject) {
-					setEditedSubject(updatedSubject);
-				}
+				refetchSubject(); // Recargar los datos después de añadir
 			}
 		} catch (error) {
 			console.error("Error al añadir tema:", error);
 		}
 	};
 
-	const handleEditTopic = async (topicId: string, newTitle: string) => {
+	const handleEditTopicRequest = async (
+		topicId: string,
+		newTitle: string
+	) => {
 		if (!subject) return;
 
 		try {
-			// TODO: Cuando implementes la API real, modifica esta llamada
-			// para usar la ruta correcta y método correspondiente
-			const response = await apiService.simulateApiCall(
-				`/api/subjects/${id}/topics/${topicId}`,
-				"PATCH",
-				{ title: newTitle }
+			const response = await editTopic(
+				{ title: newTitle },
+				false,
+				`${id}/topics/${topicId}`
 			);
 
 			if (response.success) {
-				const updatedTopics = subject.topics.map((topic) =>
-					topic.id === topicId ? { ...topic, title: newTitle } : topic
-				);
-
-				const updatedSubject = {
-					...subject,
-					topics: updatedTopics,
-				};
-
-				setSubject(updatedSubject);
-				if (editedSubject) {
-					setEditedSubject(updatedSubject);
-				}
+				refetchSubject(); // Recargar los datos después de editar
+				setEditingTopic(null);
 			}
 		} catch (error) {
 			console.error("Error al actualizar tema:", error);
@@ -285,13 +190,7 @@ export default function SubjectDetailPage() {
 
 	const handleDeleteSubject = async () => {
 		try {
-			// TODO: Cuando implementes la API real, modifica esta llamada
-			// para usar la ruta correcta y método correspondiente
-			const response = await apiService.simulateApiCall(
-				`/api/subjects/${id}`,
-				"DELETE"
-			);
-
+			const response = await deleteSubjectRequest();
 			if (response.success) {
 				router.push("/manager/subjects");
 			}
@@ -313,7 +212,7 @@ export default function SubjectDetailPage() {
 		);
 	}
 
-	if (!subject) {
+	if (error || !subject) {
 		return (
 			<div className="p-6 sm:p-8">
 				<div className="text-center">
@@ -456,7 +355,8 @@ export default function SubjectDetailPage() {
 						<TopicsTab
 							subjectId={subject.id}
 							topics={subject.topics}
-							handleAddTopic={handleAddTopic}
+							handleAddTopic={handleAddTopicRequest}
+							isLoading={addingTopic}
 						/>
 					)}
 
@@ -465,6 +365,7 @@ export default function SubjectDetailPage() {
 							<button
 								className="mb-6 bg-gray-800 text-white py-2 px-4 rounded-md flex items-center"
 								onClick={() => setShowInviteModal(true)}
+								disabled={addingProfessor}
 							>
 								<svg
 									className="w-5 h-5 mr-1"
@@ -485,12 +386,14 @@ export default function SubjectDetailPage() {
 							<ProfessorsTab
 								professors={subject.professors}
 								onRemoveProfessor={handleRemoveProfessor}
+								isLoading={removingProfessor}
 							/>
 
 							{showInviteModal && (
 								<InviteModal
 									onClose={() => setShowInviteModal(false)}
 									onInvite={handleAddProfessor}
+									isLoading={addingProfessor}
 								/>
 							)}
 						</>
@@ -504,7 +407,9 @@ export default function SubjectDetailPage() {
 							onEditToggle={handleEditToggle}
 							onInputChange={handleInputChange}
 							onSaveChanges={handleSaveChanges}
-							onEditTopic={handleEditTopic}
+							onEditTopic={handleEditTopicRequest}
+							onDeleteSubject={handleDeleteSubject}
+							isLoading={savingSubject || deletingSubject}
 						/>
 					)}
 
@@ -513,7 +418,8 @@ export default function SubjectDetailPage() {
 						<EditTopicModal
 							topic={editingTopic}
 							onClose={() => setEditingTopic(null)}
-							onSave={handleEditTopic}
+							onSave={handleEditTopicRequest}
+							isLoading={editingTopicLoading}
 						/>
 					)}
 				</div>

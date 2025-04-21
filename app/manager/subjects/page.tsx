@@ -1,44 +1,24 @@
 // /app/manager/subjects/page.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import SubjectCard, {
 	SubjectCardProps,
 } from "../components/subject/SubjectCard";
-import apiService from "../services/apiService";
+import useApiRequest from "../hooks/useApiRequest";
 
 interface Subject extends SubjectCardProps {}
 
 export default function SubjectsPage() {
 	const { t } = useTranslation();
-	const [subjects, setSubjects] = useState<Subject[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
-	const dataFetchedRef = useRef(false);
 
-	useEffect(() => {
-		// Solo realizamos la solicitud si los datos no se han cargado
-		if (dataFetchedRef.current) return;
-
-		const fetchSubjects = async () => {
-			setIsLoading(true);
-			try {
-				console.log("🔄 Cargando lista de asignaturas desde page.tsx");
-				// TODO: Cuando implementes la API real, modifica esta llamada
-				// para usar la ruta correcta y método correspondiente
-				const data = await apiService.simulateApiCall("/api/subjects");
-				setSubjects(data);
-				dataFetchedRef.current = true;
-			} catch (error) {
-				console.error("Error al cargar las asignaturas:", error);
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
-		fetchSubjects();
-	}, []); // Sin dependencias para que se ejecute solo una vez al montar
+	// Usar el hook personalizado para gestionar la petición
+	const {
+		data: subjects = [],
+		loading: isLoading,
+		error,
+	} = useApiRequest("/api/subjects", "GET", [], true);
 
 	return (
 		<div>
@@ -72,6 +52,10 @@ export default function SubjectsPage() {
 			{isLoading ? (
 				<div className="flex justify-center items-center h-64">
 					<div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+				</div>
+			) : error ? (
+				<div className="text-center py-8 text-red-500">
+					<p>Error al cargar las asignaturas</p>
 				</div>
 			) : (
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

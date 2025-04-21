@@ -20,20 +20,39 @@ export function useApiRequest(
 	const [loading, setLoading] = useState(loadOnMount);
 	const [error, setError] = useState<Error | null>(null);
 	const dataFetchedRef = useRef(false);
+	const requestInProgressRef = useRef(false);
 
 	// Función para realizar la solicitud
 	const makeRequest = async (
 		requestData: any = null,
-		forceCall: boolean = false
+		forceCall: boolean = false,
+		customEndpoint: string = ""
 	) => {
+		// Evitar llamadas simultáneas para el mismo endpoint
+		if (requestInProgressRef.current && !forceCall) {
+			console.log(
+				`⚠️ Request in progress for ${endpoint}, skipping duplicate call`
+			);
+			return null;
+		}
+
 		setLoading(true);
 		setError(null);
+		requestInProgressRef.current = true;
 
 		try {
+			// Usar endpoint personalizado si se proporciona
+			const targetEndpoint = customEndpoint
+				? `${endpoint
+						.split("/")
+						.slice(0, -1)
+						.join("/")}/${customEndpoint}`
+				: endpoint;
+
 			// TODO: Cuando implementes la API real, modifica esta llamada
 			// para usar la API real en lugar de la simulación
 			const response = await apiService.simulateApiCall(
-				endpoint,
+				targetEndpoint,
 				method,
 				requestData,
 				800,
@@ -49,12 +68,13 @@ export function useApiRequest(
 			throw errorObj;
 		} finally {
 			setLoading(false);
+			requestInProgressRef.current = false;
 		}
 	};
 
 	// Cargar datos al montar el componente si loadOnMount es true
 	useEffect(() => {
-		if (loadOnMount && !dataFetchedRef.current) {
+		if (loadOnMount && !dataFetchedRef.current && method === "GET") {
 			dataFetchedRef.current = true;
 			makeRequest();
 		}

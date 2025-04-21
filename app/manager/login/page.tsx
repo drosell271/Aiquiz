@@ -1,13 +1,13 @@
 // /app/manager/login/page.tsx
 "use client";
 
-import { useState, useContext, FormEvent, ChangeEvent } from "react";
+import { useState, useEffect, useContext, FormEvent, ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import { ClientSideContext } from "../I18nProvider";
 import Link from "next/link";
-import apiService from "../services/apiService";
+import useApiRequest from "../hooks/useApiRequest";
 
 interface Credentials {
 	email: string;
@@ -23,8 +23,22 @@ const LoginPage = () => {
 		email: "",
 		password: "",
 	});
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState("");
+
+	const [loginError, setLoginError] = useState("");
+
+	// API login
+	const {
+		makeRequest: login,
+		loading,
+		error: apiError,
+	} = useApiRequest("/api/auth/login", "POST", null, false);
+
+	// Actualizar el error de login si hay error en la API
+	useEffect(() => {
+		if (apiError) {
+			setLoginError(t("login.loginError"));
+		}
+	}, [apiError, t]);
 
 	const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target;
@@ -36,29 +50,21 @@ const LoginPage = () => {
 
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
-		setLoading(true);
-		setError("");
+		setLoginError("");
 
 		try {
-			// TODO: Reemplazar con llamada real a la API cuando esté implementada
-			const response = await apiService.simulateApiCall(
-				"/api/auth/login",
-				"POST",
-				credentials
-			);
+			const response = await login(credentials);
 
 			if (response.success) {
 				// Guardar token JWT en localStorage
 				localStorage.setItem("jwt_token", response.token);
 				router.push("/manager/subjects");
 			} else {
-				setError(t("login.loginError"));
+				setLoginError(t("login.loginError"));
 			}
 		} catch (error) {
 			console.error("❌ Error durante el login:", error);
-			setError(t("login.loginError"));
-		} finally {
-			setLoading(false);
+			setLoginError(t("login.loginError"));
 		}
 	};
 
@@ -122,9 +128,9 @@ const LoginPage = () => {
 							/>
 						</div>
 
-						{error && (
+						{loginError && (
 							<div className="mb-4 p-2 bg-red-100 text-red-700 rounded-md text-sm">
-								{error}
+								{loginError}
 							</div>
 						)}
 
