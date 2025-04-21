@@ -10,6 +10,8 @@ class ApiService {
 		this.callRegistry = new Map();
 		// Flag para habilitar o deshabilitar prevención de llamadas duplicadas
 		this.preventDuplicateCalls = true;
+		// Registro de respuestas en caché para reutilizarlas
+		this.responseCache = new Map();
 	}
 
 	/**
@@ -42,6 +44,14 @@ class ApiService {
 			return this.callRegistry.get(callId);
 		}
 
+		// Verificar si tenemos una respuesta en caché para peticiones GET
+		if (method === "GET" && this.responseCache.has(callId) && !forceCall) {
+			console.log(
+				`📥 Usando respuesta cacheada para ${method} ${endpoint}`
+			);
+			return Promise.resolve(this.responseCache.get(callId));
+		}
+
 		// Registrar la nueva llamada
 		console.log(`📤 Simulando petición ${method} a ${endpoint}`);
 		if (data) {
@@ -55,6 +65,11 @@ class ApiService {
 				console.log(
 					`📥 Respuesta simulada recibida para ${method} ${endpoint}`
 				);
+
+				// Guardar en caché para peticiones GET
+				if (method === "GET") {
+					this.responseCache.set(callId, response);
+				}
 
 				// Eliminar del registro una vez completada
 				this.callRegistry.delete(callId);
@@ -194,6 +209,14 @@ class ApiService {
 			success: false,
 			error: "Endpoint no implementado en simulación",
 		};
+	}
+
+	/**
+	 * Limpia la caché de respuestas guardadas
+	 */
+	clearCache() {
+		this.responseCache.clear();
+		console.log("Caché de respuestas limpiada");
 	}
 
 	/**

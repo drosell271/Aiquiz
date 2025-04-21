@@ -26,14 +26,30 @@ const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 	useEffect(() => {
 		if (pathname?.includes("/topics/")) {
 			const pathParts = pathname.split("/");
-			const topicId = pathParts[pathParts.length - 1];
+			// Buscamos el id del topic en la URL
+			const topicIndex = pathParts.findIndex((part) => part === "topics");
+			const topicId =
+				topicIndex >= 0 && pathParts.length > topicIndex + 1
+					? pathParts[topicIndex + 1]
+					: null;
 
-			const initialExpandedState: Record<string, boolean> = {};
-			topics.forEach((topic) => {
-				initialExpandedState[topic.id] = topic.id === topicId;
-			});
+			if (topicId) {
+				// Solo actualizar si hay cambios para evitar re-renders innecesarios
+				setExpandedTopics((prev) => {
+					const newState = { ...prev };
+					let updated = false;
 
-			setExpandedTopics(initialExpandedState);
+					topics.forEach((topic) => {
+						const shouldBeExpanded = topic.id === topicId;
+						if (newState[topic.id] !== shouldBeExpanded) {
+							newState[topic.id] = shouldBeExpanded;
+							updated = true;
+						}
+					});
+
+					return updated ? newState : prev;
+				});
+			}
 		}
 	}, [pathname, topics]);
 
@@ -64,7 +80,7 @@ const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 							<span>{topic.title}</span>
 							{topic.subtopics && topic.subtopics.length > 0 && (
 								<svg
-									className={`ml-auto h-5 w-5 transform ${
+									className={`ml-auto h-5 w-5 transform transition-transform ${
 										expandedTopics[topic.id]
 											? "rotate-90"
 											: ""
@@ -83,25 +99,27 @@ const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 							)}
 						</button>
 
-						{expandedTopics[topic.id] && topic.subtopics && (
-							<div className="ml-6 border-l border-gray-200 pl-4">
-								{topic.subtopics.map((subtopic) => (
-									<Link
-										key={subtopic.id}
-										href={`/manager/subjects/${subjectId}/topics/${topic.id}/subtopics/${subtopic.id}`}
-										className={`block py-2 px-4 hover:bg-gray-100 ${
-											pathname?.includes(
-												`/subtopics/${subtopic.id}`
-											)
-												? "font-bold"
-												: ""
-										}`}
-									>
-										{subtopic.title}
-									</Link>
-								))}
-							</div>
-						)}
+						{expandedTopics[topic.id] &&
+							topic.subtopics &&
+							topic.subtopics.length > 0 && (
+								<div className="ml-6 border-l border-gray-200 pl-4">
+									{topic.subtopics.map((subtopic) => (
+										<Link
+											key={subtopic.id}
+											href={`/manager/subjects/${subjectId}/topics/${topic.id}/subtopics/${subtopic.id}`}
+											className={`block py-2 px-4 hover:bg-gray-100 ${
+												pathname?.includes(
+													`/subtopics/${subtopic.id}`
+												)
+													? "font-bold"
+													: ""
+											}`}
+										>
+											{subtopic.title}
+										</Link>
+									))}
+								</div>
+							)}
 					</div>
 				))}
 			</nav>

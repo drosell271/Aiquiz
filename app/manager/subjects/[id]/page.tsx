@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import apiService from "../../services/apiService";
 import { Subject, Topic } from "../../contexts/SubjectContext";
-import SubjectDetailSidebar from "../../components/topics/SubjectDetailSidebar";
 
 // Importamos los componentes necesarios
 import TopicsTab from "../../components/topics/TopicsTab";
@@ -20,7 +19,7 @@ export default function SubjectDetailPage() {
 	const { id } = useParams();
 	const router = useRouter();
 	const { t } = useTranslation();
-	const fetchedRef = useRef(false);
+	const dataFetchedRef = useRef(false);
 
 	// Estados
 	const [subject, setSubject] = useState<Subject | null>(null);
@@ -36,34 +35,33 @@ export default function SubjectDetailPage() {
 
 	// Cargar datos de la asignatura
 	useEffect(() => {
-		// Evitar llamadas duplicadas
-		if (fetchedRef.current) return;
+		// Evitar llamadas duplicadas con el ref
+		if (dataFetchedRef.current) return;
 
 		const fetchSubjectData = async () => {
 			setLoading(true);
 			try {
-				// TODO: Reemplazar con llamada real a la API cuando esté implementada
 				console.log("🔄 Cargando datos de asignatura desde page.tsx");
+				// TODO: Cuando implementes la API real, modifica esta llamada
+				// para usar la ruta correcta y método correspondiente
 				const data = await apiService.simulateApiCall(
 					`/api/subjects/${id}`
 				);
 				setSubject(data);
 				setEditedSubject(data);
-				fetchedRef.current = true;
+				dataFetchedRef.current = true;
 			} catch (error) {
-				console.error("Error fetching subject details:", error);
+				console.error(
+					"Error al cargar detalles de la asignatura:",
+					error
+				);
 			} finally {
 				setLoading(false);
 			}
 		};
 
 		fetchSubjectData();
-
-		return () => {
-			// Al desmontar el componente, resetear el flag
-			fetchedRef.current = false;
-		};
-	}, [id]);
+	}, [id]); // Dependencia solo en id - si cambia el id, se recargará
 
 	const handleTabChange = (tab: string) => {
 		setActiveTab(tab);
@@ -80,11 +78,11 @@ export default function SubjectDetailPage() {
 					setTimeout(() => setCopied(false), 2000);
 				})
 				.catch((error) => {
-					console.error("Error copying to clipboard:", error);
+					console.error("Error al copiar al portapapeles:", error);
 					setCopied(false);
 				});
 		} else {
-			// Fallback for browsers that don't support clipboard API
+			// Fallback para navegadores que no soportan clipboard API
 			try {
 				const textArea = document.createElement("textarea");
 				textArea.value = text;
@@ -99,7 +97,7 @@ export default function SubjectDetailPage() {
 					setTimeout(() => setCopied(false), 2000);
 				}
 			} catch (error) {
-				console.error("Fallback: Error copying to clipboard:", error);
+				console.error("Error al copiar al portapapeles:", error);
 				setCopied(false);
 			}
 		}
@@ -132,7 +130,8 @@ export default function SubjectDetailPage() {
 		if (!editedSubject) return;
 
 		try {
-			// TODO: Reemplazar con llamada real a la API cuando esté implementada
+			// TODO: Cuando implementes la API real, modifica esta llamada
+			// para usar la ruta correcta y método correspondiente
 			const response = await apiService.simulateApiCall(
 				`/api/subjects/${id}`,
 				"PUT",
@@ -144,7 +143,7 @@ export default function SubjectDetailPage() {
 				setEditMode(false);
 			}
 		} catch (error) {
-			console.error("Error updating subject:", error);
+			console.error("Error al actualizar la asignatura:", error);
 		}
 	};
 
@@ -152,7 +151,8 @@ export default function SubjectDetailPage() {
 		if (!subject) return;
 
 		try {
-			// TODO: Reemplazar con llamada real a la API cuando esté implementada
+			// TODO: Cuando implementes la API real, modifica esta llamada
+			// para usar la ruta correcta y método correspondiente
 			const response = await apiService.simulateApiCall(
 				`/api/subjects/${id}/professors`,
 				"POST",
@@ -177,7 +177,7 @@ export default function SubjectDetailPage() {
 				}
 			}
 		} catch (error) {
-			console.error("Error adding professor:", error);
+			console.error("Error al añadir profesor:", error);
 		}
 	};
 
@@ -185,7 +185,8 @@ export default function SubjectDetailPage() {
 		if (!subject) return;
 
 		try {
-			// TODO: Reemplazar con llamada real a la API cuando esté implementada
+			// TODO: Cuando implementes la API real, modifica esta llamada
+			// para usar la ruta correcta y método correspondiente
 			const response = await apiService.simulateApiCall(
 				`/api/subjects/${id}/professors/${professorId}`,
 				"DELETE"
@@ -205,7 +206,7 @@ export default function SubjectDetailPage() {
 				}
 			}
 		} catch (error) {
-			console.error("Error removing professor:", error);
+			console.error("Error al eliminar profesor:", error);
 		}
 	};
 
@@ -213,7 +214,8 @@ export default function SubjectDetailPage() {
 		if (!subject) return;
 
 		try {
-			// TODO: Reemplazar con llamada real a la API cuando esté implementada
+			// TODO: Cuando implementes la API real, modifica esta llamada
+			// para usar la ruta correcta y método correspondiente
 			const newTopic = {
 				title: t("subjectDetail.newTopic"),
 				description: "",
@@ -222,7 +224,9 @@ export default function SubjectDetailPage() {
 			const response = await apiService.simulateApiCall(
 				`/api/subjects/${id}/topics`,
 				"POST",
-				newTopic
+				newTopic,
+				800,
+				true // Forzar para evitar duplicidad
 			);
 
 			if (response.success) {
@@ -243,7 +247,7 @@ export default function SubjectDetailPage() {
 				}
 			}
 		} catch (error) {
-			console.error("Error adding topic:", error);
+			console.error("Error al añadir tema:", error);
 		}
 	};
 
@@ -251,7 +255,8 @@ export default function SubjectDetailPage() {
 		if (!subject) return;
 
 		try {
-			// TODO: Reemplazar con llamada real a la API cuando esté implementada
+			// TODO: Cuando implementes la API real, modifica esta llamada
+			// para usar la ruta correcta y método correspondiente
 			const response = await apiService.simulateApiCall(
 				`/api/subjects/${id}/topics/${topicId}`,
 				"PATCH",
@@ -274,13 +279,14 @@ export default function SubjectDetailPage() {
 				}
 			}
 		} catch (error) {
-			console.error("Error updating topic:", error);
+			console.error("Error al actualizar tema:", error);
 		}
 	};
 
 	const handleDeleteSubject = async () => {
 		try {
-			// TODO: Reemplazar con llamada real a la API cuando esté implementada
+			// TODO: Cuando implementes la API real, modifica esta llamada
+			// para usar la ruta correcta y método correspondiente
 			const response = await apiService.simulateApiCall(
 				`/api/subjects/${id}`,
 				"DELETE"
@@ -290,7 +296,7 @@ export default function SubjectDetailPage() {
 				router.push("/manager/subjects");
 			}
 		} catch (error) {
-			console.error("Error deleting subject:", error);
+			console.error("Error al eliminar asignatura:", error);
 		}
 	};
 
@@ -329,11 +335,24 @@ export default function SubjectDetailPage() {
 		<>
 			{/* Sidebar fijo en el lado izquierdo */}
 			<div className="fixed top-16 left-0 bottom-0 w-64 z-40">
-				<SubjectDetailSidebar
-					subjectId={id as string}
-					subjectTitle={subject.title}
-					topics={subject.topics}
-				/>
+				<div className="bg-white border-r border-gray-200 h-full overflow-y-auto">
+					<div className="p-6 border-b border-gray-200">
+						<h2 className="text-xl font-bold">{subject.title}</h2>
+					</div>
+
+					<nav className="pt-4 pb-16">
+						{subject.topics.map((topic) => (
+							<div key={topic.id} className="mb-2">
+								<Link
+									href={`/manager/subjects/${id}/topics/${topic.id}`}
+									className="flex items-center w-full py-2 px-6 text-left hover:bg-gray-100"
+								>
+									<span>{topic.title}</span>
+								</Link>
+							</div>
+						))}
+					</nav>
+				</div>
 			</div>
 
 			<div className="p-6 sm:p-8">

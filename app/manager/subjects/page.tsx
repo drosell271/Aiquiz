@@ -18,31 +18,27 @@ export default function SubjectsPage() {
 	const dataFetchedRef = useRef(false);
 
 	useEffect(() => {
-		const fetchSubjects = async () => {
-			// Evitar múltiples llamadas usando un ref
-			if (dataFetchedRef.current) return;
+		// Solo realizamos la solicitud si los datos no se han cargado
+		if (dataFetchedRef.current) return;
 
+		const fetchSubjects = async () => {
 			setIsLoading(true);
 			try {
-				// TODO: Reemplazar con llamada real a la API cuando esté implementada
 				console.log("🔄 Cargando lista de asignaturas desde page.tsx");
+				// TODO: Cuando implementes la API real, modifica esta llamada
+				// para usar la ruta correcta y método correspondiente
 				const data = await apiService.simulateApiCall("/api/subjects");
 				setSubjects(data);
 				dataFetchedRef.current = true;
 			} catch (error) {
-				console.error("Error fetching subjects:", error);
+				console.error("Error al cargar las asignaturas:", error);
 			} finally {
 				setIsLoading(false);
 			}
 		};
 
 		fetchSubjects();
-
-		// Limpiar el flag al desmontar
-		return () => {
-			dataFetchedRef.current = false;
-		};
-	}, []);
+	}, []); // Sin dependencias para que se ejecute solo una vez al montar
 
 	return (
 		<div>
