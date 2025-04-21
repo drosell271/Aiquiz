@@ -1,51 +1,28 @@
 // /app/manager/subjects/[id]/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import apiService from "../../services/apiService";
+import { Subject, Topic } from "../../contexts/SubjectContext";
+import SubjectDetailSidebar from "../../components/topics/SubjectDetailSidebar";
 
-// Importamos solo los componentes realmente necesarios
+// Importamos los componentes necesarios
 import TopicsTab from "../../components/topics/TopicsTab";
 import ProfessorsTab from "../../components/topics/ProfessorsTab";
 import SettingsTab from "../../components/topics/SettingsTab";
 import InviteModal from "../../components/topics/InviteModal";
 import EditTopicModal from "../../components/topics/EditTopicModal";
 
-// Interfaces
-interface SubTopic {
-	id: string;
-	title: string;
-}
-
-interface Topic {
-	id: string;
-	title: string;
-	description: string;
-	subtopics: SubTopic[];
-}
-
-interface Professor {
-	id: string;
-	name: string;
-	email: string;
-}
-
-interface Subject {
-	id: string;
-	title: string;
-	acronym: string;
-	description: string;
-	topics: Topic[];
-	professors: Professor[];
-}
-
 export default function SubjectDetailPage() {
 	const { id } = useParams();
 	const router = useRouter();
 	const { t } = useTranslation();
+	const fetchedRef = useRef(false);
 
+	// Estados
 	const [subject, setSubject] = useState<Subject | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [activeTab, setActiveTab] = useState("topics");
@@ -57,133 +34,35 @@ export default function SubjectDetailPage() {
 	const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
 	const [showInviteModal, setShowInviteModal] = useState(false);
 
+	// Cargar datos de la asignatura
 	useEffect(() => {
-		const fetchSubjectDetails = async () => {
+		// Evitar llamadas duplicadas
+		if (fetchedRef.current) return;
+
+		const fetchSubjectData = async () => {
 			setLoading(true);
 			try {
-				// Simulamos la carga de datos
-				console.log(`📤 Simulando petición GET a /api/subjects/${id}`);
-
-				// Uso de setTimeout para simular el tiempo de carga
-				setTimeout(() => {
-					// Datos simulados con UUIDs
-					const mockData = {
-						id: "550e8400-e29b-41d4-a716-446655440000",
-						title: "Computación en red (CORE)",
-						acronym: "CORE",
-						description:
-							"Una red de computadoras, red de ordenadores o red informática es un conjunto de equipos nodos y software conectados entre sí por medio de dispositivos físicos que envían y reciben impulsos eléctricos, ondas electromagnéticas o cualquier otro medio para el transporte de datos, con la finalidad de compartir información, recursos y ofrecer servicios.",
-						topics: [
-							{
-								id: "7e9d5eb7-9058-4754-b325-062ace8c2249",
-								title: "HTTP",
-								description:
-									"El protocolo de transferencia de hipertexto (en inglés: Hypertext Transfer (...)) Ver descripción",
-								subtopics: [
-									{
-										id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-										title: "URLs",
-									},
-									{
-										id: "f47ac10b-58cc-4372-a567-0e02b2c3d480",
-										title: "Formato peticiones HTTP",
-									},
-									{
-										id: "f47ac10b-58cc-4372-a567-0e02b2c3d481",
-										title: "Cabeceras HTTP",
-									},
-									{
-										id: "f47ac10b-58cc-4372-a567-0e02b2c3d482",
-										title: "Métodos POST, PUT GET, DELETE, HEAD",
-									},
-									{
-										id: "f47ac10b-58cc-4372-a567-0e02b2c3d483",
-										title: "Códigos de respuesta",
-									},
-									{
-										id: "f47ac10b-58cc-4372-a567-0e02b2c3d484",
-										title: "Caché web",
-									},
-									{
-										id: "f47ac10b-58cc-4372-a567-0e02b2c3d485",
-										title: "Gestión de estado: parámetros ocultos, cookies, sesión",
-									},
-								],
-							},
-							{
-								id: "6b86b273-6e81-4e47-a252-08a2c3d53778",
-								title: "HTML",
-								description:
-									"HTML es un lenguaje de marcado que posibilita definir la estructura de (...)",
-								subtopics: [
-									{
-										id: "d4735e3a-5caa-4bd7-9db8-c40f4c8a3480",
-										title: "Declaración de variables",
-									},
-									{
-										id: "d4735e3a-5caa-4bd7-9db8-c40f4c8a3481",
-										title: "Tipos de datos operadores y expresiones",
-									},
-									{
-										id: "d4735e3a-5caa-4bd7-9db8-c40f4c8a3482",
-										title: "Bucles y condicionales",
-									},
-									{
-										id: "d4735e3a-5caa-4bd7-9db8-c40f4c8a3483",
-										title: "Uso de break y continue",
-									},
-									{
-										id: "d4735e3a-5caa-4bd7-9db8-c40f4c8a3484",
-										title: "Clases y objetos",
-									},
-									{
-										id: "d4735e3a-5caa-4bd7-9db8-c40f4c8a3485",
-										title: "Comandos try, catch y finally",
-									},
-									{
-										id: "d4735e3a-5caa-4bd7-9db8-c40f4c8a3486",
-										title: "Manejo de excepciones",
-									},
-								],
-							},
-							{
-								id: "ef2d127d-ea53-4e70-804d-bff65e45c8a7",
-								title: "CSS",
-								description:
-									"CSS es un lenguaje de diseño gráfico para definir y crear la presentación de documentos.",
-								subtopics: [],
-							},
-						],
-						professors: [
-							{
-								id: "37e1a2c3-d1c0-4f1c-a5d8-f72f3391e32a",
-								name: "Carlos González",
-								email: "cgonzalez@upm.es",
-							},
-							{
-								id: "0cae5fb4-4819-4a06-bba2-aa98b3a8425e",
-								name: "Marina Yeros",
-								email: "myeros@upm.es",
-							},
-						],
-					};
-
-					console.log(
-						`📥 Respuesta simulada recibida para asignatura ${id}`
-					);
-					setSubject(mockData);
-					setEditedSubject(mockData);
-					setLoading(false);
-				}, 800);
+				// TODO: Reemplazar con llamada real a la API cuando esté implementada
+				console.log("🔄 Cargando datos de asignatura desde page.tsx");
+				const data = await apiService.simulateApiCall(
+					`/api/subjects/${id}`
+				);
+				setSubject(data);
+				setEditedSubject(data);
+				fetchedRef.current = true;
 			} catch (error) {
 				console.error("Error fetching subject details:", error);
+			} finally {
 				setLoading(false);
 			}
 		};
 
-		if (id) {
-			fetchSubjectDetails();
-		}
+		fetchSubjectData();
+
+		return () => {
+			// Al desmontar el componente, resetear el flag
+			fetchedRef.current = false;
+		};
 	}, [id]);
 
 	const handleTabChange = (tab: string) => {
@@ -249,32 +128,40 @@ export default function SubjectDetailPage() {
 		setEditedSubject((prev) => (prev ? { ...prev, [name]: value } : null));
 	};
 
-	const handleSaveChanges = () => {
+	const handleSaveChanges = async () => {
 		if (!editedSubject) return;
 
-		console.log(`📤 Simulando petición PUT a /api/subjects/${id}`);
-		console.log("Datos enviados:", editedSubject);
+		try {
+			// TODO: Reemplazar con llamada real a la API cuando esté implementada
+			const response = await apiService.simulateApiCall(
+				`/api/subjects/${id}`,
+				"PUT",
+				editedSubject
+			);
 
-		// Simular guardado exitoso
-		setTimeout(() => {
-			console.log(`📥 Respuesta simulada: actualización exitosa`);
-			setSubject(editedSubject);
-			setEditMode(false);
-		}, 800);
+			if (response.success) {
+				setSubject(editedSubject);
+				setEditMode(false);
+			}
+		} catch (error) {
+			console.error("Error updating subject:", error);
+		}
 	};
 
-	const handleAddProfessor = (name: string, email: string) => {
-		console.log(
-			`📤 Simulando petición POST a /api/subjects/${id}/professors`
-		);
-		console.log("Datos enviados:", { name, email });
+	const handleAddProfessor = async (name: string, email: string) => {
+		if (!subject) return;
 
-		// Simular añadir profesor
-		setTimeout(() => {
-			console.log(`📥 Respuesta simulada: profesor añadido exitosamente`);
-			if (subject) {
+		try {
+			// TODO: Reemplazar con llamada real a la API cuando esté implementada
+			const response = await apiService.simulateApiCall(
+				`/api/subjects/${id}/professors`,
+				"POST",
+				{ name, email }
+			);
+
+			if (response.success) {
 				const newProfessor = {
-					id: `professor-${Date.now()}`,
+					id: response.id,
 					name,
 					email,
 				};
@@ -289,20 +176,22 @@ export default function SubjectDetailPage() {
 					setEditedSubject(updatedSubject);
 				}
 			}
-		}, 800);
+		} catch (error) {
+			console.error("Error adding professor:", error);
+		}
 	};
 
-	const handleRemoveProfessor = (professorId: string) => {
-		console.log(
-			`📤 Simulando petición DELETE a /api/subjects/${id}/professors/${professorId}`
-		);
+	const handleRemoveProfessor = async (professorId: string) => {
+		if (!subject) return;
 
-		// Simular eliminar profesor
-		setTimeout(() => {
-			console.log(
-				`📥 Respuesta simulada: profesor eliminado exitosamente`
+		try {
+			// TODO: Reemplazar con llamada real a la API cuando esté implementada
+			const response = await apiService.simulateApiCall(
+				`/api/subjects/${id}/professors/${professorId}`,
+				"DELETE"
 			);
-			if (subject) {
+
+			if (response.success) {
 				const updatedSubject = {
 					...subject,
 					professors: subject.professors.filter(
@@ -315,27 +204,37 @@ export default function SubjectDetailPage() {
 					setEditedSubject(updatedSubject);
 				}
 			}
-		}, 800);
+		} catch (error) {
+			console.error("Error removing professor:", error);
+		}
 	};
 
-	const handleAddTopic = () => {
-		console.log(`📤 Simulando petición POST a /api/subjects/${id}/topics`);
-		console.log("Datos enviados: Nuevo tema");
+	const handleAddTopic = async () => {
+		if (!subject) return;
 
-		// Simular añadir tema
-		setTimeout(() => {
-			console.log(`📥 Respuesta simulada: tema añadido exitosamente`);
-			if (subject) {
-				const newTopic = {
-					id: `topic-${Date.now()}`,
-					title: t("subjectDetail.newTopic"),
-					description: "",
+		try {
+			// TODO: Reemplazar con llamada real a la API cuando esté implementada
+			const newTopic = {
+				title: t("subjectDetail.newTopic"),
+				description: "",
+			};
+
+			const response = await apiService.simulateApiCall(
+				`/api/subjects/${id}/topics`,
+				"POST",
+				newTopic
+			);
+
+			if (response.success) {
+				const topicWithId: Topic = {
+					...newTopic,
+					id: response.id || `topic-${Date.now()}`,
 					subtopics: [],
 				};
 
 				const updatedSubject = {
 					...subject,
-					topics: [...subject.topics, newTopic],
+					topics: [...subject.topics, topicWithId],
 				};
 
 				setSubject(updatedSubject);
@@ -343,19 +242,23 @@ export default function SubjectDetailPage() {
 					setEditedSubject(updatedSubject);
 				}
 			}
-		}, 800);
+		} catch (error) {
+			console.error("Error adding topic:", error);
+		}
 	};
 
-	const handleEditTopic = (topicId: string, newTitle: string) => {
-		console.log(
-			`📤 Simulando petición PATCH a /api/subjects/${id}/topics/${topicId}`
-		);
-		console.log("Datos enviados:", { title: newTitle });
+	const handleEditTopic = async (topicId: string, newTitle: string) => {
+		if (!subject) return;
 
-		// Simular editar tema
-		setTimeout(() => {
-			console.log(`📥 Respuesta simulada: tema actualizado exitosamente`);
-			if (subject) {
+		try {
+			// TODO: Reemplazar con llamada real a la API cuando esté implementada
+			const response = await apiService.simulateApiCall(
+				`/api/subjects/${id}/topics/${topicId}`,
+				"PATCH",
+				{ title: newTitle }
+			);
+
+			if (response.success) {
 				const updatedTopics = subject.topics.map((topic) =>
 					topic.id === topicId ? { ...topic, title: newTitle } : topic
 				);
@@ -370,7 +273,25 @@ export default function SubjectDetailPage() {
 					setEditedSubject(updatedSubject);
 				}
 			}
-		}, 800);
+		} catch (error) {
+			console.error("Error updating topic:", error);
+		}
+	};
+
+	const handleDeleteSubject = async () => {
+		try {
+			// TODO: Reemplazar con llamada real a la API cuando esté implementada
+			const response = await apiService.simulateApiCall(
+				`/api/subjects/${id}`,
+				"DELETE"
+			);
+
+			if (response.success) {
+				router.push("/manager/subjects");
+			}
+		} catch (error) {
+			console.error("Error deleting subject:", error);
+		}
 	};
 
 	if (loading) {
@@ -405,168 +326,179 @@ export default function SubjectDetailPage() {
 	}
 
 	return (
-		<div className="p-6 sm:p-8">
-			{/* Breadcrumbs y título */}
-			<div className="mb-6">
-				<div className="flex items-center text-sm text-gray-500 mb-2">
-					<Link
-						href="/manager/subjects"
-						className="hover:text-gray-700"
-					>
-						{t("navigation.subjects")}
-					</Link>
-					<span className="mx-2">&gt;</span>
-					<Link
-						href={`/manager/subjects/${id}`}
-						className="hover:text-gray-700"
-					>
-						{subject.title}
-					</Link>
-				</div>
+		<>
+			{/* Sidebar fijo en el lado izquierdo */}
+			<div className="fixed top-16 left-0 bottom-0 w-64 z-40">
+				<SubjectDetailSidebar
+					subjectId={id as string}
+					subjectTitle={subject.title}
+					topics={subject.topics}
+				/>
+			</div>
 
-				<div className="flex items-center justify-between">
-					<h1 className="text-3xl font-bold flex items-center">
-						{subject.title}
-						<button
-							onClick={handleCopySubjectUrl}
-							className="ml-2 focus:outline-none"
-							title={
-								copied
-									? t("subjectDetail.copied")
-									: t("subjectDetail.copyLink")
-							}
+			<div className="p-6 sm:p-8">
+				{/* Breadcrumbs y título */}
+				<div className="mb-6">
+					<div className="flex items-center text-sm text-gray-500 mb-2">
+						<Link
+							href="/manager/subjects"
+							className="hover:text-gray-700"
 						>
-							<svg
-								className={`w-6 h-6 ${
+							{t("navigation.subjects")}
+						</Link>
+						<span className="mx-2">&gt;</span>
+						<Link
+							href={`/manager/subjects/${id}`}
+							className="hover:text-gray-700"
+						>
+							{subject.title}
+						</Link>
+					</div>
+
+					<div className="flex items-center justify-between">
+						<h1 className="text-3xl font-bold flex items-center">
+							{subject.title}
+							<button
+								onClick={handleCopySubjectUrl}
+								className="ml-2 focus:outline-none"
+								title={
 									copied
-										? "text-green-500"
-										: "text-gray-500 hover:text-gray-700"
-								}`}
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
+										? t("subjectDetail.copied")
+										: t("subjectDetail.copyLink")
+								}
 							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth="2"
-									d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-								/>
-							</svg>
-						</button>
-					</h1>
+								<svg
+									className={`w-6 h-6 ${
+										copied
+											? "text-green-500"
+											: "text-gray-500 hover:text-gray-700"
+									}`}
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth="2"
+										d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+									/>
+								</svg>
+							</button>
+						</h1>
+					</div>
+
+					<p className="text-gray-700 mt-2">
+						{subject.description.length > 150
+							? subject.description.substring(0, 150) + "..."
+							: subject.description}
+					</p>
 				</div>
 
-				<p className="text-gray-700 mt-2">
-					{subject.description.length > 150
-						? subject.description.substring(0, 150) + "..."
-						: subject.description}
-				</p>
-			</div>
-
-			{/* Tabs de navegación */}
-			<div className="border-b border-gray-200 mb-6">
-				<nav className="-mb-px flex space-x-8">
-					<button
-						onClick={() => handleTabChange("topics")}
-						className={`py-4 px-1 ${
-							activeTab === "topics"
-								? "border-b-2 border-indigo-500 font-medium text-indigo-600"
-								: "border-b-2 border-transparent font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-						}`}
-					>
-						{t("subjectDetail.topics")}
-					</button>
-					<button
-						onClick={() => handleTabChange("professors")}
-						className={`py-4 px-1 ${
-							activeTab === "professors"
-								? "border-b-2 border-indigo-500 font-medium text-indigo-600"
-								: "border-b-2 border-transparent font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-						}`}
-					>
-						{t("subjectDetail.professors")}
-					</button>
-					<button
-						onClick={() => handleTabChange("settings")}
-						className={`py-4 px-1 ${
-							activeTab === "settings"
-								? "border-b-2 border-indigo-500 font-medium text-indigo-600"
-								: "border-b-2 border-transparent font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-						}`}
-					>
-						{t("subjectDetail.settings")}
-					</button>
-				</nav>
-			</div>
-
-			{/* Contenido de las tabs */}
-			<div className="mt-6">
-				{activeTab === "topics" && (
-					<TopicsTab
-						subjectId={subject.id}
-						topics={subject.topics}
-						handleAddTopic={handleAddTopic}
-					/>
-				)}
-
-				{activeTab === "professors" && (
-					<>
+				{/* Tabs de navegación */}
+				<div className="border-b border-gray-200 mb-6">
+					<nav className="-mb-px flex space-x-8">
 						<button
-							className="mb-6 bg-gray-800 text-white py-2 px-4 rounded-md flex items-center"
-							onClick={() => setShowInviteModal(true)}
+							onClick={() => handleTabChange("topics")}
+							className={`py-4 px-1 ${
+								activeTab === "topics"
+									? "border-b-2 border-indigo-500 font-medium text-indigo-600"
+									: "border-b-2 border-transparent font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+							}`}
 						>
-							<svg
-								className="w-5 h-5 mr-1"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth="2"
-									d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-								/>
-							</svg>
-							{t("subjectDetail.inviteProfessor")}
+							{t("subjectDetail.topics")}
 						</button>
+						<button
+							onClick={() => handleTabChange("professors")}
+							className={`py-4 px-1 ${
+								activeTab === "professors"
+									? "border-b-2 border-indigo-500 font-medium text-indigo-600"
+									: "border-b-2 border-transparent font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+							}`}
+						>
+							{t("subjectDetail.professors")}
+						</button>
+						<button
+							onClick={() => handleTabChange("settings")}
+							className={`py-4 px-1 ${
+								activeTab === "settings"
+									? "border-b-2 border-indigo-500 font-medium text-indigo-600"
+									: "border-b-2 border-transparent font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+							}`}
+						>
+							{t("subjectDetail.settings")}
+						</button>
+					</nav>
+				</div>
 
-						<ProfessorsTab
-							professors={subject.professors}
-							onRemoveProfessor={handleRemoveProfessor}
+				{/* Contenido de las tabs */}
+				<div className="mt-6">
+					{activeTab === "topics" && (
+						<TopicsTab
+							subjectId={subject.id}
+							topics={subject.topics}
+							handleAddTopic={handleAddTopic}
 						/>
+					)}
 
-						{showInviteModal && (
-							<InviteModal
-								onClose={() => setShowInviteModal(false)}
-								onInvite={handleAddProfessor}
+					{activeTab === "professors" && (
+						<>
+							<button
+								className="mb-6 bg-gray-800 text-white py-2 px-4 rounded-md flex items-center"
+								onClick={() => setShowInviteModal(true)}
+							>
+								<svg
+									className="w-5 h-5 mr-1"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth="2"
+										d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+									/>
+								</svg>
+								{t("subjectDetail.inviteProfessor")}
+							</button>
+
+							<ProfessorsTab
+								professors={subject.professors}
+								onRemoveProfessor={handleRemoveProfessor}
 							/>
-						)}
-					</>
-				)}
 
-				{activeTab === "settings" && (
-					<SettingsTab
-						subject={subject}
-						editMode={editMode}
-						editedSubject={editedSubject!}
-						onEditToggle={handleEditToggle}
-						onInputChange={handleInputChange}
-						onSaveChanges={handleSaveChanges}
-						onEditTopic={handleEditTopic}
-					/>
-				)}
+							{showInviteModal && (
+								<InviteModal
+									onClose={() => setShowInviteModal(false)}
+									onInvite={handleAddProfessor}
+								/>
+							)}
+						</>
+					)}
 
-				{/* Modales */}
-				{editingTopic && (
-					<EditTopicModal
-						topic={editingTopic}
-						onClose={() => setEditingTopic(null)}
-						onSave={handleEditTopic}
-					/>
-				)}
+					{activeTab === "settings" && editedSubject && (
+						<SettingsTab
+							subject={subject}
+							editMode={editMode}
+							editedSubject={editedSubject}
+							onEditToggle={handleEditToggle}
+							onInputChange={handleInputChange}
+							onSaveChanges={handleSaveChanges}
+							onEditTopic={handleEditTopic}
+						/>
+					)}
+
+					{/* Modales */}
+					{editingTopic && (
+						<EditTopicModal
+							topic={editingTopic}
+							onClose={() => setEditingTopic(null)}
+							onSave={handleEditTopic}
+						/>
+					)}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 }

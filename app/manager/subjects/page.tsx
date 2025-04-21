@@ -1,13 +1,13 @@
 // /app/manager/subjects/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import SubjectCard, {
 	SubjectCardProps,
 } from "../components/subject/SubjectCard";
-import mockSubjects from "../data/subjects.json";
+import apiService from "../services/apiService";
 
 interface Subject extends SubjectCardProps {}
 
@@ -15,32 +15,33 @@ export default function SubjectsPage() {
 	const { t } = useTranslation();
 	const [subjects, setSubjects] = useState<Subject[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const dataFetchedRef = useRef(false);
 
 	useEffect(() => {
 		const fetchSubjects = async () => {
+			// Evitar múltiples llamadas usando un ref
+			if (dataFetchedRef.current) return;
+
 			setIsLoading(true);
 			try {
 				// TODO: Reemplazar con llamada real a la API cuando esté implementada
-				// const response = await fetch('/api/subjects', {
-				//   headers: {
-				//     'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
-				//   }
-				// });
-				// const data = await response.json();
-
-				// Usar los datos de mock desde el archivo JSON
-				// Simular retardo de red
-				setTimeout(() => {
-					setSubjects(mockSubjects);
-					setIsLoading(false);
-				}, 1000);
+				console.log("🔄 Cargando lista de asignaturas desde page.tsx");
+				const data = await apiService.simulateApiCall("/api/subjects");
+				setSubjects(data);
+				dataFetchedRef.current = true;
 			} catch (error) {
 				console.error("Error fetching subjects:", error);
+			} finally {
 				setIsLoading(false);
 			}
 		};
 
 		fetchSubjects();
+
+		// Limpiar el flag al desmontar
+		return () => {
+			dataFetchedRef.current = false;
+		};
 	}, []);
 
 	return (

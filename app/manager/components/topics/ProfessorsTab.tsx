@@ -1,4 +1,4 @@
-// /app/manager/components/subject/ProfessorsTab.tsx
+// /app/manager/components/topics/ProfessorsTab.tsx
 import { useTranslation } from "react-i18next";
 
 interface Professor {

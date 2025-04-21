@@ -1,26 +1,9 @@
-// /app/manager/components/subject/SettingsTab.tsx
+// /app/manager/components/topics/SettingsTab.tsx
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import EditTopicModal from "./EditTopicModal";
-
-interface Topic {
-	id: string;
-	title: string;
-	description: string;
-	subtopics: Array<{
-		id: string;
-		title: string;
-	}>;
-}
-
-interface Subject {
-	id: string;
-	title: string;
-	acronym: string;
-	description: string;
-	topics: Topic[];
-}
+import { Subject, Topic } from "../../contexts/SubjectContext";
 
 interface SettingsTabProps {
 	subject: Subject;
@@ -46,16 +29,6 @@ const SettingsTab = ({
 	const { t } = useTranslation();
 	const router = useRouter();
 	const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
-
-	const handleDeleteSubject = () => {
-		console.log(
-			`📤 Simulando petición DELETE a /api/subjects/${subject.id}`
-		);
-		setTimeout(() => {
-			console.log(`📥 Respuesta simulada: asignatura eliminada`);
-			router.push("/manager/subjects");
-		}, 800);
-	};
 
 	const handleEditTopic = (topicId: string, newTitle: string) => {
 		onEditTopic(topicId, newTitle);
@@ -235,10 +208,7 @@ const SettingsTab = ({
 				<p className="text-red-700 mb-4">
 					{t("subjectDetail.deleteWarning")}
 				</p>
-				<button
-					className="bg-red-800 text-white py-2 px-4 rounded-md flex items-center"
-					onClick={handleDeleteSubject}
-				>
+				<button className="bg-red-800 text-white py-2 px-4 rounded-md flex items-center">
 					<svg
 						className="w-5 h-5 mr-1"
 						fill="none"

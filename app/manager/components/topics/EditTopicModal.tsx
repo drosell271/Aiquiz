@@ -1,12 +1,10 @@
-// /app/manager/components/subject/EditTopicModal.tsx
+// /app/manager/components/topics/EditTopicModal.tsx
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Topic } from "../../contexts/SubjectContext";
 
 interface EditTopicModalProps {
-	topic: {
-		id: string;
-		title: string;
-	};
+	topic: Topic;
 	onClose: () => void;
 	onSave: (topicId: string, newTitle: string) => void;
 }
@@ -22,7 +20,7 @@ const EditTopicModal = ({ topic, onClose, onSave }: EditTopicModalProps) => {
 
 		setIsSubmitting(true);
 		onSave(topic.id, title);
-		// Close is handled by parent
+		// La opción de cerrar el modal se delegará a la función onSave
 	};
 
 	return (

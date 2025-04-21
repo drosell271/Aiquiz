@@ -1,4 +1,4 @@
-// /app/manager/components/subject/InviteModal.tsx
+// /app/manager/components/topics/InviteModal.tsx
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -20,7 +20,8 @@ const InviteModal = ({ onClose, onInvite }: InviteModalProps) => {
 		setIsSubmitting(true);
 		onInvite(name, email);
 
-		// Reset form and close modal (handled by parent component)
+		// La opción de cerrar el modal se delegará a la función onInvite
+		onClose();
 	};
 
 	return (

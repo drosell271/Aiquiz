@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import { ClientSideContext } from "../I18nProvider";
 import Link from "next/link";
+import apiService from "../services/apiService";
 
 interface Credentials {
 	email: string;
@@ -38,48 +39,25 @@ const LoginPage = () => {
 		setLoading(true);
 		setError("");
 
-		const dataToSend = {
-			email: credentials.email,
-			password: credentials.password,
-		};
-
-		console.log("Enviando datos a la API:", dataToSend);
-		console.log("📍 Endpoint: /api/auth/login (POST)");
-
 		try {
 			// TODO: Reemplazar con llamada real a la API cuando esté implementada
-			// const response = await fetch('/api/auth/login', {
-			//   method: 'POST',
-			//   headers: {
-			//     'Content-Type': 'application/json',
-			//   },
-			//   body: JSON.stringify(dataToSend),
-			// });
-			// const data = await response.json();
+			const response = await apiService.simulateApiCall(
+				"/api/auth/login",
+				"POST",
+				credentials
+			);
 
-			// Simulación de respuesta exitosa con JWT
-			const mockResponse = {
-				success: true,
-				token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkNhcmxvcyBHb256YWxleiIsImlhdCI6MTUxNjIzOTAyMn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
-			};
-
-			console.log("📥 Respuesta simulada de la API:", mockResponse);
-
-			// Simular retardo de red
-			setTimeout(() => {
-				if (mockResponse.success) {
-					// Guardar token JWT en localStorage
-					localStorage.setItem("jwt_token", mockResponse.token);
-					router.push("/manager/subjects");
-				} else {
-					setError(t("login.loginError"));
-					console.error("❌ Error de autenticación");
-				}
-				setLoading(false);
-			}, 1000);
+			if (response.success) {
+				// Guardar token JWT en localStorage
+				localStorage.setItem("jwt_token", response.token);
+				router.push("/manager/subjects");
+			} else {
+				setError(t("login.loginError"));
+			}
 		} catch (error) {
 			console.error("❌ Error durante el login:", error);
 			setError(t("login.loginError"));
+		} finally {
 			setLoading(false);
 		}
 	};

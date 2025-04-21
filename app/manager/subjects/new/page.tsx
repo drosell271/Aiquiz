@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import Header from "../../components/common/Header";
+import apiService from "../../services/apiService";
 
 interface Professor {
 	id: string;
@@ -104,39 +105,27 @@ const NewSubjectPage = () => {
 			})),
 		};
 
-		console.log("📤 Simulando petición POST a /api/subjects");
-		console.log("Datos enviados:", subjectData);
-
 		try {
 			// TODO: Reemplazar con llamada real a la API cuando esté implementada
-			// const response = await fetch('/api/subjects', {
-			// 	method: 'POST',
-			// 	headers: {
-			// 		'Content-Type': 'application/json',
-			// 		'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
-			// 	},
-			// 	body: JSON.stringify(subjectData),
-			// });
-			// const data = await response.json();
+			const response = await apiService.simulateApiCall(
+				"/api/subjects",
+				"POST",
+				subjectData
+			);
 
-			// Simular retardo de red
-			setTimeout(() => {
-				console.log(
-					"📥 Respuesta simulada de la API: Asignatura creada exitosamente"
-				);
-				console.log(
-					"ID generado:",
-					"550e8400-e29b-41d4-a716-446655440000"
-				);
-
-				// Redireccionar a la página de asignaturas
+			if (response.success) {
 				router.push("/manager/subjects");
-			}, 1000);
+			} else {
+				setError(
+					t("subjects.createError") || "Error al crear la asignatura"
+				);
+			}
 		} catch (error) {
 			console.error("Error al crear la asignatura:", error);
 			setError(
 				t("subjects.createError") || "Error al crear la asignatura"
 			);
+		} finally {
 			setIsLoading(false);
 		}
 	};

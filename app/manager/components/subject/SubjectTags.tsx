@@ -1,4 +1,4 @@
-// /app/manager/components/SubjectTags.tsx
+// /app/manager/components/subject/SubjectTags.tsx
 import React from "react";
 
 interface SubjectTagsProps {

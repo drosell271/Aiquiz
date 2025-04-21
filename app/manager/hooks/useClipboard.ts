@@ -1,14 +1,16 @@
-// /app/manager/components/subject/useCopyToClipboard.tsx
 import { useState } from "react";
 
-interface CopyToClipboardResult {
-	copied: boolean;
-	copyToClipboard: (text: string) => void;
-}
-
-const useCopyToClipboard = (): CopyToClipboardResult => {
+/**
+ * Hook personalizado para copiar texto al portapapeles
+ * @returns {Object} - { copied, copyToClipboard }
+ */
+export function useClipboard() {
 	const [copied, setCopied] = useState(false);
 
+	/**
+	 * Copia el texto proporcionado al portapapeles
+	 * @param {string} text - Texto a copiar
+	 */
 	const copyToClipboard = (text: string) => {
 		if (navigator.clipboard) {
 			navigator.clipboard
@@ -23,7 +25,7 @@ const useCopyToClipboard = (): CopyToClipboardResult => {
 					setCopied(false);
 				});
 		} else {
-			// Fallback for browsers that don't support clipboard API
+			// Fallback para navegadores que no soportan la API clipboard
 			try {
 				const textArea = document.createElement("textarea");
 				textArea.value = text;
@@ -45,6 +47,4 @@ const useCopyToClipboard = (): CopyToClipboardResult => {
 	};
 
 	return { copied, copyToClipboard };
-};
-
-export default useCopyToClipboard;
+}

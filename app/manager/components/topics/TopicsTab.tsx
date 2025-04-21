@@ -1,4 +1,4 @@
-// /app/manager/components/subject/TopicsTab.tsx
+// /app/manager/components/topics/TopicsTab.tsx
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";

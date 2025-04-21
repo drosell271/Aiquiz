@@ -1,21 +1,10 @@
-// /app/manager/components/SubjectDetailSidebar.tsx
+// /app/manager/components/topics/SubjectDetailSidebar.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-interface SubTopic {
-	id: string;
-	title: string;
-}
-
-interface Topic {
-	id: string;
-	title: string;
-	description: string;
-	subtopics: SubTopic[];
-}
+import { Topic } from "../../contexts/SubjectContext";
 
 interface SubjectDetailSidebarProps {
 	subjectId: string;
@@ -35,7 +24,7 @@ const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 
 	// Inicializar expandiendo el tema activo si estamos en una ruta de subtema
 	useEffect(() => {
-		if (pathname.includes("/topics/")) {
+		if (pathname?.includes("/topics/")) {
 			const pathParts = pathname.split("/");
 			const topicId = pathParts[pathParts.length - 1];
 
@@ -67,7 +56,7 @@ const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 						<button
 							onClick={() => toggleTopic(topic.id)}
 							className={`flex items-center w-full py-2 px-6 text-left hover:bg-gray-100 ${
-								pathname.includes(`/topics/${topic.id}`)
+								pathname?.includes(`/topics/${topic.id}`)
 									? "font-bold"
 									: ""
 							}`}
@@ -101,7 +90,7 @@ const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 										key={subtopic.id}
 										href={`/manager/subjects/${subjectId}/topics/${topic.id}/subtopics/${subtopic.id}`}
 										className={`block py-2 px-4 hover:bg-gray-100 ${
-											pathname.includes(
+											pathname?.includes(
 												`/subtopics/${subtopic.id}`
 											)
 												? "font-bold"

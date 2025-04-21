@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ClientSideContext } from "../I18nProvider";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import Link from "next/link";
+import apiService from "../services/apiService";
 
 const RecoveryPasswordPage = () => {
 	const isClient = useContext(ClientSideContext);
@@ -21,12 +22,22 @@ const RecoveryPasswordPage = () => {
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
 		setLoading(true);
-		console.log("📤 Email enviado:", email);
-		// TODO: Implementar llamada real a la API
-		setTimeout(() => {
+
+		try {
+			// TODO: Reemplazar con llamada real a la API cuando esté implementada
+			await apiService.simulateApiCall("/api/auth/recovery", "POST", {
+				email,
+			});
+
 			setIsEmailSent(true);
+		} catch (error) {
+			console.error(
+				"Error durante la recuperación de contraseña:",
+				error
+			);
+		} finally {
 			setLoading(false);
-		}, 1000);
+		}
 	};
 
 	// Pantalla de confirmación después de enviar el correo
