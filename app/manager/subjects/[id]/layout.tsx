@@ -2,9 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Header from "../../components/common/Header";
-import useApiRequest from "../../hooks/useApiRequest";
+import { SubjectProvider } from "../../contexts/SubjectContext"; // Importación actualizada
 
 export default function SubjectDetailLayout({
 	children,
@@ -12,16 +12,7 @@ export default function SubjectDetailLayout({
 	children: React.ReactNode;
 }) {
 	const router = useRouter();
-	const { id } = useParams();
 	const [isLoading, setIsLoading] = useState(true);
-
-	// Obtener datos de la asignatura para el sidebar
-	const { data: subject } = useApiRequest(
-		`/api/subjects/${id}`,
-		"GET",
-		null,
-		true
-	);
 
 	useEffect(() => {
 		// Comprobar si el usuario está autenticado
@@ -57,7 +48,9 @@ export default function SubjectDetailLayout({
 
 			{/* Contenido principal con scroll */}
 			<div className="ml-0 md:ml-64 mt-16 w-full overflow-y-auto">
-				<main className="flex-1 h-full">{children}</main>
+				<SubjectProvider>
+					<main className="flex-1 h-full">{children}</main>
+				</SubjectProvider>
 			</div>
 		</div>
 	);

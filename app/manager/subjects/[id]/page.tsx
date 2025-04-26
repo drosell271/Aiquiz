@@ -7,9 +7,9 @@ import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import useApiRequest from "../../hooks/useApiRequest";
 import { useClipboard } from "../../hooks/useClipboard";
-import { Subject, Topic, Professor } from "../../contexts/SubjectContext";
+import { Topic, useSubject } from "../../contexts/SubjectContext"; // Importación actualizada
 
-// Importamos los componentes actualizados
+// Importamos los componentes
 import TopicsTab from "../../components/topics/TopicsTab";
 import ProfessorsTab from "../../components/topics/ProfessorsTab";
 import SettingsTab from "../../components/topics/SettingsTab";
@@ -23,23 +23,18 @@ export default function SubjectDetailPage() {
 	const { t } = useTranslation();
 	const { copied, copyToClipboard } = useClipboard();
 
+	// Usar el hook useSubject en lugar del contexto directo
+	const { subject, loading, setSubject, refetchSubject } = useSubject();
+
 	// Estados para UI
 	const [activeTab, setActiveTab] = useState("topics");
 	const [editMode, setEditMode] = useState(false);
-	const [editedSubject, setEditedSubject] = useState<Subject | null>(null);
+	const [editedSubject, setEditedSubject] = useState(subject);
 	const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
 	const [showInviteModal, setShowInviteModal] = useState(false);
 	const [deletingTopicId, setDeletingTopicId] = useState<string>("");
 
-	// Datos de la asignatura
-	const {
-		data: subject,
-		loading,
-		error,
-		makeRequest: refetchSubject,
-	} = useApiRequest(`/api/subjects/${id}`, "GET", null, true);
-
-	// Sincronizar estado local cuando llegan los datos
+	// Sincronizar estado local cuando cambia el subject en el contexto
 	useEffect(() => {
 		if (subject) {
 			setEditedSubject(subject);
@@ -119,7 +114,7 @@ export default function SubjectDetailPage() {
 		try {
 			const response = await saveSubject(editedSubject);
 			if (response.success) {
-				refetchSubject(); // Recargar datos actualizados
+				refetchSubject(); // Usar refetchSubject del contexto
 				setEditMode(false);
 			}
 		} catch (error) {
@@ -133,7 +128,7 @@ export default function SubjectDetailPage() {
 		try {
 			const response = await addProfessor({ name, email });
 			if (response.success) {
-				refetchSubject(); // Recargar los datos después de añadir
+				refetchSubject(); // Usar refetchSubject del contexto
 				setShowInviteModal(false);
 			}
 		} catch (error) {
@@ -151,7 +146,7 @@ export default function SubjectDetailPage() {
 				`${id}/professors/${professorId}`
 			);
 			if (response.success) {
-				refetchSubject(); // Recargar los datos después de eliminar
+				refetchSubject(); // Usar refetchSubject del contexto
 			}
 		} catch (error) {
 			console.error("Error al eliminar profesor:", error);
@@ -169,7 +164,7 @@ export default function SubjectDetailPage() {
 
 			const response = await addTopic(newTopic, true); // Forzar nueva llamada
 			if (response.success) {
-				refetchSubject(); // Recargar los datos después de añadir
+				refetchSubject(); // Usar refetchSubject del contexto
 			}
 		} catch (error) {
 			console.error("Error al añadir tema:", error);
@@ -190,7 +185,7 @@ export default function SubjectDetailPage() {
 			);
 
 			if (response.success) {
-				refetchSubject(); // Recargar los datos después de editar
+				refetchSubject(); // Usar refetchSubject del contexto
 				setEditingTopic(null);
 			}
 		} catch (error) {
@@ -210,7 +205,7 @@ export default function SubjectDetailPage() {
 			);
 
 			if (response.success) {
-				refetchSubject(); // Recargar los datos después de eliminar
+				refetchSubject(); // Usar refetchSubject del contexto
 			}
 		} catch (error) {
 			console.error("Error al eliminar tema:", error);
@@ -243,7 +238,7 @@ export default function SubjectDetailPage() {
 		);
 	}
 
-	if (error || !subject) {
+	if (!subject) {
 		return (
 			<div className="p-6 sm:p-8">
 				<div className="text-center">

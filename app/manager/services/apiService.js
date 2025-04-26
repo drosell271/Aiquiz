@@ -12,6 +12,107 @@ class ApiService {
 		this.preventDuplicateCalls = true;
 		// Registro de respuestas en caché para reutilizarlas
 		this.responseCache = new Map();
+		// Contador de llamadas para estadísticas
+		this.callCounter = 0;
+		// Nivel de detalle de los logs
+		this.verboseLogging = true;
+	}
+
+	/**
+	 * Formatea un objeto para la consola
+	 * @param {Object} obj - Objeto a formatear
+	 * @returns {string} - Objeto formateado
+	 */
+	_formatObject(obj) {
+		try {
+			return JSON.stringify(obj, null, 2);
+		} catch (error) {
+			return String(obj);
+		}
+	}
+
+	/**
+	 * Imprime un mensaje en la consola con estilo
+	 * @param {string} type - Tipo de mensaje (info, success, warning, error)
+	 * @param {string} message - Mensaje a imprimir
+	 * @param {Object} data - Datos adicionales a imprimir
+	 */
+	_log(type, message, data = null) {
+		if (!this.verboseLogging && type !== "error") return;
+
+		const timestamp = new Date().toISOString().split("T")[1].split(".")[0];
+		let style = "";
+		let emoji = "";
+
+		switch (type) {
+			case "info":
+				style = "color: #3498db; font-weight: bold;";
+				emoji = "ℹ️";
+				break;
+			case "success":
+				style = "color: #2ecc71; font-weight: bold;";
+				emoji = "✅";
+				break;
+			case "warning":
+				style = "color: #f39c12; font-weight: bold;";
+				emoji = "⚠️";
+				break;
+			case "error":
+				style = "color: #e74c3c; font-weight: bold;";
+				emoji = "❌";
+				break;
+			case "api":
+				style = "color: #9b59b6; font-weight: bold;";
+				emoji = "🔄";
+				break;
+			default:
+				style = "color: #34495e; font-weight: bold;";
+				emoji = "📝";
+		}
+
+		console.log(`%c${emoji} [${timestamp}] ApiService: ${message}`, style);
+
+		if (data) {
+			if (typeof data === "object" && data !== null) {
+				console.log("%cDatos:", "font-weight: bold;");
+				console.log(data);
+			} else {
+				console.log(`%cDatos: ${data}`, "font-weight: bold;");
+			}
+		}
+	}
+
+	/**
+	 * Registra una nueva llamada a la API
+	 * @param {string} endpoint - Endpoint de la API
+	 * @param {string} method - Método HTTP
+	 * @param {Object} data - Datos enviados
+	 * @returns {string} - ID único de la llamada
+	 */
+	_registerCall(endpoint, method, data) {
+		this.callCounter++;
+		const callId = `${method}:${endpoint}:${JSON.stringify(data)}`;
+		const requestInfo = {
+			id: this.callCounter,
+			timestamp: new Date(),
+			endpoint,
+			method,
+			data,
+		};
+
+		this._log(
+			"api",
+			`Llamada #${this.callCounter} - ${method} ${endpoint}`,
+			{
+				request: {
+					method,
+					endpoint,
+					data,
+				},
+			}
+		);
+
+		return callId;
 	}
 
 	/**
@@ -30,7 +131,7 @@ class ApiService {
 		delay = 800,
 		forceCall = false
 	) {
-		const callId = `${method}:${endpoint}:${JSON.stringify(data)}`;
+		const callId = this._registerCall(endpoint, method, data);
 
 		// Verificar si hay una llamada duplicada en curso
 		if (
@@ -38,32 +139,41 @@ class ApiService {
 			!forceCall &&
 			this.callRegistry.has(callId)
 		) {
-			console.log(
-				`⚠️ Llamada duplicada detectada: ${method} ${endpoint}`
+			this._log(
+				"warning",
+				`Llamada duplicada detectada: ${method} ${endpoint}`
 			);
 			return this.callRegistry.get(callId);
 		}
 
 		// Verificar si tenemos una respuesta en caché para peticiones GET
 		if (method === "GET" && this.responseCache.has(callId) && !forceCall) {
-			console.log(
-				`📥 Usando respuesta cacheada para ${method} ${endpoint}`
+			this._log(
+				"info",
+				`Usando respuesta cacheada para ${method} ${endpoint}`,
+				{
+					cachedResponse: this.responseCache.get(callId),
+				}
 			);
 			return Promise.resolve(this.responseCache.get(callId));
-		}
-
-		// Registrar la nueva llamada
-		console.log(`📤 Simulando petición ${method} a ${endpoint}`);
-		if (data) {
-			console.log("Datos enviados:", data);
 		}
 
 		// Crear la promesa de respuesta
 		const responsePromise = new Promise((resolve) => {
 			setTimeout(() => {
 				const response = this._getMockResponse(endpoint, method, data);
-				console.log(
-					`📥 Respuesta simulada recibida para ${method} ${endpoint}`
+
+				this._log(
+					"success",
+					`Respuesta recibida para ${method} ${endpoint}`,
+					{
+						request: {
+							method,
+							endpoint,
+							data,
+						},
+						response,
+					}
 				);
 
 				// Guardar en caché para peticiones GET
@@ -216,7 +326,7 @@ class ApiService {
 	 */
 	clearCache() {
 		this.responseCache.clear();
-		console.log("Caché de respuestas limpiada");
+		this._log("info", "Caché de respuestas limpiada");
 	}
 
 	/**
@@ -225,10 +335,23 @@ class ApiService {
 	 */
 	setPreventDuplicateCalls(enable) {
 		this.preventDuplicateCalls = enable;
-		console.log(
+		this._log(
+			"info",
 			`${
 				enable ? "Habilitada" : "Deshabilitada"
 			} la prevención de llamadas duplicadas`
+		);
+	}
+
+	/**
+	 * Habilitar o deshabilitar logs detallados
+	 * @param {boolean} enable - True para habilitar, false para deshabilitar
+	 */
+	setVerboseLogging(enable) {
+		this.verboseLogging = enable;
+		this._log(
+			"info",
+			`Logs detallados ${enable ? "habilitados" : "deshabilitados"}`
 		);
 	}
 
@@ -237,10 +360,29 @@ class ApiService {
 	 */
 	clearCallRegistry() {
 		this.callRegistry.clear();
-		console.log("Registro de llamadas limpiado");
+		this._log("info", "Registro de llamadas limpiado");
+	}
+
+	/**
+	 * Obtener estadísticas de uso
+	 * @returns {Object} - Estadísticas de uso
+	 */
+	getStats() {
+		const stats = {
+			totalCalls: this.callCounter,
+			activeCalls: this.callRegistry.size,
+			cachedResponses: this.responseCache.size,
+		};
+
+		this._log("info", "Estadísticas de uso", stats);
+		return stats;
 	}
 }
 
 // Exportamos una única instancia para toda la aplicación
 const apiService = new ApiService();
+
+// Configuración inicial
+apiService.setVerboseLogging(true);
+
 export default apiService;
