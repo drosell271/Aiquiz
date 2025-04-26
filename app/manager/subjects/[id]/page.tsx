@@ -1,4 +1,4 @@
-// /app/manager/subjects/[id]/page.tsx
+// /app/manager/subjects/[id]/page.tsx (actualizado)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import useApiRequest from "../../hooks/useApiRequest";
 import { useClipboard } from "../../hooks/useClipboard";
-import { Topic, useSubject } from "../../contexts/SubjectContext"; // Importación actualizada
+import { Topic, useSubject } from "../../contexts/SubjectContext";
 
 // Importamos los componentes
 import TopicsTab from "../../components/topics/TopicsTab";
@@ -16,6 +16,7 @@ import SettingsTab from "../../components/topics/SettingsTab";
 import InviteModal from "../../components/topics/InviteModal";
 import EditTopicModal from "../../components/topics/EditTopicModal";
 import SubjectDetailSidebar from "../../components/topics/SubjectDetailSidebar";
+import ConfirmationModal from "../../components/common/ConfirmationModal"; // Importación del nuevo componente
 
 export default function SubjectDetailPage() {
 	const { id } = useParams();
@@ -33,6 +34,13 @@ export default function SubjectDetailPage() {
 	const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
 	const [showInviteModal, setShowInviteModal] = useState(false);
 	const [deletingTopicId, setDeletingTopicId] = useState<string>("");
+
+	// Estados para modales de confirmación
+	const [showDeleteSubjectModal, setShowDeleteSubjectModal] = useState(false);
+	const [showDeleteTopicModal, setShowDeleteTopicModal] = useState(false);
+	const [showDeleteProfessorModal, setShowDeleteProfessorModal] =
+		useState(false);
+	const [itemToDelete, setItemToDelete] = useState<string>("");
 
 	// Sincronizar estado local cuando cambia el subject en el contexto
 	useEffect(() => {
@@ -136,17 +144,25 @@ export default function SubjectDetailPage() {
 		}
 	};
 
-	const handleRemoveProfessor = async (professorId: string) => {
-		if (!subject) return;
+	// Confirmar eliminación de profesor
+	const handleConfirmDeleteProfessor = (professorId: string) => {
+		setItemToDelete(professorId);
+		setShowDeleteProfessorModal(true);
+	};
+
+	const handleRemoveProfessor = async () => {
+		if (!subject || !itemToDelete) return;
 
 		try {
 			const response = await removeProfessor(
 				null,
 				false,
-				`${id}/professors/${professorId}`
+				`${id}/professors/${itemToDelete}`
 			);
 			if (response.success) {
 				refetchSubject(); // Usar refetchSubject del contexto
+				setShowDeleteProfessorModal(false);
+				setItemToDelete("");
 			}
 		} catch (error) {
 			console.error("Error al eliminar profesor:", error);
@@ -193,25 +209,38 @@ export default function SubjectDetailPage() {
 		}
 	};
 
-	const handleDeleteTopicRequest = async (topicId: string) => {
-		if (!subject) return;
+	// Confirmar eliminación de tema
+	const handleConfirmDeleteTopic = (topicId: string) => {
+		setItemToDelete(topicId);
+		setShowDeleteTopicModal(true);
+	};
+
+	const handleDeleteTopicRequest = async () => {
+		if (!subject || !itemToDelete) return;
 
 		try {
-			setDeletingTopicId(topicId);
+			setDeletingTopicId(itemToDelete);
 			const response = await deleteTopic(
 				null,
 				false,
-				`${id}/topics/${topicId}`
+				`${id}/topics/${itemToDelete}`
 			);
 
 			if (response.success) {
 				refetchSubject(); // Usar refetchSubject del contexto
+				setShowDeleteTopicModal(false);
+				setItemToDelete("");
 			}
 		} catch (error) {
 			console.error("Error al eliminar tema:", error);
 		} finally {
 			setDeletingTopicId("");
 		}
+	};
+
+	// Confirmar eliminación de asignatura
+	const handleConfirmDeleteSubject = () => {
+		setShowDeleteSubjectModal(true);
 	};
 
 	const handleDeleteSubject = async () => {
@@ -369,7 +398,7 @@ export default function SubjectDetailPage() {
 							subjectId={subject.id}
 							topics={subject.topics}
 							handleAddTopic={handleAddTopicRequest}
-							handleDeleteTopic={handleDeleteTopicRequest}
+							handleDeleteTopic={handleConfirmDeleteTopic} // Cambiado para usar la confirmación
 							isLoading={addingTopic}
 							deletingTopicId={deletingTopicId}
 						/>
@@ -400,7 +429,7 @@ export default function SubjectDetailPage() {
 
 							<ProfessorsTab
 								professors={subject.professors}
-								onRemoveProfessor={handleRemoveProfessor}
+								onRemoveProfessor={handleConfirmDeleteProfessor} // Cambiado para usar la confirmación
 								isLoading={removingProfessor}
 							/>
 
@@ -423,8 +452,8 @@ export default function SubjectDetailPage() {
 							onInputChange={handleInputChange}
 							onSaveChanges={handleSaveChanges}
 							onEditTopic={handleEditTopicRequest}
-							onDeleteTopic={handleDeleteTopicRequest}
-							onDeleteSubject={handleDeleteSubject}
+							onDeleteTopic={handleConfirmDeleteTopic} // Cambiado para usar la confirmación
+							onDeleteSubject={handleConfirmDeleteSubject} // Cambiado para usar la confirmación
 							isLoading={savingSubject || deletingSubject}
 							isDeletingTopic={Boolean(deletingTopicId)}
 						/>
@@ -439,6 +468,40 @@ export default function SubjectDetailPage() {
 							isLoading={editingTopicLoading}
 						/>
 					)}
+
+					{/* Modales de confirmación */}
+					<ConfirmationModal
+						isOpen={showDeleteSubjectModal}
+						title={t("confirmation.deleteSubject.title")}
+						message={t("confirmation.deleteSubject.message")}
+						confirmButtonText={t("common.delete")}
+						onConfirm={handleDeleteSubject}
+						onCancel={() => setShowDeleteSubjectModal(false)}
+						isLoading={deletingSubject}
+						isDanger={true}
+					/>
+
+					<ConfirmationModal
+						isOpen={showDeleteTopicModal}
+						title={t("confirmation.deleteTopic.title")}
+						message={t("confirmation.deleteTopic.message")}
+						confirmButtonText={t("common.delete")}
+						onConfirm={handleDeleteTopicRequest}
+						onCancel={() => setShowDeleteTopicModal(false)}
+						isLoading={deletingTopic}
+						isDanger={true}
+					/>
+
+					<ConfirmationModal
+						isOpen={showDeleteProfessorModal}
+						title={t("confirmation.deleteProfessor.title")}
+						message={t("confirmation.deleteProfessor.message")}
+						confirmButtonText={t("common.delete")}
+						onConfirm={handleRemoveProfessor}
+						onCancel={() => setShowDeleteProfessorModal(false)}
+						isLoading={removingProfessor}
+						isDanger={true}
+					/>
 				</div>
 			</div>
 		</>

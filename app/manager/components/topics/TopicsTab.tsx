@@ -1,4 +1,4 @@
-// /app/manager/components/topics/TopicsTab.tsx
+// /app/manager/components/topics/TopicsTab.tsx (actualizado)
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
@@ -22,7 +22,7 @@ interface TopicsTabProps {
 	handleAddTopic: () => void;
 	handleDeleteTopic: (topicId: string) => void;
 	isLoading?: boolean;
-	deletingTopicId?: string | null; // Actualizado para aceptar null
+	deletingTopicId?: string | null;
 }
 
 const TopicsTab = ({
@@ -35,9 +35,6 @@ const TopicsTab = ({
 }: TopicsTabProps) => {
 	const { t } = useTranslation();
 	const [filteredTopics, setFilteredTopics] = useState(topics);
-	const [confirmingDelete, setConfirmingDelete] = useState<string | null>(
-		null
-	);
 
 	const handleSearch = (query: string) => {
 		if (!query) {
@@ -54,21 +51,6 @@ const TopicsTab = ({
 				)
 		);
 		setFilteredTopics(filtered);
-	};
-
-	const handleDeleteClick = (topicId: string) => {
-		if (confirmingDelete === topicId) {
-			// Si ya estamos confirmando, entonces ejecutamos la eliminación
-			handleDeleteTopic(topicId);
-			setConfirmingDelete(null);
-		} else {
-			// Activamos el modo de confirmación para este tema
-			setConfirmingDelete(topicId);
-		}
-	};
-
-	const cancelDelete = () => {
-		setConfirmingDelete(null);
 	};
 
 	return (
@@ -164,7 +146,7 @@ const TopicsTab = ({
 							<div className="flex">
 								<button
 									className="text-red-500 hover:text-red-700 flex items-center disabled:opacity-50"
-									onClick={() => handleDeleteClick(topic.id)}
+									onClick={() => handleDeleteTopic(topic.id)}
 									disabled={
 										isLoading ||
 										deletingTopicId === topic.id
@@ -206,22 +188,8 @@ const TopicsTab = ({
 											/>
 										</svg>
 									)}
-									{confirmingDelete === topic.id
-										? t("subjectDetail.confirmDelete") ||
-										  "Confirmar"
-										: t("subjectDetail.delete") ||
-										  "Eliminar"}
+									{t("common.delete")}
 								</button>
-
-								{confirmingDelete === topic.id && (
-									<button
-										className="ml-2 text-gray-500 hover:text-gray-700"
-										onClick={cancelDelete}
-									>
-										{t("subjectDetail.cancel") ||
-											"Cancelar"}
-									</button>
-								)}
 							</div>
 						</div>
 

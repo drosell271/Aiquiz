@@ -1,4 +1,4 @@
-// /app/manager/subjects/new/page.tsx
+// /app/manager/subjects/new/page.tsx (actualizado)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import Header from "../../components/common/Header";
 import useApiRequest from "../../hooks/useApiRequest";
+import ConfirmationModal from "../../components/common/ConfirmationModal"; // Importación del nuevo componente
 
 interface Professor {
 	id: string;
@@ -39,6 +40,11 @@ const NewSubjectPage = () => {
 	});
 
 	const [error, setError] = useState("");
+
+	// Estado para modal de confirmación de eliminación de profesor
+	const [showDeleteProfessorModal, setShowDeleteProfessorModal] =
+		useState(false);
+	const [professorToDelete, setProfessorToDelete] = useState<string>("");
 
 	// Hook para crear asignatura
 	const {
@@ -90,12 +96,22 @@ const NewSubjectPage = () => {
 		setMostrarModalProfesor(false);
 	};
 
-	// Eliminar un profesor
-	const handleRemoveProfessor = (id: string) => {
-		setProfesores(profesores.filter((prof) => prof.id !== id));
+	// Solicitar confirmación para eliminar un profesor
+	const handleConfirmRemoveProfessor = (id: string) => {
+		setProfessorToDelete(id);
+		setShowDeleteProfessorModal(true);
 	};
 
-	// Enviar el formulario
+	// Eliminar un profesor después de confirmar
+	const handleRemoveProfessor = () => {
+		setProfesores(
+			profesores.filter((prof) => prof.id !== professorToDelete)
+		);
+		setShowDeleteProfessorModal(false);
+		setProfessorToDelete("");
+	};
+
+	// Enviar el formulario para crear la asignatura
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setError("");
@@ -287,7 +303,7 @@ const NewSubjectPage = () => {
 													<button
 														type="button"
 														onClick={() =>
-															handleRemoveProfessor(
+															handleConfirmRemoveProfessor(
 																profesor.id
 															)
 														}
@@ -449,6 +465,17 @@ const NewSubjectPage = () => {
 						</div>
 					</div>
 				)}
+
+				{/* Modal de confirmación para eliminar profesor */}
+				<ConfirmationModal
+					isOpen={showDeleteProfessorModal}
+					title={t("confirmation.deleteProfessor.title")}
+					message={t("confirmation.deleteProfessor.message")}
+					confirmButtonText={t("common.delete")}
+					onConfirm={handleRemoveProfessor}
+					onCancel={() => setShowDeleteProfessorModal(false)}
+					isDanger={true}
+				/>
 			</main>
 		</div>
 	);

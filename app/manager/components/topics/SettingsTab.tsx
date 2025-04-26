@@ -1,4 +1,4 @@
-// /app/manager/components/topics/SettingsTab.tsx
+// /app/manager/components/topics/SettingsTab.tsx (actualizado)
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
@@ -35,35 +35,8 @@ const SettingsTab = ({
 }: SettingsTabProps) => {
 	const { t } = useTranslation();
 	const router = useRouter();
-	const [deletingSubjectConfirm, setDeletingSubjectConfirm] = useState(false);
-	const [confirmingDeleteTopic, setConfirmingDeleteTopic] = useState<
-		string | null
-	>(null);
 	const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
 	const [editingTopicTitle, setEditingTopicTitle] = useState("");
-
-	const handleDeleteSubjectConfirm = () => {
-		if (deletingSubjectConfirm) {
-			onDeleteSubject();
-		} else {
-			setDeletingSubjectConfirm(true);
-		}
-	};
-
-	const handleDeleteTopicClick = (topicId: string) => {
-		if (confirmingDeleteTopic === topicId) {
-			// Si ya estamos confirmando, ejecutamos la eliminación
-			onDeleteTopic(topicId);
-			setConfirmingDeleteTopic(null);
-		} else {
-			// Activamos el modo de confirmación
-			setConfirmingDeleteTopic(topicId);
-		}
-	};
-
-	const cancelDeleteTopic = () => {
-		setConfirmingDeleteTopic(null);
-	};
 
 	const handleStartEditTopic = (topic: Topic) => {
 		setEditingTopicId(topic.id);
@@ -291,89 +264,52 @@ const SettingsTab = ({
 													/>
 												</svg>
 											</button>
-											{confirmingDeleteTopic ===
-											topic.id ? (
-												<>
-													<button
-														className="text-red-600 font-medium hover:text-red-800 mr-2"
-														onClick={() =>
-															handleDeleteTopicClick(
-																topic.id
-															)
-														}
-														disabled={
-															isLoading ||
-															isDeletingTopic
-														}
+											<button
+												className="text-red-500 hover:text-red-700 disabled:opacity-50"
+												onClick={() =>
+													onDeleteTopic(topic.id)
+												}
+												disabled={
+													isLoading || isDeletingTopic
+												}
+											>
+												{isDeletingTopic ? (
+													<svg
+														className="animate-spin w-5 h-5"
+														xmlns="http://www.w3.org/2000/svg"
+														fill="none"
+														viewBox="0 0 24 24"
 													>
-														{t(
-															"subjectDetail.confirmDelete"
-														) || "Confirmar"}
-													</button>
-													<button
-														className="text-gray-500 hover:text-gray-700"
-														onClick={
-															cancelDeleteTopic
-														}
-													>
-														{t(
-															"subjectDetail.cancel"
-														) || "Cancelar"}
-													</button>
-												</>
-											) : (
-												<button
-													className="text-red-500 hover:text-red-700 disabled:opacity-50"
-													onClick={() =>
-														handleDeleteTopicClick(
-															topic.id
-														)
-													}
-													disabled={
-														isLoading ||
-														isDeletingTopic
-													}
-												>
-													{isDeletingTopic &&
-													confirmingDeleteTopic ===
-														topic.id ? (
-														<svg
-															className="animate-spin w-5 h-5"
-															xmlns="http://www.w3.org/2000/svg"
-															fill="none"
-															viewBox="0 0 24 24"
-														>
-															<circle
-																className="opacity-25"
-																cx="12"
-																cy="12"
-																r="10"
-																stroke="currentColor"
-																strokeWidth="4"
-															></circle>
-															<path
-																className="opacity-75"
-																fill="currentColor"
-																d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-															></path>
-														</svg>
-													) : (
-														<svg
-															className="w-5 h-5"
-															fill="none"
+														<circle
+															className="opacity-25"
+															cx="12"
+															cy="12"
+															r="10"
 															stroke="currentColor"
-															viewBox="0 0 24 24"
-														>
-															<path
-																strokeLinecap="round"
-																strokeLinejoin="round"
-																strokeWidth="2"
-																d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-															/>
-														</svg>
-													)}
-												</button>
-											)}
+															strokeWidth="4"
+														></circle>
+														<path
+															className="opacity-75"
+															fill="currentColor"
+															d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+														></path>
+													</svg>
+												) : (
+													<svg
+														className="w-5 h-5"
+														fill="none"
+														stroke="currentColor"
+														viewBox="0 0 24 24"
+													>
+														<path
+															strokeLinecap="round"
+															strokeLinejoin="round"
+															strokeWidth="2"
+															d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+														/>
+													</svg>
+												)}
+											</button>
 										</div>
 									)}
 								</div>
@@ -393,7 +329,7 @@ const SettingsTab = ({
 				</p>
 				<button
 					className="bg-red-800 text-white py-2 px-4 rounded-md flex items-center disabled:opacity-50"
-					onClick={handleDeleteSubjectConfirm}
+					onClick={onDeleteSubject}
 					disabled={isLoading}
 				>
 					{isLoading ? (
@@ -435,22 +371,10 @@ const SettingsTab = ({
 									d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
 								/>
 							</svg>
-							{deletingSubjectConfirm
-								? t("subjectDetail.confirmDelete") ||
-								  "Confirmar eliminación"
-								: t("subjectDetail.delete") ||
-								  "Eliminar asignatura"}
+							{t("common.delete")}
 						</>
 					)}
 				</button>
-				{deletingSubjectConfirm && (
-					<button
-						className="ml-4 py-2 px-4 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
-						onClick={() => setDeletingSubjectConfirm(false)}
-					>
-						{t("subjectDetail.cancel") || "Cancelar"}
-					</button>
-				)}
 			</div>
 		</div>
 	);

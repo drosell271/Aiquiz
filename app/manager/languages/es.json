@@ -22,7 +22,8 @@
 		"back": "Atrás",
 		"processing": "Procesando...",
 		"emailSent": "Hemos enviado el link de recuperación de contraseña al correo {{email}}",
-		"backToLogin": "Volver"
+		"backToLogin": "Volver",
+		"errorSending": "Error al enviar el email de recuperación"
 	},
 	"navigation": {
 		"dashboard": "Dashboard",
@@ -35,7 +36,11 @@
 		"newSubject": "Nueva asignatura",
 		"viewMore": "Ver más",
 		"administrator": "Administrador",
-		"topics": "Temas"
+		"topics": "Temas",
+		"noProfessorsAdded": "Aquí se mostrarán los profesores que añadas.",
+		"createSubject": "Crear asignatura",
+		"newSubjectError": "Nombre y siglas son obligatorios",
+		"createError": "Error al crear la asignatura"
 	},
 	"subjectDetail": {
 		"backToSubjects": "Volver a asignaturas",
@@ -67,6 +72,36 @@
 		"loading": "Cargando...",
 		"noProfessors": "No hay profesores asignados a esta asignatura.",
 		"copyLink": "Copiar enlace",
-		"copied": "¡Enlace copiado!"
+		"copied": "¡Enlace copiado!",
+		"save": "Guardar",
+		"confirmDelete": "Confirmar"
+	},
+	"common": {
+		"processing": "Procesando...",
+		"saving": "Guardando...",
+		"adding": "Añadiendo...",
+		"loading": "Cargando...",
+		"cancel": "Cancelar",
+		"confirm": "Confirmar",
+		"delete": "Eliminar",
+		"confirmDelete": "Confirmar eliminación"
+	},
+	"confirmation": {
+		"deleteSubject": {
+			"title": "Eliminar asignatura",
+			"message": "¿Estás seguro de que deseas eliminar esta asignatura? Esta acción no se puede deshacer."
+		},
+		"deleteTopic": {
+			"title": "Eliminar tema",
+			"message": "¿Estás seguro de que deseas eliminar este tema? Esta acción no se puede deshacer."
+		},
+		"deleteSubtopic": {
+			"title": "Eliminar subtema",
+			"message": "¿Estás seguro de que deseas eliminar este subtema? Esta acción no se puede deshacer."
+		},
+		"deleteProfessor": {
+			"title": "Eliminar profesor",
+			"message": "¿Estás seguro de que deseas eliminar este profesor de la asignatura?"
+		}
 	}
 }
