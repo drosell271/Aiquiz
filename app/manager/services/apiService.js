@@ -16,6 +16,16 @@ class ApiService {
 		this.callCounter = 0;
 		// Nivel de detalle de los logs
 		this.verboseLogging = true;
+
+		// Datos de usuario simulados para la cuenta
+		this.userData = {
+			id: "user123",
+			name: "Carlos González",
+			email: "carlos.gonzalez@upm.es",
+			faculty: "ETSIT",
+			department: "Ingeniería Telemática",
+			lastLogin: "2025-04-20T10:30:00Z",
+		};
 	}
 
 	/**
@@ -201,6 +211,48 @@ class ApiService {
 	 * @private
 	 */
 	_getMockResponse(endpoint, method, data) {
+		// Obtener datos de la cuenta
+		if (endpoint === "/api/account" && method === "GET") {
+			return {
+				success: true,
+				user: this.userData,
+			};
+		}
+
+		// Actualizar datos de la cuenta
+		if (endpoint === "/api/account" && method === "PUT") {
+			// Actualizar solo los campos permitidos
+			if (data) {
+				const allowedFields = ["name", "email", "faculty"];
+				allowedFields.forEach((field) => {
+					if (data[field] !== undefined) {
+						this.userData[field] = data[field];
+					}
+				});
+			}
+			return {
+				success: true,
+				user: this.userData,
+				message: "Perfil actualizado correctamente",
+			};
+		}
+
+		// Cambiar contraseña
+		if (endpoint === "/api/account/password" && method === "PUT") {
+			// Validar que la contraseña actual sea correcta (simulado)
+			if (data && data.currentPassword !== "password123") {
+				return {
+					success: false,
+					message: "La contraseña actual es incorrecta",
+				};
+			}
+
+			return {
+				success: true,
+				message: "Contraseña actualizada correctamente",
+			};
+		}
+
 		// Autenticación
 		if (endpoint === "/api/auth/login") {
 			return {
