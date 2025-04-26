@@ -9,12 +9,13 @@ import useApiRequest from "../../hooks/useApiRequest";
 import { useClipboard } from "../../hooks/useClipboard";
 import { Subject, Topic, Professor } from "../../contexts/SubjectContext";
 
-// Importamos los componentes necesarios
+// Importamos los componentes actualizados
 import TopicsTab from "../../components/topics/TopicsTab";
 import ProfessorsTab from "../../components/topics/ProfessorsTab";
 import SettingsTab from "../../components/topics/SettingsTab";
 import InviteModal from "../../components/topics/InviteModal";
 import EditTopicModal from "../../components/topics/EditTopicModal";
+import SubjectDetailSidebar from "../../components/topics/SubjectDetailSidebar";
 
 export default function SubjectDetailPage() {
 	const { id } = useParams();
@@ -28,6 +29,7 @@ export default function SubjectDetailPage() {
 	const [editedSubject, setEditedSubject] = useState<Subject | null>(null);
 	const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
 	const [showInviteModal, setShowInviteModal] = useState(false);
+	const [deletingTopicId, setDeletingTopicId] = useState<string>("");
 
 	// Datos de la asignatura
 	const {
@@ -63,6 +65,14 @@ export default function SubjectDetailPage() {
 	// API para editar tema
 	const { makeRequest: editTopic, loading: editingTopicLoading } =
 		useApiRequest("", "PATCH", null, false);
+
+	// API para eliminar tema
+	const { makeRequest: deleteTopic, loading: deletingTopic } = useApiRequest(
+		"",
+		"DELETE",
+		null,
+		false
+	);
 
 	// API para guardar cambios de la asignatura
 	const { makeRequest: saveSubject, loading: savingSubject } = useApiRequest(
@@ -188,6 +198,27 @@ export default function SubjectDetailPage() {
 		}
 	};
 
+	const handleDeleteTopicRequest = async (topicId: string) => {
+		if (!subject) return;
+
+		try {
+			setDeletingTopicId(topicId);
+			const response = await deleteTopic(
+				null,
+				false,
+				`${id}/topics/${topicId}`
+			);
+
+			if (response.success) {
+				refetchSubject(); // Recargar los datos después de eliminar
+			}
+		} catch (error) {
+			console.error("Error al eliminar tema:", error);
+		} finally {
+			setDeletingTopicId("");
+		}
+	};
+
 	const handleDeleteSubject = async () => {
 		try {
 			const response = await deleteSubjectRequest();
@@ -234,24 +265,11 @@ export default function SubjectDetailPage() {
 		<>
 			{/* Sidebar fijo en el lado izquierdo */}
 			<div className="fixed top-16 left-0 bottom-0 w-64 z-40">
-				<div className="bg-white border-r border-gray-200 h-full overflow-y-auto">
-					<div className="p-6 border-b border-gray-200">
-						<h2 className="text-xl font-bold">{subject.title}</h2>
-					</div>
-
-					<nav className="pt-4 pb-16">
-						{subject.topics.map((topic) => (
-							<div key={topic.id} className="mb-2">
-								<Link
-									href={`/manager/subjects/${id}/topics/${topic.id}`}
-									className="flex items-center w-full py-2 px-6 text-left hover:bg-gray-100"
-								>
-									<span>{topic.title}</span>
-								</Link>
-							</div>
-						))}
-					</nav>
-				</div>
+				<SubjectDetailSidebar
+					subjectId={subject.id}
+					subjectTitle={subject.title}
+					topics={subject.topics}
+				/>
 			</div>
 
 			<div className="p-6 sm:p-8">
@@ -356,7 +374,9 @@ export default function SubjectDetailPage() {
 							subjectId={subject.id}
 							topics={subject.topics}
 							handleAddTopic={handleAddTopicRequest}
+							handleDeleteTopic={handleDeleteTopicRequest}
 							isLoading={addingTopic}
+							deletingTopicId={deletingTopicId}
 						/>
 					)}
 
@@ -408,8 +428,10 @@ export default function SubjectDetailPage() {
 							onInputChange={handleInputChange}
 							onSaveChanges={handleSaveChanges}
 							onEditTopic={handleEditTopicRequest}
+							onDeleteTopic={handleDeleteTopicRequest}
 							onDeleteSubject={handleDeleteSubject}
 							isLoading={savingSubject || deletingSubject}
+							isDeletingTopic={Boolean(deletingTopicId)}
 						/>
 					)}
 

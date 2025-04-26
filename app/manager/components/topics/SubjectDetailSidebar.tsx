@@ -22,7 +22,18 @@ const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 		Record<string, boolean>
 	>({});
 
-	// Inicializar expandiendo el tema activo si estamos en una ruta de subtema
+	// Inicializar expandiendo todos los temas que tienen subtemas
+	useEffect(() => {
+		const initialExpanded: Record<string, boolean> = {};
+		topics.forEach((topic) => {
+			if (topic.subtopics && topic.subtopics.length > 0) {
+				initialExpanded[topic.id] = true;
+			}
+		});
+		setExpandedTopics(initialExpanded);
+	}, [topics]);
+
+	// Adicionalmente, asegurarse de mantener expandido el tema activo
 	useEffect(() => {
 		if (pathname?.includes("/topics/")) {
 			const pathParts = pathname.split("/");
@@ -37,17 +48,11 @@ const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 				// Solo actualizar si hay cambios para evitar re-renders innecesarios
 				setExpandedTopics((prev) => {
 					const newState = { ...prev };
-					let updated = false;
-
-					topics.forEach((topic) => {
-						const shouldBeExpanded = topic.id === topicId;
-						if (newState[topic.id] !== shouldBeExpanded) {
-							newState[topic.id] = shouldBeExpanded;
-							updated = true;
-						}
-					});
-
-					return updated ? newState : prev;
+					if (!newState[topicId]) {
+						newState[topicId] = true;
+						return newState;
+					}
+					return prev;
 				});
 			}
 		}

@@ -20,17 +20,24 @@ interface TopicsTabProps {
 	subjectId: string;
 	topics: Topic[];
 	handleAddTopic: () => void;
+	handleDeleteTopic: (topicId: string) => void;
 	isLoading?: boolean;
+	deletingTopicId?: string | null; // Actualizado para aceptar null
 }
 
 const TopicsTab = ({
 	subjectId,
 	topics,
 	handleAddTopic,
+	handleDeleteTopic,
 	isLoading = false,
+	deletingTopicId = "",
 }: TopicsTabProps) => {
 	const { t } = useTranslation();
 	const [filteredTopics, setFilteredTopics] = useState(topics);
+	const [confirmingDelete, setConfirmingDelete] = useState<string | null>(
+		null
+	);
 
 	const handleSearch = (query: string) => {
 		if (!query) {
@@ -47,6 +54,21 @@ const TopicsTab = ({
 				)
 		);
 		setFilteredTopics(filtered);
+	};
+
+	const handleDeleteClick = (topicId: string) => {
+		if (confirmingDelete === topicId) {
+			// Si ya estamos confirmando, entonces ejecutamos la eliminación
+			handleDeleteTopic(topicId);
+			setConfirmingDelete(null);
+		} else {
+			// Activamos el modo de confirmación para este tema
+			setConfirmingDelete(topicId);
+		}
+	};
+
+	const cancelDelete = () => {
+		setConfirmingDelete(null);
 	};
 
 	return (
@@ -139,6 +161,68 @@ const TopicsTab = ({
 									</svg>
 								</Link>
 							</h3>
+							<div className="flex">
+								<button
+									className="text-red-500 hover:text-red-700 flex items-center disabled:opacity-50"
+									onClick={() => handleDeleteClick(topic.id)}
+									disabled={
+										isLoading ||
+										deletingTopicId === topic.id
+									}
+								>
+									{deletingTopicId === topic.id ? (
+										<svg
+											className="animate-spin w-5 h-5 mr-1"
+											xmlns="http://www.w3.org/2000/svg"
+											fill="none"
+											viewBox="0 0 24 24"
+										>
+											<circle
+												className="opacity-25"
+												cx="12"
+												cy="12"
+												r="10"
+												stroke="currentColor"
+												strokeWidth="4"
+											></circle>
+											<path
+												className="opacity-75"
+												fill="currentColor"
+												d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+											></path>
+										</svg>
+									) : (
+										<svg
+											className="w-5 h-5 mr-1"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												strokeWidth="2"
+												d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+											/>
+										</svg>
+									)}
+									{confirmingDelete === topic.id
+										? t("subjectDetail.confirmDelete") ||
+										  "Confirmar"
+										: t("subjectDetail.delete") ||
+										  "Eliminar"}
+								</button>
+
+								{confirmingDelete === topic.id && (
+									<button
+										className="ml-2 text-gray-500 hover:text-gray-700"
+										onClick={cancelDelete}
+									>
+										{t("subjectDetail.cancel") ||
+											"Cancelar"}
+									</button>
+								)}
+							</div>
 						</div>
 
 						<p className="text-gray-700 mb-4">
