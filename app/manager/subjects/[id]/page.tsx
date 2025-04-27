@@ -10,12 +10,12 @@ import { useClipboard } from "../../hooks/useClipboard";
 import { Topic, useSubject } from "../../contexts/SubjectContext";
 
 // Importamos los componentes
-import TopicsTab from "../../components/topics/TopicsTab";
-import ProfessorsTab from "../../components/topics/ProfessorsTab";
-import SettingsTab from "../../components/topics/SettingsTab";
-import InviteModal from "../../components/topics/InviteModal";
-import EditTopicModal from "../../components/topics/EditTopicModal";
-import SubjectDetailSidebar from "../../components/topics/SubjectDetailSidebar";
+import TopicsTab from "../../components/subject/TopicsTab";
+import ProfessorsTab from "../../components/subject/ProfessorsTab";
+import SettingsTab from "../../components/subject/SettingsTab";
+import InviteModal from "../../components/subject/InviteModal";
+import EditTopicModal from "../../components/subject/EditTopicModal";
+import SubjectDetailSidebar from "../../components/common/SubjectDetailSidebar";
 import ConfirmationModal from "../../components/common/ConfirmationModal"; // Importación del nuevo componente
 
 export default function SubjectDetailPage() {
