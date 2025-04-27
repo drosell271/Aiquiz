@@ -130,5 +130,36 @@
 			"title": "Eliminar profesor",
 			"message": "¿Estás seguro de que deseas eliminar este profesor de la asignatura?"
 		}
+	},
+	"topicDetail": {
+		"name": "Nombre",
+		"description": "Descripción",
+		"subject": "Asignatura",
+		"subtopics": "Subtemas",
+		"subtopicsCount": "Número de subtemas",
+		"information": "Información",
+		"questions": "Preguntas",
+		"searchSubtopicsPlaceholder": "Buscar subtemas...",
+		"searchQuestionsPlaceholder": "Buscar preguntas...",
+		"newSubtopic": "Nuevo subtema",
+		"editSubtopic": "Editar subtema",
+		"editTopic": "Editar tema",
+		"saveChanges": "Guardar cambios",
+		"cancel": "Cancelar",
+		"add": "Añadir",
+		"noSubtopicsFound": "No se encontraron subtemas",
+		"noQuestionsFound": "No se encontraron preguntas",
+		"topicNotFound": "Tema no encontrado",
+		"backToSubject": "Volver a la asignatura",
+		"loading": "Cargando...",
+		"createdAt": "Fecha de creación",
+		"updatedAt": "Fecha de actualización",
+		"viewDetails": "Ver detalles",
+		"questionText": "Pregunta",
+		"type": "Tipo",
+		"difficulty": "Dificultad",
+		"actions": "Acciones",
+		"newQuestion": "Nueva pregunta",
+		"errorLoadingQuestions": "Error al cargar las preguntas"
 	}
 }

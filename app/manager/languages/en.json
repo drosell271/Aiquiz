@@ -130,5 +130,36 @@
 			"title": "Delete professor",
 			"message": "Are you sure you want to remove this professor from the subject?"
 		}
+	},
+	"topicDetail": {
+		"name": "Name",
+		"description": "Description",
+		"subject": "Subject",
+		"subtopics": "Subtopics",
+		"subtopicsCount": "Number of subtopics",
+		"information": "Information",
+		"questions": "Questions",
+		"searchSubtopicsPlaceholder": "Search subtopics...",
+		"searchQuestionsPlaceholder": "Search questions...",
+		"newSubtopic": "New subtopic",
+		"editSubtopic": "Edit subtopic",
+		"editTopic": "Edit topic",
+		"saveChanges": "Save changes",
+		"cancel": "Cancel",
+		"add": "Add",
+		"noSubtopicsFound": "No subtopics found",
+		"noQuestionsFound": "No questions found",
+		"topicNotFound": "Topic not found",
+		"backToSubject": "Back to subject",
+		"loading": "Loading...",
+		"createdAt": "Creation date",
+		"updatedAt": "Update date",
+		"viewDetails": "View details",
+		"questionText": "Question",
+		"type": "Type",
+		"difficulty": "Difficulty",
+		"actions": "Actions",
+		"newQuestion": "New question",
+		"errorLoadingQuestions": "Error loading questions"
 	}
 }

@@ -1,0 +1,49 @@
+{
+	"id": "6b86b273-6e81-4e47-a252-08a2c3d53778",
+	"title": "HTML",
+	"description": "HTML (Lenguaje de Marcado de Hipertexto) es el componente más básico de la Web. Define el significado y la estructura del contenido web.",
+	"subjectId": "7e9d5eb7-9058-4754-b325-062ace8c2249",
+	"subjectTitle": "Computación en red (CORE)",
+	"subtopics": [
+		{
+			"id": "d4735e3a-5caa-4bd7-9db8-c40f4c8a3480",
+			"title": "Estructura básica de un documento HTML",
+			"description": "Un documento HTML básico consiste en una estructura jerárquica de elementos que definen el contenido y su presentación.",
+			"content": "# Estructura básica de HTML\n\nUn documento HTML básico tiene la siguiente estructura:\n\n```html\n<!DOCTYPE html>\n<html>\n<head>\n  <title>Título de la página</title>\n</head>\n<body>\n  <!-- Contenido de la página -->\n</body>\n</html>\n```",
+			"createdAt": "2023-01-15T10:00:00Z",
+			"updatedAt": "2023-05-20T14:30:00Z"
+		},
+		{
+			"id": "d4735e3a-5caa-4bd7-9db8-c40f4c8a3481",
+			"title": "Elementos HTML",
+			"description": "Los elementos HTML son los componentes básicos de una página web, definidos por etiquetas.",
+			"content": "# Elementos HTML\n\nLos elementos HTML consisten en:\n\n- Etiqueta de apertura\n- Contenido\n- Etiqueta de cierre\n\nEjemplo:\n\n```html\n<p>Este es un párrafo</p>\n```",
+			"createdAt": "2023-01-20T11:15:00Z",
+			"updatedAt": "2023-06-05T09:45:00Z"
+		},
+		{
+			"id": "d4735e3a-5caa-4bd7-9db8-c40f4c8a3482",
+			"title": "Atributos HTML",
+			"description": "Los atributos HTML proporcionan información adicional sobre los elementos.",
+			"content": "# Atributos HTML\n\nLos atributos HTML proporcionan información adicional acerca de los elementos:\n\n```html\n<a href=\"https://www.example.com\">Enlace a Example</a>\n```\n\nDonde `href` es un atributo del elemento `<a>`.",
+			"createdAt": "2023-02-10T14:20:00Z",
+			"updatedAt": "2023-07-12T16:00:00Z"
+		},
+		{
+			"id": "d4735e3a-5caa-4bd7-9db8-c40f4c8a3483",
+			"title": "Formularios HTML",
+			"description": "Los formularios HTML permiten recopilar datos de los usuarios.",
+			"content": "# Formularios HTML\n\nLos formularios HTML se utilizan para recopilar la entrada del usuario:\n\n```html\n<form action=\"/submit-form\" method=\"post\">\n  <label for=\"nombre\">Nombre:</label>\n  <input type=\"text\" id=\"nombre\" name=\"nombre\">\n  <input type=\"submit\" value=\"Enviar\">\n</form>\n```",
+			"createdAt": "2023-03-05T09:30:00Z",
+			"updatedAt": "2023-08-18T11:20:00Z"
+		},
+		{
+			"id": "d4735e3a-5caa-4bd7-9db8-c40f4c8a3484",
+			"title": "Tablas HTML",
+			"description": "Las tablas HTML se utilizan para mostrar datos en filas y columnas.",
+			"content": "# Tablas HTML\n\nUna tabla en HTML consiste en celdas dentro de filas y columnas:\n\n```html\n<table>\n  <tr>\n    <th>Encabezado 1</th>\n    <th>Encabezado 2</th>\n  </tr>\n  <tr>\n    <td>Celda 1</td>\n    <td>Celda 2</td>\n  </tr>\n</table>\n```",
+			"createdAt": "2023-04-12T13:45:00Z",
+			"updatedAt": "2023-09-22T10:10:00Z"
+		}
+	]
+}
