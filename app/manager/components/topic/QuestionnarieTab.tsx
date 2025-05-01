@@ -42,35 +42,7 @@ const QuestionnaireTab = ({ topicId, subjectId }: QuestionnaireTabProps) => {
 	} = useApiRequest(
 		`/api/subjects/${subjectId}/topics/${topicId}/questionnaires`,
 		"GET",
-		// Datos de ejemplo para desarrollo
-		[
-			{
-				id: "quest-1",
-				title: "Cuestionario HTML básico",
-				description:
-					"Preguntas sobre estructura básica de documentos HTML",
-				questions: 15,
-				createdAt: "2023-12-10T10:30:00Z",
-				downloadCount: 45,
-			},
-			{
-				id: "quest-2",
-				title: "Elementos HTML avanzados",
-				description: "Preguntas sobre elementos semánticos y HTML5",
-				questions: 20,
-				createdAt: "2024-01-05T14:20:00Z",
-				downloadCount: 32,
-			},
-			{
-				id: "quest-3",
-				title: "Atributos HTML",
-				description:
-					"Preguntas sobre atributos y propiedades de elementos",
-				questions: 12,
-				createdAt: "2024-02-15T09:45:00Z",
-				downloadCount: 18,
-			},
-		],
+		null,
 		true
 	);
 
@@ -302,7 +274,7 @@ const QuestionnaireTab = ({ topicId, subjectId }: QuestionnaireTabProps) => {
 									</td>
 									<td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
 										<div className="flex justify-end space-x-3">
-											<div className="relative">
+											<div className="relative group">
 												<button
 													className="text-blue-600 hover:text-blue-900 flex items-center"
 													title={

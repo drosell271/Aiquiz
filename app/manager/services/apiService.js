@@ -1,10 +1,12 @@
-// ApiService.js - Versión corregida para mantener compatibilidad con el componente existente
+// ApiService.js - Versión actualizada para soportar todas las funcionalidades necesarias
 // Servicio para gestionar llamadas a la API con simulación para desarrollo
 
 // Importar datos JSON directamente para evitar problemas con require dinámico
 import subjectsData from "../data/subjects.json";
 import subjectDetailsData from "../data/subject-details.json";
 import topicDetailsData from "../data/topic-details.json";
+import questionsHttpData from "../data/questions-http.json";
+import questionnairesHttpData from "../data/questionnaires-http.json";
 
 class ApiService {
 	constructor() {
@@ -32,6 +34,8 @@ class ApiService {
 			subjects: subjectsData,
 			subjectDetails: subjectDetailsData,
 			topicDetails: topicDetailsData,
+			questionsHttp: questionsHttpData,
+			questionnairesHttp: questionnairesHttpData,
 		};
 
 		console.log("🚀 ApiService inicializado con datos simulados");
@@ -342,6 +346,134 @@ class ApiService {
 				return this.mockData.topicDetails;
 			}
 
+			// === PREGUNTAS ===
+			// GET /api/subjects/:id/topics/:topicId/questions
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/questions$/
+				) &&
+				method === "GET"
+			) {
+				return this.mockData.questionsHttp;
+			}
+
+			// POST /api/subjects/:id/topics/:topicId/questions
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/questions$/
+				) &&
+				method === "POST"
+			) {
+				return {
+					success: true,
+					id: `question-${Date.now()}`,
+					...data,
+				};
+			}
+
+			// DELETE /api/subjects/:id/topics/:topicId/questions/:questionId
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/questions\/[\w-]+$/
+				) &&
+				method === "DELETE"
+			) {
+				return {
+					success: true,
+					message: "Pregunta eliminada correctamente",
+				};
+			}
+
+			// === CUESTIONARIOS ===
+			// GET /api/subjects/:id/topics/:topicId/questionnaires
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/questionnaires$/
+				) &&
+				method === "GET"
+			) {
+				return this.mockData.questionnairesHttp;
+			}
+
+			// POST /api/subjects/:id/topics/:topicId/questionnaires
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/questionnaires$/
+				) &&
+				method === "POST"
+			) {
+				return {
+					success: true,
+					id: `questionnaire-${Date.now()}`,
+					...data,
+				};
+			}
+
+			// DELETE /api/subjects/:id/topics/:topicId/questionnaires/:questionnaireId
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/questionnaires\/[\w-]+$/
+				) &&
+				method === "DELETE"
+			) {
+				return {
+					success: true,
+					message: "Cuestionario eliminado correctamente",
+				};
+			}
+
+			// === GENERACIÓN Y DESCARGA ===
+			// POST /api/subjects/:id/topics/:topicId/generate-questionnaire
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/generate-questionnaire$/
+				) &&
+				method === "POST"
+			) {
+				return {
+					success: true,
+					id: `questionnaire-${Date.now()}`,
+					title: data.title,
+					description: data.description,
+					questionIds: data.questionIds,
+					createdAt: new Date().toISOString(),
+					message: "Cuestionario generado correctamente",
+				};
+			}
+
+			// POST /api/subjects/:id/topics/:topicId/download-questions
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/download-questions$/
+				) &&
+				method === "POST"
+			) {
+				return {
+					success: true,
+					format: data.format,
+					questionIds: data.questionIds,
+					message: `Preguntas descargadas en formato ${data.format}`,
+				};
+			}
+
+			// GET /api/subjects/:id/topics/:topicId/questionnaires/:questionnaireId/download
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/questionnaires\/[\w-]+\/download/
+				) &&
+				method === "GET"
+			) {
+				const format = endpoint.includes("format=")
+					? endpoint.split("format=")[1]
+					: "pdf";
+
+				return {
+					success: true,
+					format,
+					message: `Cuestionario descargado en formato ${format}`,
+				};
+			}
+
 			// === SUBTEMAS ===
 			// POST /api/subjects/:id/topics/:topicId/subtopics
 			if (
@@ -354,6 +486,8 @@ class ApiService {
 					success: true,
 					id: `subtopic-${Date.now()}`,
 					...data,
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
 				};
 			}
 
@@ -367,6 +501,7 @@ class ApiService {
 				return {
 					success: true,
 					...data,
+					updatedAt: new Date().toISOString(),
 				};
 			}
 

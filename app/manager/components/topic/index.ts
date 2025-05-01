@@ -4,6 +4,8 @@ import InformationTab from "./InformationTab";
 import QuestionsTab from "./QuestionsTab";
 import AddSubtopicModal from "./AddSubtopicModal";
 import EditSubtopicModal from "./EditSubtopicModal";
+import QuestionnaireTab from "./QuestionnarieTab";
+import SettingsTab from "./SettingsTab";
 
 export {
 	SubtopicsTab,
@@ -11,4 +13,6 @@ export {
 	QuestionsTab,
 	AddSubtopicModal,
 	EditSubtopicModal,
+	QuestionnaireTab,
+	SettingsTab,
 };
