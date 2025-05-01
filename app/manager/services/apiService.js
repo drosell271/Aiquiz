@@ -1,23 +1,23 @@
-// Servicio centralizado para manejar todas las llamadas a la API
-// Simula las respuestas mientras se desarrolla la API real
+// ApiService.js - Versión corregida para mantener compatibilidad con el componente existente
+// Servicio para gestionar llamadas a la API con simulación para desarrollo
 
-/**
- * Clase para gestionar las llamadas a la API con simulaciones para el desarrollo
- */
+// Importar datos JSON directamente para evitar problemas con require dinámico
+import subjectsData from "../data/subjects.json";
+import subjectDetailsData from "../data/subject-details.json";
+import topicDetailsData from "../data/topic-details.json";
+
 class ApiService {
 	constructor() {
-		// Registro de llamadas para detectar duplicados
+		// Control de llamadas y caché
 		this.callRegistry = new Map();
-		// Flag para habilitar o deshabilitar prevención de llamadas duplicadas
-		this.preventDuplicateCalls = true;
-		// Registro de respuestas en caché para reutilizarlas
 		this.responseCache = new Map();
-		// Contador de llamadas para estadísticas
 		this.callCounter = 0;
-		// Nivel de detalle de los logs
-		this.verboseLogging = true;
 
-		// Datos de usuario simulados para la cuenta
+		// Configuración
+		this.preventDuplicateCalls = true;
+		this.enableLogging = true;
+
+		// Datos de usuario de prueba
 		this.userData = {
 			id: "user123",
 			name: "Carlos González",
@@ -26,113 +26,72 @@ class ApiService {
 			department: "Ingeniería Telemática",
 			lastLogin: "2025-04-20T10:30:00Z",
 		};
-	}
 
-	/**
-	 * Formatea un objeto para la consola
-	 * @param {Object} obj - Objeto a formatear
-	 * @returns {string} - Objeto formateado
-	 */
-	_formatObject(obj) {
-		try {
-			return JSON.stringify(obj, null, 2);
-		} catch (error) {
-			return String(obj);
-		}
-	}
-
-	/**
-	 * Imprime un mensaje en la consola con estilo
-	 * @param {string} type - Tipo de mensaje (info, success, warning, error)
-	 * @param {string} message - Mensaje a imprimir
-	 * @param {Object} data - Datos adicionales a imprimir
-	 */
-	_log(type, message, data = null) {
-		if (!this.verboseLogging && type !== "error") return;
-
-		const timestamp = new Date().toISOString().split("T")[1].split(".")[0];
-		let style = "";
-		let emoji = "";
-
-		switch (type) {
-			case "info":
-				style = "color: #3498db; font-weight: bold;";
-				emoji = "ℹ️";
-				break;
-			case "success":
-				style = "color: #2ecc71; font-weight: bold;";
-				emoji = "✅";
-				break;
-			case "warning":
-				style = "color: #f39c12; font-weight: bold;";
-				emoji = "⚠️";
-				break;
-			case "error":
-				style = "color: #e74c3c; font-weight: bold;";
-				emoji = "❌";
-				break;
-			case "api":
-				style = "color: #9b59b6; font-weight: bold;";
-				emoji = "🔄";
-				break;
-			default:
-				style = "color: #34495e; font-weight: bold;";
-				emoji = "📝";
-		}
-
-		console.log(`%c${emoji} [${timestamp}] ApiService: ${message}`, style);
-
-		if (data) {
-			if (typeof data === "object" && data !== null) {
-				console.log("%cDatos:", "font-weight: bold;");
-				console.log(data);
-			} else {
-				console.log(`%cDatos: ${data}`, "font-weight: bold;");
-			}
-		}
-	}
-
-	/**
-	 * Registra una nueva llamada a la API
-	 * @param {string} endpoint - Endpoint de la API
-	 * @param {string} method - Método HTTP
-	 * @param {Object} data - Datos enviados
-	 * @returns {string} - ID único de la llamada
-	 */
-	_registerCall(endpoint, method, data) {
-		this.callCounter++;
-		const callId = `${method}:${endpoint}:${JSON.stringify(data)}`;
-		const requestInfo = {
-			id: this.callCounter,
-			timestamp: new Date(),
-			endpoint,
-			method,
-			data,
+		// Datos simulados precargados
+		this.mockData = {
+			subjects: subjectsData,
+			subjectDetails: subjectDetailsData,
+			topicDetails: topicDetailsData,
 		};
 
-		this._log(
-			"api",
-			`Llamada #${this.callCounter} - ${method} ${endpoint}`,
-			{
-				request: {
-					method,
-					endpoint,
-					data,
-				},
-			}
-		);
-
-		return callId;
+		console.log("🚀 ApiService inicializado con datos simulados");
 	}
 
 	/**
-	 * Simula una llamada a la API con retardo
-	 * @param {string} endpoint - Endpoint de la API
-	 * @param {string} method - Método HTTP (GET, POST, PUT, DELETE)
-	 * @param {Object} data - Datos a enviar (para POST/PUT)
-	 * @param {number} delay - Tiempo de retardo en ms
-	 * @param {boolean} forceCall - Forzar la llamada incluso si es duplicada
-	 * @returns {Promise<any>} - Promesa con la respuesta simulada
+	 * Imprime un log unificado en la consola con toda la información relevante
+	 */
+	logComplete(request, response, isCache = false) {
+		if (!this.enableLogging) return;
+
+		const timestamp = new Date().toLocaleTimeString();
+		const isError = !response.success;
+
+		// Construir un mensaje unificado con todos los detalles
+		console.groupCollapsed(
+			`%c🔄 API [${timestamp}]: ${request.method} ${request.endpoint} ${
+				isCache ? "(CACHE)" : ""
+			}`,
+			"color: #2980b9; font-weight: bold; font-size: 12px;"
+		);
+
+		// Sección de Petición
+		console.log(
+			"%c📤 Petición:",
+			"color: #3498db; font-weight: bold; margin-top: 5px;"
+		);
+		console.log(`• Método: ${request.method}`);
+		console.log(`• Endpoint: ${request.endpoint}`);
+		if (request.data) {
+			console.log("• Datos enviados:");
+			console.log(request.data);
+		}
+
+		// Sección de Respuesta
+		console.log(
+			"%c📥 Respuesta:",
+			"color: #2ecc71; font-weight: bold; margin-top: 8px;"
+		);
+		if (response.success) {
+			console.log(`• Estado: %cÉxito`, "color: #2ecc71");
+		} else {
+			console.log(`• Estado: %cError`, "color: #e74c3c");
+		}
+		console.log("• Datos recibidos:");
+		console.log(response);
+
+		// Tiempo de respuesta (simulado en desarrollo)
+		console.log(
+			"%c⏱️ Tiempo: %c" +
+				(isCache ? "<1ms (caché)" : "~800ms (simulado)"),
+			"color: #7f8c8d; margin-top: 5px;",
+			isCache ? "color: #9b59b6; font-weight: bold" : "color: inherit"
+		);
+
+		console.groupEnd();
+	}
+
+	/**
+	 * Simula una llamada a la API
 	 */
 	async simulateApiCall(
 		endpoint,
@@ -141,64 +100,57 @@ class ApiService {
 		delay = 800,
 		forceCall = false
 	) {
-		const callId = this._registerCall(endpoint, method, data);
+		this.callCounter++;
+		const callId = `${method}:${endpoint}:${JSON.stringify(data)}`;
 
-		// Verificar si hay una llamada duplicada en curso
+		const requestInfo = {
+			id: this.callCounter,
+			method,
+			endpoint,
+			data,
+		};
+
+		// Verificar llamadas duplicadas
 		if (
 			this.preventDuplicateCalls &&
 			!forceCall &&
 			this.callRegistry.has(callId)
 		) {
-			this._log(
-				"warning",
-				`Llamada duplicada detectada: ${method} ${endpoint}`
+			console.warn(
+				`⚠️ API: Llamada duplicada detectada: ${method} ${endpoint}`
 			);
 			return this.callRegistry.get(callId);
 		}
 
-		// Verificar si tenemos una respuesta en caché para peticiones GET
+		// Verificar caché para peticiones GET
 		if (method === "GET" && this.responseCache.has(callId) && !forceCall) {
-			this._log(
-				"info",
-				`Usando respuesta cacheada para ${method} ${endpoint}`,
-				{
-					cachedResponse: this.responseCache.get(callId),
-				}
-			);
-			return Promise.resolve(this.responseCache.get(callId));
+			const cachedResponse = this.responseCache.get(callId);
+			// Log unificado para respuesta de caché
+			this.logComplete(requestInfo, cachedResponse, true);
+			return Promise.resolve(cachedResponse);
 		}
 
-		// Crear la promesa de respuesta
+		// Crear y registrar la promesa de respuesta
 		const responsePromise = new Promise((resolve) => {
 			setTimeout(() => {
 				const response = this._getMockResponse(endpoint, method, data);
 
-				this._log(
-					"success",
-					`Respuesta recibida para ${method} ${endpoint}`,
-					{
-						request: {
-							method,
-							endpoint,
-							data,
-						},
-						response,
-					}
-				);
+				// Log unificado para petición y respuesta
+				this.logComplete(requestInfo, response);
 
-				// Guardar en caché para peticiones GET
+				// Guardar en caché si es GET
 				if (method === "GET") {
 					this.responseCache.set(callId, response);
 				}
 
-				// Eliminar del registro una vez completada
+				// Eliminar del registro
 				this.callRegistry.delete(callId);
 
 				resolve(response);
 			}, delay);
 		});
 
-		// Guardar la promesa en el registro
+		// Registrar la promesa para evitar duplicados
 		if (this.preventDuplicateCalls) {
 			this.callRegistry.set(callId, responsePromise);
 		}
@@ -208,233 +160,260 @@ class ApiService {
 
 	/**
 	 * Obtiene la respuesta simulada según el endpoint y método
-	 * @private
 	 */
 	_getMockResponse(endpoint, method, data) {
-		// Obtener datos de la cuenta
-		if (endpoint === "/api/account" && method === "GET") {
-			return {
-				success: true,
-				user: this.userData,
-			};
-		}
-
-		// Actualizar datos de la cuenta
-		if (endpoint === "/api/account" && method === "PUT") {
-			// Actualizar solo los campos permitidos
-			if (data) {
-				const allowedFields = ["name", "email", "faculty"];
-				allowedFields.forEach((field) => {
-					if (data[field] !== undefined) {
-						this.userData[field] = data[field];
-					}
-				});
-			}
-			return {
-				success: true,
-				user: this.userData,
-				message: "Perfil actualizado correctamente",
-			};
-		}
-
-		// Cambiar contraseña
-		if (endpoint === "/api/account/password" && method === "PUT") {
-			// Validar que la contraseña actual sea correcta (simulado)
-			if (data && data.currentPassword !== "password123") {
+		try {
+			// === CUENTA ===
+			// GET /api/account
+			if (endpoint === "/api/account" && method === "GET") {
 				return {
-					success: false,
-					message: "La contraseña actual es incorrecta",
+					success: true,
+					user: this.userData,
 				};
 			}
 
+			// PUT /api/account
+			if (endpoint === "/api/account" && method === "PUT") {
+				if (data) {
+					const allowedFields = ["name", "email", "faculty"];
+					allowedFields.forEach((field) => {
+						if (data[field] !== undefined) {
+							this.userData[field] = data[field];
+						}
+					});
+				}
+				return {
+					success: true,
+					user: this.userData,
+					message: "Perfil actualizado correctamente",
+				};
+			}
+
+			// PUT /api/account/password
+			if (endpoint === "/api/account/password" && method === "PUT") {
+				if (data && data.currentPassword !== "password123") {
+					return {
+						success: false,
+						message: "La contraseña actual es incorrecta",
+					};
+				}
+				return {
+					success: true,
+					message: "Contraseña actualizada correctamente",
+				};
+			}
+
+			// === AUTENTICACIÓN ===
+			// POST /api/auth/login
+			if (endpoint === "/api/auth/login") {
+				return {
+					success: true,
+					token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+					user: {
+						id: "user123",
+						name: "Carlos González",
+						email: data?.email || "admin@upm.es",
+					},
+				};
+			}
+
+			// POST /api/auth/recovery
+			if (endpoint === "/api/auth/recovery") {
+				return {
+					success: true,
+					message: "Email de recuperación enviado",
+				};
+			}
+
+			// === ASIGNATURAS ===
+			// GET /api/subjects
+			if (endpoint === "/api/subjects" && method === "GET") {
+				// IMPORTANTE: Devolver directamente el array para que subjects.map funcione
+				return this.mockData.subjects;
+			}
+
+			// POST /api/subjects
+			if (endpoint === "/api/subjects" && method === "POST") {
+				return {
+					success: true,
+					id: `subject-${Date.now()}`,
+					...data,
+				};
+			}
+
+			// GET /api/subjects/:id
+			if (
+				endpoint.match(/\/api\/subjects\/[\w-]+$/) &&
+				method === "GET"
+			) {
+				// Devolver directamente el objeto para mantener compatibilidad
+				return this.mockData.subjectDetails;
+			}
+
+			// PUT /api/subjects/:id
+			if (
+				endpoint.match(/\/api\/subjects\/[\w-]+$/) &&
+				method === "PUT"
+			) {
+				return {
+					success: true,
+					...data,
+				};
+			}
+
+			// DELETE /api/subjects/:id
+			if (
+				endpoint.match(/\/api\/subjects\/[\w-]+$/) &&
+				method === "DELETE"
+			) {
+				return {
+					success: true,
+					message: "Asignatura eliminada correctamente",
+				};
+			}
+
+			// === PROFESORES ===
+			// POST /api/subjects/:id/professors
+			if (
+				endpoint.match(/\/api\/subjects\/[\w-]+\/professors$/) &&
+				method === "POST"
+			) {
+				return {
+					success: true,
+					id: `professor-${Date.now()}`,
+					...data,
+				};
+			}
+
+			// DELETE /api/subjects/:id/professors/:profId
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/professors\/[\w-]+$/
+				) &&
+				method === "DELETE"
+			) {
+				return {
+					success: true,
+					message: "Profesor eliminado correctamente",
+				};
+			}
+
+			// === TEMAS ===
+			// POST /api/subjects/:id/topics
+			if (
+				endpoint.match(/\/api\/subjects\/[\w-]+\/topics$/) &&
+				method === "POST"
+			) {
+				return {
+					success: true,
+					id: `topic-${Date.now()}`,
+					...data,
+				};
+			}
+
+			// PATCH /api/subjects/:id/topics/:topicId
+			if (
+				endpoint.match(/\/api\/subjects\/[\w-]+\/topics\/[\w-]+$/) &&
+				method === "PATCH"
+			) {
+				return {
+					success: true,
+					...data,
+				};
+			}
+
+			// DELETE /api/subjects/:id/topics/:topicId
+			if (
+				endpoint.match(/\/api\/subjects\/[\w-]+\/topics\/[\w-]+$/) &&
+				method === "DELETE"
+			) {
+				return {
+					success: true,
+					message: "Tema eliminado correctamente",
+				};
+			}
+
+			// GET /api/subjects/:id/topics/:topicId
+			if (
+				endpoint.match(/\/api\/subjects\/[\w-]+\/topics\/[\w-]+$/) &&
+				method === "GET"
+			) {
+				// Devolver directamente el objeto para mantener compatibilidad
+				return this.mockData.topicDetails;
+			}
+
+			// === SUBTEMAS ===
+			// POST /api/subjects/:id/topics/:topicId/subtopics
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/subtopics$/
+				) &&
+				method === "POST"
+			) {
+				return {
+					success: true,
+					id: `subtopic-${Date.now()}`,
+					...data,
+				};
+			}
+
+			// PUT /api/subjects/:id/topics/:topicId/subtopics/:subtopicId
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/subtopics\/[\w-]+$/
+				) &&
+				method === "PUT"
+			) {
+				return {
+					success: true,
+					...data,
+				};
+			}
+
+			// DELETE /api/subjects/:id/topics/:topicId/subtopics/:subtopicId
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/subtopics\/[\w-]+$/
+				) &&
+				method === "DELETE"
+			) {
+				return {
+					success: true,
+					message: "Subtema eliminado correctamente",
+				};
+			}
+
+			// Endpoint no implementado
 			return {
-				success: true,
-				message: "Contraseña actualizada correctamente",
+				success: false,
+				error: "Endpoint no implementado en simulación",
+				endpoint,
+			};
+		} catch (error) {
+			console.error("Error procesando la solicitud:", error);
+			return {
+				success: false,
+				error: `Error al procesar la solicitud: ${error.message}`,
+				details: error.stack,
 			};
 		}
-
-		// Autenticación
-		if (endpoint === "/api/auth/login") {
-			return {
-				success: true,
-				token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkNhcmxvcyBHb256YWxleiIsImlhdCI6MTUxNjIzOTAyMn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
-				user: {
-					id: "user123",
-					name: "Carlos González",
-					email: data?.email || "admin@upm.es",
-				},
-			};
-		}
-
-		// Recuperación de contraseña
-		if (endpoint === "/api/auth/recovery") {
-			return {
-				success: true,
-				message: "Email de recuperación enviado",
-			};
-		}
-
-		// Asignaturas
-		if (endpoint === "/api/subjects" && method === "GET") {
-			return require("../data/subjects.json");
-		}
-
-		// Crear nueva asignatura
-		if (endpoint === "/api/subjects" && method === "POST") {
-			return {
-				success: true,
-				id: `subject-${Date.now()}`,
-				...data,
-			};
-		}
-
-		// Detalle de asignatura
-		if (endpoint.match(/\/api\/subjects\/[\w-]+$/) && method === "GET") {
-			return require("../data/subject-details.json");
-		}
-
-		// Actualizar asignatura
-		if (endpoint.match(/\/api\/subjects\/[\w-]+$/) && method === "PUT") {
-			return {
-				success: true,
-				...data,
-			};
-		}
-
-		// Eliminar asignatura
-		if (endpoint.match(/\/api\/subjects\/[\w-]+$/) && method === "DELETE") {
-			return {
-				success: true,
-				message: "Asignatura eliminada correctamente",
-			};
-		}
-
-		// Añadir profesor a asignatura
-		if (
-			endpoint.match(/\/api\/subjects\/[\w-]+\/professors$/) &&
-			method === "POST"
-		) {
-			return {
-				success: true,
-				id: `professor-${Date.now()}`,
-				...data,
-			};
-		}
-
-		// Eliminar profesor de asignatura
-		if (
-			endpoint.match(/\/api\/subjects\/[\w-]+\/professors\/[\w-]+$/) &&
-			method === "DELETE"
-		) {
-			return {
-				success: true,
-				message: "Profesor eliminado correctamente",
-			};
-		}
-
-		// Añadir tema a asignatura
-		if (
-			endpoint.match(/\/api\/subjects\/[\w-]+\/topics$/) &&
-			method === "POST"
-		) {
-			return {
-				success: true,
-				id: `topic-${Date.now()}`,
-				...data,
-			};
-		}
-
-		// Actualizar tema
-		if (
-			endpoint.match(/\/api\/subjects\/[\w-]+\/topics\/[\w-]+$/) &&
-			method === "PATCH"
-		) {
-			return {
-				success: true,
-				...data,
-			};
-		}
-
-		// Eliminar tema
-		if (
-			endpoint.match(/\/api\/subjects\/[\w-]+\/topics\/[\w-]+$/) &&
-			method === "DELETE"
-		) {
-			return {
-				success: true,
-				message: "Tema eliminado correctamente",
-			};
-		}
-
-		// Por defecto
-		return {
-			success: false,
-			error: "Endpoint no implementado en simulación",
-		};
 	}
 
-	/**
-	 * Limpia la caché de respuestas guardadas
-	 */
+	// Métodos de utilidad
+	setLogging(enable) {
+		this.enableLogging = enable;
+		console.log(`ℹ️ API: Logging ${enable ? "activado" : "desactivado"}`);
+	}
+
 	clearCache() {
 		this.responseCache.clear();
-		this._log("info", "Caché de respuestas limpiada");
-	}
-
-	/**
-	 * Habilitar o deshabilitar la prevención de llamadas duplicadas
-	 * @param {boolean} enable - True para habilitar, false para deshabilitar
-	 */
-	setPreventDuplicateCalls(enable) {
-		this.preventDuplicateCalls = enable;
-		this._log(
-			"info",
-			`${
-				enable ? "Habilitada" : "Deshabilitada"
-			} la prevención de llamadas duplicadas`
+		console.log(
+			`ℹ️ API: Caché limpiada (${this.responseCache.size} entradas)`
 		);
-	}
-
-	/**
-	 * Habilitar o deshabilitar logs detallados
-	 * @param {boolean} enable - True para habilitar, false para deshabilitar
-	 */
-	setVerboseLogging(enable) {
-		this.verboseLogging = enable;
-		this._log(
-			"info",
-			`Logs detallados ${enable ? "habilitados" : "deshabilitados"}`
-		);
-	}
-
-	/**
-	 * Limpiar el registro de llamadas
-	 */
-	clearCallRegistry() {
-		this.callRegistry.clear();
-		this._log("info", "Registro de llamadas limpiado");
-	}
-
-	/**
-	 * Obtener estadísticas de uso
-	 * @returns {Object} - Estadísticas de uso
-	 */
-	getStats() {
-		const stats = {
-			totalCalls: this.callCounter,
-			activeCalls: this.callRegistry.size,
-			cachedResponses: this.responseCache.size,
-		};
-
-		this._log("info", "Estadísticas de uso", stats);
-		return stats;
 	}
 }
 
-// Exportamos una única instancia para toda la aplicación
+// Exportar una única instancia para toda la aplicación
 const apiService = new ApiService();
-
-// Configuración inicial
-apiService.setVerboseLogging(true);
 
 export default apiService;

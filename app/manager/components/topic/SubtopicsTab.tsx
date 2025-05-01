@@ -17,7 +17,7 @@ interface SubtopicsTabProps {
 const SubtopicsTab = ({
 	topicId,
 	subjectId,
-	subtopics,
+	subtopics = [], // Proporcionar un array vacío por defecto
 	handleAddSubtopic,
 	handleEditSubtopic,
 	handleDeleteSubtopic,
@@ -25,15 +25,15 @@ const SubtopicsTab = ({
 	deletingSubtopicId = "",
 }: SubtopicsTabProps) => {
 	const { t } = useTranslation();
-	const [filteredSubtopics, setFilteredSubtopics] = useState(subtopics);
+	const [filteredSubtopics, setFilteredSubtopics] = useState(subtopics || []); // Asegurar que siempre hay un array
 
 	const handleSearch = (query: string) => {
 		if (!query) {
-			setFilteredSubtopics(subtopics);
+			setFilteredSubtopics(subtopics || []);
 			return;
 		}
 
-		const filtered = subtopics.filter(
+		const filtered = (subtopics || []).filter(
 			(subtopic) =>
 				subtopic.title.toLowerCase().includes(query.toLowerCase()) ||
 				subtopic.description.toLowerCase().includes(query.toLowerCase())

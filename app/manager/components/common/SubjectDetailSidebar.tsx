@@ -1,4 +1,4 @@
-// /app/manager/components/topics/SubjectDetailSidebar.tsx
+// /app/manager/components/common/SubjectDetailSidebar.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,7 +15,7 @@ interface SubjectDetailSidebarProps {
 const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 	subjectId,
 	subjectTitle,
-	topics,
+	topics = [], // Proporcionar un valor predeterminado
 }) => {
 	const pathname = usePathname();
 	const [expandedTopics, setExpandedTopics] = useState<
@@ -25,16 +25,23 @@ const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 	// Inicializar expandiendo todos los temas que tienen subtemas
 	useEffect(() => {
 		const initialExpanded: Record<string, boolean> = {};
+
+		// Protección contra topics indefinido
+		if (!topics || topics.length === 0) return;
+
 		topics.forEach((topic) => {
-			if (topic.subtopics && topic.subtopics.length > 0) {
+			if (topic && topic.subtopics && topic.subtopics.length > 0) {
 				initialExpanded[topic.id] = true;
 			}
 		});
+
 		setExpandedTopics(initialExpanded);
 	}, [topics]);
 
 	// Adicionalmente, asegurarse de mantener expandido el tema activo
 	useEffect(() => {
+		if (!pathname) return;
+
 		if (pathname?.includes("/topics/")) {
 			const pathParts = pathname.split("/");
 			// Buscamos el id del topic en la URL
@@ -56,7 +63,23 @@ const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 				});
 			}
 		}
-	}, [pathname, topics]);
+	}, [pathname]);
+
+	// Si no hay temas, mostrar un mensaje
+	if (!topics || topics.length === 0) {
+		return (
+			<div className="bg-white border-r border-gray-200 h-full overflow-y-auto">
+				<div className="p-6 border-b border-gray-200">
+					<h2 className="text-xl font-bold">
+						{subjectTitle || "Asignatura"}
+					</h2>
+				</div>
+				<div className="p-6 text-gray-500 italic">
+					No hay temas disponibles
+				</div>
+			</div>
+		);
+	}
 
 	const toggleTopic = (topicId: string) => {
 		setExpandedTopics((prev) => ({
