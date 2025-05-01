@@ -1,3 +1,4 @@
+// app/manager/subjects/[id]/topics/[topicId]/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,56 +14,16 @@ import useApiRequest from "../../../../hooks/useApiRequest";
 import { ConfirmationModal } from "../../../../components/common/index";
 import {
 	SubtopicsTab,
-	InformationTab,
+	QuestionnaireTab,
 	QuestionsTab,
-	AddSubtopicModal,
-	EditSubtopicModal,
+	SettingsTab,
 } from "../../../../components/topic";
 
-// Datos de preguntas simulados para la pestaña de preguntas
-const MOCK_QUESTIONS = [
-	{
-		id: "q1",
-		text: "¿Cuál es la estructura básica de un documento HTML?",
-		type: "Opción múltiple",
-		difficulty: "Fácil",
-		createdAt: "2023-11-15T10:00:00Z",
-	},
-	{
-		id: "q2",
-		text: "¿Qué significa HTML?",
-		type: "Opción múltiple",
-		difficulty: "Fácil",
-		createdAt: "2023-11-16T11:30:00Z",
-	},
-	{
-		id: "q3",
-		text: "Explica la diferencia entre etiquetas semánticas y no semánticas en HTML",
-		type: "Desarrollo",
-		difficulty: "Medio",
-		createdAt: "2023-11-18T14:20:00Z",
-	},
-	{
-		id: "q4",
-		text: "¿Cómo se crea un formulario en HTML?",
-		type: "Opción múltiple",
-		difficulty: "Medio",
-		createdAt: "2023-11-20T09:15:00Z",
-	},
-	{
-		id: "q5",
-		text: "Explica el uso de la etiqueta 'meta' en HTML y sus atributos principales",
-		type: "Desarrollo",
-		difficulty: "Avanzado",
-		createdAt: "2023-11-22T16:45:00Z",
-	},
-];
-
 // Componente interno para la funcionalidad una vez cargado el contexto
-const TopicSubtopicsContent = () => {
+const TopicDetailContent = () => {
 	const params = useParams();
 	const id = params.id as string;
-	const topicId = params.topicId as string; // Aseguramos que usamos el nombre correcto del parámetro
+	const topicId = params.topicId as string;
 
 	const router = useRouter();
 	const { t } = useTranslation();
@@ -72,16 +33,24 @@ const TopicSubtopicsContent = () => {
 	const [activeTab, setActiveTab] = useState("subtopics");
 	const [editMode, setEditMode] = useState(false);
 	const [editedTopic, setEditedTopic] = useState(topic);
+	const [showDeleteSubtopicModal, setShowDeleteSubtopicModal] =
+		useState(false);
+	const [subtopicToDelete, setSubtopicToDelete] = useState<string>("");
+	const [deletingSubtopicId, setDeletingSubtopicId] = useState<string>("");
 	const [showAddSubtopicModal, setShowAddSubtopicModal] = useState(false);
 	const [editingSubtopic, setEditingSubtopic] = useState<Subtopic | null>(
 		null
 	);
-	const [deletingSubtopicId, setDeletingSubtopicId] = useState<string>("");
-	const [showDeleteSubtopicModal, setShowDeleteSubtopicModal] =
-		useState(false);
-	const [subtopicToDelete, setSubtopicToDelete] = useState<string>("");
 
-	// Simulación de llamadas a la API
+	// API para modificaciones de tema
+	const { makeRequest: updateTopic, loading: updatingTopic } = useApiRequest(
+		`/api/subjects/${id}/topics/${topicId}`,
+		"PUT",
+		null,
+		false
+	);
+
+	// API para subtemas
 	const { makeRequest: addSubtopic, loading: addingSubtopic } = useApiRequest(
 		`/api/subjects/${id}/topics/${topicId}/subtopics`,
 		"POST",
@@ -94,26 +63,6 @@ const TopicSubtopicsContent = () => {
 
 	const { makeRequest: deleteSubtopic, loading: deletingSubtopic } =
 		useApiRequest("", "DELETE", null, false);
-
-	const { makeRequest: updateTopic, loading: updatingTopic } = useApiRequest(
-		`/api/subjects/${id}/topics/${topicId}`,
-		"PUT",
-		null,
-		false
-	);
-
-	const { data: questions, loading: loadingQuestions } = useApiRequest(
-		`/api/subjects/${id}/topics/${topicId}/questions`,
-		"GET",
-		MOCK_QUESTIONS,
-		true
-	);
-
-	// Simular la carga de preguntas
-	useEffect(() => {
-		// TODO: Implementar la llamada real a la API cuando esté disponible
-		// Por ahora usamos los datos simulados de MOCK_QUESTIONS
-	}, []);
 
 	// Sincronizar estado local cuando cambia el topic en el contexto
 	useEffect(() => {
@@ -146,7 +95,6 @@ const TopicSubtopicsContent = () => {
 		if (!editedTopic) return;
 
 		try {
-			// TODO: Implementar la llamada real a la API cuando esté disponible
 			const response = await updateTopic(editedTopic);
 
 			if (response.success) {
@@ -167,7 +115,6 @@ const TopicSubtopicsContent = () => {
 		if (!topic) return;
 
 		try {
-			// TODO: Implementar la llamada real a la API cuando esté disponible
 			const response = await addSubtopic({ title, description });
 
 			if (response.success) {
@@ -191,7 +138,6 @@ const TopicSubtopicsContent = () => {
 		if (!topic) return;
 
 		try {
-			// TODO: Implementar la llamada real a la API cuando esté disponible
 			const response = await editSubtopic(
 				{ title, description },
 				false,
@@ -218,7 +164,6 @@ const TopicSubtopicsContent = () => {
 		try {
 			setDeletingSubtopicId(subtopicToDelete);
 
-			// TODO: Implementar la llamada real a la API cuando esté disponible
 			const response = await deleteSubtopic(
 				null,
 				false,
@@ -309,14 +254,14 @@ const TopicSubtopicsContent = () => {
 						{t("topicDetail.subtopics") || "Subtemas"}
 					</button>
 					<button
-						onClick={() => handleTabChange("information")}
+						onClick={() => handleTabChange("questionnaires")}
 						className={`py-4 px-1 ${
-							activeTab === "information"
+							activeTab === "questionnaires"
 								? "border-b-2 border-indigo-500 font-medium text-indigo-600"
 								: "border-b-2 border-transparent font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
 						}`}
 					>
-						{t("topicDetail.information") || "Información"}
+						{t("topicDetail.questionnaires") || "Cuestionarios"}
 					</button>
 					<button
 						onClick={() => handleTabChange("questions")}
@@ -327,6 +272,16 @@ const TopicSubtopicsContent = () => {
 						}`}
 					>
 						{t("topicDetail.questions") || "Preguntas"}
+					</button>
+					<button
+						onClick={() => handleTabChange("settings")}
+						className={`py-4 px-1 ${
+							activeTab === "settings"
+								? "border-b-2 border-indigo-500 font-medium text-indigo-600"
+								: "border-b-2 border-transparent font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+						}`}
+					>
+						{t("topicDetail.settings") || "Ajustes"}
 					</button>
 				</nav>
 			</div>
@@ -346,8 +301,16 @@ const TopicSubtopicsContent = () => {
 					/>
 				)}
 
-				{activeTab === "information" && topic && editedTopic && (
-					<InformationTab
+				{activeTab === "questionnaires" && (
+					<QuestionnaireTab topicId={topicId} subjectId={id} />
+				)}
+
+				{activeTab === "questions" && (
+					<QuestionsTab topicId={topicId} subjectId={id} />
+				)}
+
+				{activeTab === "settings" && topic && editedTopic && (
+					<SettingsTab
 						topic={topic}
 						editMode={editMode}
 						editedTopic={editedTopic}
@@ -357,13 +320,9 @@ const TopicSubtopicsContent = () => {
 						isLoading={updatingTopic}
 					/>
 				)}
-
-				{activeTab === "questions" && (
-					<QuestionsTab topicId={topicId} subjectId={id} />
-				)}
 			</div>
 
-			{/* Modales */}
+			{/* Modales para gestión de subtemas */}
 			{showAddSubtopicModal && (
 				<AddSubtopicModal
 					onClose={() => setShowAddSubtopicModal(false)}
@@ -402,10 +361,10 @@ const TopicSubtopicsContent = () => {
 };
 
 // Componente principal con el provider del contexto
-export default function TopicSubtopicsPage() {
+export default function TopicDetailPage() {
 	return (
 		<TopicProvider>
-			<TopicSubtopicsContent />
+			<TopicDetailContent />
 		</TopicProvider>
 	);
 }

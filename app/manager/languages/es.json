@@ -160,6 +160,19 @@
 		"difficulty": "Dificultad",
 		"actions": "Acciones",
 		"newQuestion": "Nueva pregunta",
-		"errorLoadingQuestions": "Error al cargar las preguntas"
+		"errorLoadingQuestions": "Error al cargar las preguntas",
+		"questionnaires": "Cuestionarios",
+		"newQuestionnaire": "Nuevo cuestionario",
+		"generate": "Generar",
+		"generateQuestionnaire": "Generar cuestionario",
+		"download": "Descargar",
+		"downloads": "Descargas",
+		"numQuestions": "Número de preguntas",
+		"create": "Crear",
+		"searchQuestionnairesPlaceholder": "Buscar cuestionarios...",
+		"noQuestionnairesFound": "No se encontraron cuestionarios",
+		"errorLoadingQuestionnaires": "Error al cargar los cuestionarios",
+		"selectedQuestionsCount": "Preguntas seleccionadas: {{count}}",
+		"subtopicsList": "Lista de subtemas"
 	}
 }
