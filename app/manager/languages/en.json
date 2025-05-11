@@ -184,6 +184,7 @@
 		"collapseAll": "Collapse all",
 		"filterByStatus": "Filter by status:",
 		"allQuestions": "All",
-		"generateNewQuestions": "Generate new"
+		"generateNewQuestions": "Generate new",
+		"settings": "Settings"
 	}
 }

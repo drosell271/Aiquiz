@@ -184,6 +184,7 @@
 		"collapseAll": "Contraer todas",
 		"filterByStatus": "Filtrar por estado:",
 		"allQuestions": "Todas",
-		"generateNewQuestions": "Generar nuevas"
+		"generateNewQuestions": "Generar nuevas",
+		"settings": "Ajustes"
 	}
 }
