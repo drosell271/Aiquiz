@@ -185,6 +185,12 @@
 		"filterByStatus": "Filter by status:",
 		"allQuestions": "All",
 		"generateNewQuestions": "Generate new",
-		"settings": "Settings"
+		"settings": "Settings",
+		"generateQuestionsTitle": "Generate questions",
+		"easy": "EASY",
+		"intermediate": "INTERMEDIATE",
+		"advanced": "ADVANCED",
+		"numberOfQuestions": "Number of questions",
+		"generateQuestions": "Generate questions"
 	}
 }

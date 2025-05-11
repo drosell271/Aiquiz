@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import useApiRequest from "../../hooks/useApiRequest";
 import SearchBar from "../subject/SearchBar";
 import { ConfirmationModal } from "../common";
+import GenerateQuestionsModal from "./GenerateQuestionsModal";
 
 type StatusFilter = "all" | "unverified" | "verified" | "rejected";
 
@@ -111,6 +112,10 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 	const [generationTitle, setGenerationTitle] = useState("");
 	const [generationDescription, setGenerationDescription] = useState("");
 
+	// Modal para generar nuevas preguntas
+	const [showGenerateQuestionsModal, setShowGenerateQuestionsModal] =
+		useState(false);
+
 	// API para obtener preguntas
 	const {
 		data: questionsData,
@@ -120,234 +125,7 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 	} = useApiRequest(
 		`/api/subjects/${subjectId}/topics/${topicId}/questions`,
 		"GET",
-		// Datos de ejemplo para desarrollo
-		[
-			{
-				id: "q1",
-				text: "¿Cuál es la estructura básica de una URL?",
-				type: "Opción múltiple",
-				difficulty: "Fácil",
-				createdAt: "2023-11-15T10:00:00Z",
-				verified: false,
-				rejected: false,
-				choices: [
-					{
-						text: "protocolo://dominio:puerto/ruta?parámetros#fragmento",
-						isCorrect: true,
-					},
-					{ text: "dominio.com/ruta", isCorrect: false },
-					{ text: "www.dominio.com", isCorrect: false },
-					{
-						text: "HTTP://www.dominio-ejemplo.com",
-						isCorrect: false,
-					},
-				],
-			},
-			{
-				id: "q2",
-				text: "¿Qué significa HTTP?",
-				type: "Opción múltiple",
-				difficulty: "Fácil",
-				createdAt: "2023-11-16T11:30:00Z",
-				verified: true,
-				rejected: false,
-				choices: [
-					{ text: "Hypertext Transfer Protocol", isCorrect: true },
-					{ text: "Hyper Transfer Text Protocol", isCorrect: false },
-					{
-						text: "High-level Transfer Text Protocol",
-						isCorrect: false,
-					},
-					{ text: "Hypertext Text Processing", isCorrect: false },
-				],
-			},
-			{
-				id: "q3",
-				text: "Explica la diferencia entre los métodos HTTP GET y POST",
-				type: "Opción múltiple",
-				difficulty: "Medio",
-				createdAt: "2023-11-18T14:20:00Z",
-				verified: false,
-				rejected: true,
-				choices: [
-					{
-						text: "GET envía datos en la URL, POST en el cuerpo del mensaje",
-						isCorrect: true,
-					},
-					{
-						text: "GET no tiene limitación de tamaño, POST sí",
-						isCorrect: false,
-					},
-					{
-						text: "GET es más seguro que POST para datos sensibles",
-						isCorrect: false,
-					},
-					{
-						text: "No hay diferencia, ambos envían datos al servidor",
-						isCorrect: false,
-					},
-				],
-			},
-			{
-				id: "q4",
-				text: "¿Qué indican los códigos de respuesta HTTP que comienzan con 4xx?",
-				type: "Opción múltiple",
-				difficulty: "Medio",
-				createdAt: "2023-11-20T09:15:00Z",
-				verified: false,
-				rejected: false,
-				choices: [
-					{ text: "Errores del cliente", isCorrect: true },
-					{ text: "Errores del servidor", isCorrect: false },
-					{ text: "Redirecciones", isCorrect: false },
-					{ text: "Respuestas informativas", isCorrect: false },
-				],
-			},
-			{
-				id: "q5",
-				text: "Explica el propósito de la cabecera Cache-Control en HTTP",
-				type: "Opción múltiple",
-				difficulty: "Avanzado",
-				createdAt: "2023-11-22T16:45:00Z",
-				verified: true,
-				rejected: false,
-				choices: [
-					{
-						text: "Especifica directivas para mecanismos de caché en solicitudes y respuestas",
-						isCorrect: true,
-					},
-					{
-						text: "Controla el tiempo de vida de una conexión HTTP",
-						isCorrect: false,
-					},
-					{
-						text: "Define reglas de compresión para el contenido",
-						isCorrect: false,
-					},
-					{
-						text: "Establece prioridades de carga de recursos",
-						isCorrect: false,
-					},
-				],
-			},
-			{
-				id: "q6",
-				text: "¿Cuál de las siguientes cabeceras HTTP se usa para la autenticación?",
-				type: "Opción múltiple",
-				difficulty: "Medio",
-				createdAt: "2023-12-05T08:30:00Z",
-				verified: false,
-				rejected: false,
-				choices: [
-					{ text: "Authorization", isCorrect: true },
-					{ text: "Accept", isCorrect: false },
-					{ text: "Host", isCorrect: false },
-					{ text: "Origin", isCorrect: false },
-				],
-			},
-			{
-				id: "q7",
-				text: "¿Cuál es la diferencia entre un código de estado 301 y 302?",
-				type: "Opción múltiple",
-				difficulty: "Medio",
-				createdAt: "2023-12-10T14:20:00Z",
-				verified: false,
-				rejected: false,
-				choices: [
-					{
-						text: "301 es redirección permanente, 302 es temporal",
-						isCorrect: true,
-					},
-					{
-						text: "301 es redirección temporal, 302 es permanente",
-						isCorrect: false,
-					},
-					{
-						text: "301 es para páginas no encontradas, 302 para redirecciones",
-						isCorrect: false,
-					},
-					{
-						text: "No hay diferencia, ambos son redirecciones",
-						isCorrect: false,
-					},
-				],
-			},
-			{
-				id: "q8",
-				text: "¿Qué información se incluye en la línea de solicitud de una petición HTTP?",
-				type: "Opción múltiple",
-				difficulty: "Fácil",
-				createdAt: "2023-12-15T11:45:00Z",
-				verified: false,
-				rejected: false,
-				choices: [
-					{ text: "Método, URI y versión HTTP", isCorrect: true },
-					{
-						text: "Host, método y cuerpo del mensaje",
-						isCorrect: false,
-					},
-					{
-						text: "Versión HTTP, cabeceras y cuerpo",
-						isCorrect: false,
-					},
-					{ text: "URI, cabeceras y parámetros", isCorrect: false },
-				],
-			},
-			{
-				id: "q9",
-				text: "Explica el concepto de idempotencia en métodos HTTP y menciona cuáles son idempotentes",
-				type: "Opción múltiple",
-				difficulty: "Avanzado",
-				createdAt: "2024-01-05T10:15:00Z",
-				verified: false,
-				rejected: false,
-				choices: [
-					{
-						text: "GET, PUT, DELETE son idempotentes; POST no lo es",
-						isCorrect: true,
-					},
-					{
-						text: "POST, PUT, DELETE son idempotentes; GET no lo es",
-						isCorrect: false,
-					},
-					{
-						text: "Solo GET y HEAD son idempotentes",
-						isCorrect: false,
-					},
-					{
-						text: "Todos los métodos HTTP son idempotentes",
-						isCorrect: false,
-					},
-				],
-			},
-			{
-				id: "q10",
-				text: "¿Qué es un token JWT y para qué se utiliza en aplicaciones web?",
-				type: "Opción múltiple",
-				difficulty: "Medio",
-				createdAt: "2024-01-10T09:30:00Z",
-				verified: true,
-				rejected: false,
-				choices: [
-					{
-						text: "Un formato compacto para transmitir información de forma segura entre partes como un objeto JSON",
-						isCorrect: true,
-					},
-					{
-						text: "Un protocolo para encriptar datos en tránsito",
-						isCorrect: false,
-					},
-					{
-						text: "Un tipo de cookie HTTP para almacenar sesiones",
-						isCorrect: false,
-					},
-					{
-						text: "Un método de compresión para transferir datos JSON",
-						isCorrect: false,
-					},
-				],
-			},
-		],
+		null,
 		true
 	);
 
@@ -548,15 +326,21 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 		}
 	};
 
-	const handleGenerateNewQuestions = async () => {
+	const handleGenerateNewQuestions = async (
+		difficulty: string,
+		count: number
+	) => {
 		try {
 			const response = await generateNewQuestions({
-				count: 5, // Número predeterminado de preguntas nuevas
+				difficulty: difficulty,
+				count: count,
+				type: "URL", // Asumimos que este es el tipo basado en la UI mostrada
 			});
 
 			if (response.success && response.questions) {
 				// Actualizar con las nuevas preguntas
 				await fetchQuestions();
+				setShowGenerateQuestionsModal(false);
 			}
 		} catch (error) {
 			console.error("Error al generar nuevas preguntas:", error);
@@ -670,7 +454,7 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 					)}
 
 					<button
-						onClick={handleGenerateNewQuestions}
+						onClick={() => setShowGenerateQuestionsModal(true)}
 						className="bg-indigo-600 text-white py-2 px-4 rounded-md flex items-center"
 						disabled={generatingNewQuestions}
 					>
@@ -1253,6 +1037,14 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 					</div>
 				</div>
 			)}
+
+			{/* Modal para generar nuevas preguntas */}
+			<GenerateQuestionsModal
+				isOpen={showGenerateQuestionsModal}
+				onClose={() => setShowGenerateQuestionsModal(false)}
+				onGenerate={handleGenerateNewQuestions}
+				isLoading={generatingNewQuestions}
+			/>
 		</div>
 	);
 };
