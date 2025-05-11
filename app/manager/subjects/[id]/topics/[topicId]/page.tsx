@@ -12,12 +12,14 @@ import {
 } from "../../../../contexts/TopicContext";
 import useApiRequest from "../../../../hooks/useApiRequest";
 import { ConfirmationModal } from "../../../../components/common/index";
-import {
-	SubtopicsTab,
-	QuestionnaireTab,
-	QuestionsTab,
-	SettingsTab,
-} from "../../../../components/topic";
+
+// Importamos los componentes actualizados
+import SubtopicsTab from "../../../../components/topic/SubtopicsTab";
+import QuestionnaireTab from "../../../../components/topic/QuestionnarieTab";
+import QuestionsTab from "../../../../components/topic/QuestionsTab";
+import SettingsTab from "../../../../components/topic/SettingsTab";
+import AddSubtopicModal from "../../../../components/topic/AddSubtopicModal";
+import EditSubtopicModal from "../../../../components/topic/EditSubtopicModal";
 
 // Componente interno para la funcionalidad una vez cargado el contexto
 const TopicDetailContent = () => {
@@ -294,10 +296,7 @@ const TopicDetailContent = () => {
 						subjectId={id}
 						subtopics={topic.subtopics}
 						handleAddSubtopic={handleAddSubtopicRequest}
-						handleEditSubtopic={handleEditSubtopicRequest}
-						handleDeleteSubtopic={handleConfirmDeleteSubtopic}
 						isLoading={addingSubtopic}
-						deletingSubtopicId={deletingSubtopicId}
 					/>
 				)}
 
@@ -317,6 +316,7 @@ const TopicDetailContent = () => {
 						onEditToggle={handleEditToggle}
 						onInputChange={handleInputChange}
 						onSaveChanges={handleSaveTopicChanges}
+						onDeleteSubtopic={handleConfirmDeleteSubtopic}
 						isLoading={updatingTopic}
 					/>
 				)}

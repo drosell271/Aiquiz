@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import useApiRequest from "../../hooks/useApiRequest";
 import SearchBar from "../subject/SearchBar";
+import { ConfirmationModal } from "../common";
 
 interface Questionnaire {
 	id: string;
@@ -26,12 +27,12 @@ const QuestionnaireTab = ({ topicId, subjectId }: QuestionnaireTabProps) => {
 	const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<
 		string | null
 	>(null);
-
-	// Estados para el modal de creación de cuestionario
-	const [showCreateModal, setShowCreateModal] = useState(false);
-	const [newTitle, setNewTitle] = useState("");
-	const [newDescription, setNewDescription] = useState("");
-	const [numQuestions, setNumQuestions] = useState(10);
+	const [showDeleteModal, setShowDeleteModal] = useState(false);
+	const [questionnaireToDelete, setQuestionnaireToDelete] =
+		useState<string>("");
+	const [showFormatOptions, setShowFormatOptions] = useState<string | null>(
+		null
+	);
 
 	// API para obtener cuestionarios
 	const {
@@ -45,15 +46,6 @@ const QuestionnaireTab = ({ topicId, subjectId }: QuestionnaireTabProps) => {
 		null,
 		true
 	);
-
-	// API para crear cuestionario
-	const { makeRequest: createQuestionnaire, loading: creatingQuestionnaire } =
-		useApiRequest(
-			`/api/subjects/${subjectId}/topics/${topicId}/questionnaires`,
-			"POST",
-			null,
-			false
-		);
 
 	// API para eliminar cuestionario
 	const { makeRequest: deleteQuestionnaire, loading: deletingQuestionnaire } =
@@ -90,36 +82,16 @@ const QuestionnaireTab = ({ topicId, subjectId }: QuestionnaireTabProps) => {
 		setFilteredQuestionnaires(filtered);
 	};
 
-	const handleCreateQuestionnaire = async () => {
-		if (!newTitle.trim()) return;
+	const handleDeleteQuestionnaire = async () => {
+		if (!questionnaireToDelete) return;
 
 		try {
-			const response = await createQuestionnaire({
-				title: newTitle,
-				description: newDescription,
-				numQuestions,
-			});
-
-			if (response.success) {
-				await fetchQuestionnaires();
-				setShowCreateModal(false);
-				setNewTitle("");
-				setNewDescription("");
-				setNumQuestions(10);
-			}
-		} catch (error) {
-			console.error("Error al crear cuestionario:", error);
-		}
-	};
-
-	const handleDeleteQuestionnaire = async (id: string) => {
-		try {
-			setSelectedQuestionnaire(id);
+			setSelectedQuestionnaire(questionnaireToDelete);
 
 			const response = await deleteQuestionnaire(
 				null,
 				false,
-				`${subjectId}/topics/${topicId}/questionnaires/${id}`
+				`${subjectId}/topics/${topicId}/questionnaires/${questionnaireToDelete}`
 			);
 
 			if (response.success) {
@@ -129,7 +101,22 @@ const QuestionnaireTab = ({ topicId, subjectId }: QuestionnaireTabProps) => {
 			console.error("Error al eliminar cuestionario:", error);
 		} finally {
 			setSelectedQuestionnaire(null);
+			setQuestionnaireToDelete("");
+			setShowDeleteModal(false);
 		}
+	};
+
+	const toggleFormatOptions = (id: string) => {
+		if (showFormatOptions === id) {
+			setShowFormatOptions(null);
+		} else {
+			setShowFormatOptions(id);
+		}
+	};
+
+	const confirmDeleteQuestionnaire = (id: string) => {
+		setQuestionnaireToDelete(id);
+		setShowDeleteModal(true);
 	};
 
 	const handleDownloadQuestionnaire = async (id: string, format: string) => {
@@ -148,10 +135,12 @@ const QuestionnaireTab = ({ topicId, subjectId }: QuestionnaireTabProps) => {
 			// En producción, aquí se procesaría la respuesta para descargar el archivo
 			setTimeout(() => {
 				setSelectedQuestionnaire(null);
+				setShowFormatOptions(null);
 			}, 1000);
 		} catch (error) {
 			console.error("Error al descargar cuestionario:", error);
 			setSelectedQuestionnaire(null);
+			setShowFormatOptions(null);
 		}
 	};
 
@@ -165,27 +154,6 @@ const QuestionnaireTab = ({ topicId, subjectId }: QuestionnaireTabProps) => {
 					}
 					onSearch={handleSearch}
 				/>
-
-				<button
-					onClick={() => setShowCreateModal(true)}
-					className="ml-4 bg-gray-800 text-white py-2 px-4 rounded-md flex items-center disabled:opacity-50"
-					disabled={loading}
-				>
-					<svg
-						className="w-5 h-5 mr-1"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							strokeWidth="2"
-							d="M12 4v16m8-8H4"
-						/>
-					</svg>
-					{t("topicDetail.newQuestionnaire") || "Nuevo cuestionario"}
-				</button>
 			</div>
 
 			{loading ? (
@@ -274,13 +242,18 @@ const QuestionnaireTab = ({ topicId, subjectId }: QuestionnaireTabProps) => {
 									</td>
 									<td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
 										<div className="flex justify-end space-x-3">
-											<div className="relative group">
+											<div className="relative">
 												<button
 													className="text-blue-600 hover:text-blue-900 flex items-center"
 													title={
 														t(
 															"topicDetail.download"
 														) || "Descargar"
+													}
+													onClick={() =>
+														toggleFormatOptions(
+															questionnaire.id
+														)
 													}
 												>
 													<svg
@@ -297,7 +270,12 @@ const QuestionnaireTab = ({ topicId, subjectId }: QuestionnaireTabProps) => {
 														/>
 													</svg>
 													<svg
-														className="w-4 h-4 ml-1"
+														className={`w-4 h-4 ml-1 transition-transform ${
+															showFormatOptions ===
+															questionnaire.id
+																? "rotate-180"
+																: ""
+														}`}
 														fill="none"
 														stroke="currentColor"
 														viewBox="0 0 24 24"
@@ -310,44 +288,47 @@ const QuestionnaireTab = ({ topicId, subjectId }: QuestionnaireTabProps) => {
 														/>
 													</svg>
 												</button>
-												<div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block">
-													<button
-														onClick={() =>
-															handleDownloadQuestionnaire(
-																questionnaire.id,
-																"pdf"
-															)
-														}
-														className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-														disabled={
-															selectedQuestionnaire ===
-																questionnaire.id &&
-															downloadingQuestionnaire
-														}
-													>
-														PDF
-													</button>
-													<button
-														onClick={() =>
-															handleDownloadQuestionnaire(
-																questionnaire.id,
-																"moodle"
-															)
-														}
-														className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-														disabled={
-															selectedQuestionnaire ===
-																questionnaire.id &&
-															downloadingQuestionnaire
-														}
-													>
-														Moodle XML
-													</button>
-												</div>
+												{showFormatOptions ===
+													questionnaire.id && (
+													<div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+														<button
+															onClick={() =>
+																handleDownloadQuestionnaire(
+																	questionnaire.id,
+																	"pdf"
+																)
+															}
+															className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+															disabled={
+																selectedQuestionnaire ===
+																	questionnaire.id &&
+																downloadingQuestionnaire
+															}
+														>
+															PDF
+														</button>
+														<button
+															onClick={() =>
+																handleDownloadQuestionnaire(
+																	questionnaire.id,
+																	"moodle"
+																)
+															}
+															className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+															disabled={
+																selectedQuestionnaire ===
+																	questionnaire.id &&
+																downloadingQuestionnaire
+															}
+														>
+															Moodle XML
+														</button>
+													</div>
+												)}
 											</div>
 											<button
 												onClick={() =>
-													handleDeleteQuestionnaire(
+													confirmDeleteQuestionnaire(
 														questionnaire.id
 													)
 												}
@@ -410,154 +391,23 @@ const QuestionnaireTab = ({ topicId, subjectId }: QuestionnaireTabProps) => {
 				</div>
 			)}
 
-			{/* Modal para crear nuevo cuestionario */}
-			{showCreateModal && (
-				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-					<div className="bg-white rounded-lg p-6 w-full max-w-md">
-						<div className="flex justify-between items-center mb-4">
-							<h2 className="text-xl font-semibold">
-								{t("topicDetail.newQuestionnaire") ||
-									"Nuevo cuestionario"}
-							</h2>
-							<button
-								onClick={() => setShowCreateModal(false)}
-								className="text-gray-500 hover:text-gray-700"
-								disabled={creatingQuestionnaire}
-							>
-								<svg
-									className="w-6 h-6"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth="2"
-										d="M6 18L18 6M6 6l12 12"
-									/>
-								</svg>
-							</button>
-						</div>
-
-						<form
-							onSubmit={(e) => {
-								e.preventDefault();
-								handleCreateQuestionnaire();
-							}}
-						>
-							<div className="mb-4">
-								<label
-									htmlFor="questionnaireTitle"
-									className="block text-sm font-medium text-gray-700 mb-1"
-								>
-									{t("topicDetail.title") || "Título"}
-								</label>
-								<input
-									type="text"
-									id="questionnaireTitle"
-									value={newTitle}
-									onChange={(e) =>
-										setNewTitle(e.target.value)
-									}
-									className="w-full p-2 border rounded-md"
-									required
-									disabled={creatingQuestionnaire}
-								/>
-							</div>
-
-							<div className="mb-4">
-								<label
-									htmlFor="questionnaireDescription"
-									className="block text-sm font-medium text-gray-700 mb-1"
-								>
-									{t("topicDetail.description") ||
-										"Descripción"}
-								</label>
-								<textarea
-									id="questionnaireDescription"
-									value={newDescription}
-									onChange={(e) =>
-										setNewDescription(e.target.value)
-									}
-									className="w-full p-2 border rounded-md h-32"
-									disabled={creatingQuestionnaire}
-								/>
-							</div>
-
-							<div className="mb-6">
-								<label
-									htmlFor="numQuestions"
-									className="block text-sm font-medium text-gray-700 mb-1"
-								>
-									{t("topicDetail.numQuestions") ||
-										"Número de preguntas"}
-								</label>
-								<input
-									type="number"
-									id="numQuestions"
-									value={numQuestions}
-									onChange={(e) =>
-										setNumQuestions(Number(e.target.value))
-									}
-									min="1"
-									max="50"
-									className="w-full p-2 border rounded-md"
-									disabled={creatingQuestionnaire}
-								/>
-							</div>
-
-							<div className="flex justify-end space-x-2">
-								<button
-									type="button"
-									onClick={() => setShowCreateModal(false)}
-									className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md"
-									disabled={creatingQuestionnaire}
-								>
-									{t("topicDetail.cancel") || "Cancelar"}
-								</button>
-								<button
-									type="submit"
-									disabled={
-										creatingQuestionnaire ||
-										!newTitle.trim()
-									}
-									className="px-4 py-2 bg-gray-800 text-white rounded-md disabled:opacity-50 flex items-center"
-								>
-									{creatingQuestionnaire ? (
-										<>
-											<svg
-												className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-												xmlns="http://www.w3.org/2000/svg"
-												fill="none"
-												viewBox="0 0 24 24"
-											>
-												<circle
-													className="opacity-25"
-													cx="12"
-													cy="12"
-													r="10"
-													stroke="currentColor"
-													strokeWidth="4"
-												></circle>
-												<path
-													className="opacity-75"
-													fill="currentColor"
-													d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-												></path>
-											</svg>
-											{t("common.processing") ||
-												"Procesando..."}
-										</>
-									) : (
-										t("topicDetail.create") || "Crear"
-									)}
-								</button>
-							</div>
-						</form>
-					</div>
-				</div>
-			)}
+			{/* Modal de confirmación para eliminar cuestionario */}
+			<ConfirmationModal
+				isOpen={showDeleteModal}
+				title={
+					t("confirmation.deleteQuestionnaire.title") ||
+					"Eliminar cuestionario"
+				}
+				message={
+					t("confirmation.deleteQuestionnaire.message") ||
+					"¿Estás seguro de que deseas eliminar este cuestionario? Esta acción no se puede deshacer."
+				}
+				confirmButtonText={t("common.delete") || "Eliminar"}
+				onConfirm={handleDeleteQuestionnaire}
+				onCancel={() => setShowDeleteModal(false)}
+				isLoading={deletingQuestionnaire}
+				isDanger={true}
+			/>
 		</div>
 	);
 };

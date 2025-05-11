@@ -160,19 +160,6 @@
 		"difficulty": "Difficulty",
 		"actions": "Actions",
 		"newQuestion": "New question",
-		"errorLoadingQuestions": "Error loading questions",
-		"questionnaires": "Questionnaires",
-		"newQuestionnaire": "New questionnaire",
-		"generate": "Generate",
-		"generateQuestionnaire": "Generate questionnaire",
-		"download": "Download",
-		"downloads": "Downloads",
-		"numQuestions": "Number of questions",
-		"create": "Create",
-		"searchQuestionnairesPlaceholder": "Search questionnaires...",
-		"noQuestionnairesFound": "No questionnaires found",
-		"errorLoadingQuestionnaires": "Error loading questionnaires",
-		"selectedQuestionsCount": "Selected questions: {{count}}",
-		"subtopicsList": "Subtopics list"
+		"errorLoadingQuestions": "Error loading questions"
 	}
 }

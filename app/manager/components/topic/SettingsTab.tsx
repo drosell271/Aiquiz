@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Topic, Subtopic } from "../../contexts/TopicContext";
+import { ConfirmationModal } from "../common";
 
 interface SettingsTabProps {
 	topic: Topic;
@@ -12,6 +13,7 @@ interface SettingsTabProps {
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
 	) => void;
 	onSaveChanges: () => void;
+	onDeleteSubtopic: (subtopicId: string) => void;
 	isLoading?: boolean;
 }
 
@@ -22,6 +24,7 @@ const SettingsTab = ({
 	onEditToggle,
 	onInputChange,
 	onSaveChanges,
+	onDeleteSubtopic,
 	isLoading = false,
 }: SettingsTabProps) => {
 	const { t } = useTranslation();
@@ -29,6 +32,9 @@ const SettingsTab = ({
 		null
 	);
 	const [editingSubtopicTitle, setEditingSubtopicTitle] = useState("");
+	const [showDeleteSubtopicModal, setShowDeleteSubtopicModal] =
+		useState(false);
+	const [subtopicToDelete, setSubtopicToDelete] = useState<string>("");
 
 	const handleStartEditSubtopic = (subtopic: Subtopic) => {
 		setEditingSubtopicId(subtopic.id);
@@ -45,6 +51,19 @@ const SettingsTab = ({
 	const handleCancelSubtopicEdit = () => {
 		setEditingSubtopicId(null);
 		setEditingSubtopicTitle("");
+	};
+
+	const confirmDeleteSubtopic = (subtopicId: string) => {
+		setSubtopicToDelete(subtopicId);
+		setShowDeleteSubtopicModal(true);
+	};
+
+	const handleDeleteSubtopic = () => {
+		if (subtopicToDelete) {
+			onDeleteSubtopic(subtopicToDelete);
+			setShowDeleteSubtopicModal(false);
+			setSubtopicToDelete("");
+		}
 	};
 
 	return (
@@ -256,6 +275,29 @@ const SettingsTab = ({
 															/>
 														</svg>
 													</button>
+													<button
+														className="text-red-500 hover:text-red-700 disabled:opacity-50"
+														onClick={() =>
+															confirmDeleteSubtopic(
+																subtopic.id
+															)
+														}
+														disabled={isLoading}
+													>
+														<svg
+															className="w-5 h-5"
+															fill="none"
+															stroke="currentColor"
+															viewBox="0 0 24 24"
+														>
+															<path
+																strokeLinecap="round"
+																strokeLinejoin="round"
+																strokeWidth="2"
+																d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+															/>
+														</svg>
+													</button>
 												</div>
 											)}
 										</div>
@@ -266,6 +308,23 @@ const SettingsTab = ({
 					</div>
 				</div>
 			</div>
+
+			{/* Modal de confirmación para eliminar subtema */}
+			<ConfirmationModal
+				isOpen={showDeleteSubtopicModal}
+				title={
+					t("confirmation.deleteSubtopic.title") || "Eliminar subtema"
+				}
+				message={
+					t("confirmation.deleteSubtopic.message") ||
+					"¿Estás seguro de que deseas eliminar este subtema? Esta acción no se puede deshacer."
+				}
+				confirmButtonText={t("common.delete") || "Eliminar"}
+				onConfirm={handleDeleteSubtopic}
+				onCancel={() => setShowDeleteSubtopicModal(false)}
+				isLoading={isLoading}
+				isDanger={true}
+			/>
 		</div>
 	);
 };

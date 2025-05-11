@@ -3,6 +3,12 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import useApiRequest from "../../hooks/useApiRequest";
 import SearchBar from "../subject/SearchBar";
+import { ConfirmationModal } from "../common";
+
+interface Choice {
+	text: string;
+	isCorrect: boolean;
+}
 
 interface Question {
 	id: string;
@@ -10,7 +16,10 @@ interface Question {
 	type: string;
 	difficulty: string;
 	createdAt: string;
+	choices?: Choice[];
 	selected?: boolean;
+	verified?: boolean;
+	rejected?: boolean;
 }
 
 interface QuestionsTabProps {
@@ -24,6 +33,10 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 	const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
 	const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
 	const [selectAll, setSelectAll] = useState(false);
+	const [showFormatOptions, setShowFormatOptions] = useState(false);
+	const [showQuestionDetails, setShowQuestionDetails] = useState<
+		string | null
+	>(null);
 
 	// Estado para modal de generación de cuestionario
 	const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -43,70 +56,133 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 		[
 			{
 				id: "q1",
-				text: "¿Cuál es la estructura básica de un documento HTML?",
+				text: "¿Cuál es la estructura básica de una URL?",
 				type: "Opción múltiple",
 				difficulty: "Fácil",
 				createdAt: "2023-11-15T10:00:00Z",
+				choices: [
+					{
+						text: "protocolo://dominio:puerto/ruta?parámetros#fragmento",
+						isCorrect: true,
+					},
+					{ text: "dominio.com/ruta", isCorrect: false },
+					{ text: "www.dominio.com", isCorrect: false },
+					{
+						text: "HTTP://www.dominio-ejemplo.com",
+						isCorrect: false,
+					},
+				],
 			},
 			{
 				id: "q2",
-				text: "¿Qué significa HTML?",
+				text: "¿Qué significa HTTP?",
 				type: "Opción múltiple",
 				difficulty: "Fácil",
 				createdAt: "2023-11-16T11:30:00Z",
+				choices: [
+					{ text: "Hypertext Transfer Protocol", isCorrect: true },
+					{ text: "Hyper Transfer Text Protocol", isCorrect: false },
+					{
+						text: "High-level Transfer Text Protocol",
+						isCorrect: false,
+					},
+					{ text: "Hypertext Text Processing", isCorrect: false },
+				],
 			},
 			{
 				id: "q3",
-				text: "Explica la diferencia entre etiquetas semánticas y no semánticas en HTML",
+				text: "Explica la diferencia entre los métodos HTTP GET y POST",
 				type: "Desarrollo",
 				difficulty: "Medio",
 				createdAt: "2023-11-18T14:20:00Z",
 			},
 			{
 				id: "q4",
-				text: "¿Cómo se crea un formulario en HTML?",
+				text: "¿Qué indican los códigos de respuesta HTTP que comienzan con 4xx?",
 				type: "Opción múltiple",
 				difficulty: "Medio",
 				createdAt: "2023-11-20T09:15:00Z",
+				choices: [
+					{ text: "Errores del cliente", isCorrect: true },
+					{ text: "Errores del servidor", isCorrect: false },
+					{ text: "Redirecciones", isCorrect: false },
+					{ text: "Respuestas informativas", isCorrect: false },
+				],
 			},
 			{
 				id: "q5",
-				text: "Explica el uso de la etiqueta 'meta' en HTML y sus atributos principales",
+				text: "Explica el propósito de la cabecera Cache-Control en HTTP",
 				type: "Desarrollo",
 				difficulty: "Avanzado",
 				createdAt: "2023-11-22T16:45:00Z",
 			},
 			{
 				id: "q6",
-				text: "¿Qué atributos son obligatorios en la etiqueta <img>?",
+				text: "¿Cuál de las siguientes cabeceras HTTP se usa para la autenticación?",
 				type: "Opción múltiple",
 				difficulty: "Medio",
 				createdAt: "2023-12-05T08:30:00Z",
+				choices: [
+					{ text: "Authorization", isCorrect: true },
+					{ text: "Accept", isCorrect: false },
+					{ text: "Host", isCorrect: false },
+					{ text: "Origin", isCorrect: false },
+				],
 			},
 			{
 				id: "q7",
-				text: "¿Cuál es la diferencia entre las etiquetas <div> y <span>?",
+				text: "¿Cuál es la diferencia entre un código de estado 301 y 302?",
 				type: "Opción múltiple",
 				difficulty: "Medio",
 				createdAt: "2023-12-10T14:20:00Z",
+				choices: [
+					{
+						text: "301 es redirección permanente, 302 es temporal",
+						isCorrect: true,
+					},
+					{
+						text: "301 es redirección temporal, 302 es permanente",
+						isCorrect: false,
+					},
+					{
+						text: "301 es para páginas no encontradas, 302 para redirecciones",
+						isCorrect: false,
+					},
+					{
+						text: "No hay diferencia, ambos son redirecciones",
+						isCorrect: false,
+					},
+				],
 			},
 			{
 				id: "q8",
-				text: "¿Cómo se crea una lista ordenada en HTML?",
+				text: "¿Qué información se incluye en la línea de solicitud de una petición HTTP?",
 				type: "Opción múltiple",
 				difficulty: "Fácil",
 				createdAt: "2023-12-15T11:45:00Z",
+				choices: [
+					{ text: "Método, URI y versión HTTP", isCorrect: true },
+					{
+						text: "Host, método y cuerpo del mensaje",
+						isCorrect: false,
+					},
+					{
+						text: "Versión HTTP, cabeceras y cuerpo",
+						isCorrect: false,
+					},
+					{ text: "URI, cabeceras y parámetros", isCorrect: false },
+				],
 			},
 			{
 				id: "q9",
-				text: "Explica la importancia de la accesibilidad web y cómo implementarla en HTML",
+				text: "Explica el concepto de idempotencia en métodos HTTP y menciona cuáles son idempotentes",
 				type: "Desarrollo",
 				difficulty: "Avanzado",
 				createdAt: "2024-01-05T10:15:00Z",
 			},
 			{
 				id: "q10",
-				text: "¿Qué son los elementos semánticos en HTML5 y cómo ayudan a la estructura del documento?",
+				text: "¿Qué es un token JWT y para qué se utiliza en aplicaciones web?",
 				type: "Desarrollo",
 				difficulty: "Medio",
 				createdAt: "2024-01-10T09:30:00Z",
@@ -135,11 +211,33 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 			false
 		);
 
+	// API para generar nuevas preguntas
+	const {
+		makeRequest: generateNewQuestions,
+		loading: generatingNewQuestions,
+	} = useApiRequest(
+		`/api/subjects/${subjectId}/topics/${topicId}/generate-questions`,
+		"POST",
+		null,
+		false
+	);
+
+	// API para verificar o rechazar preguntas
+	const { makeRequest: verifyQuestion, loading: verifyingQuestion } =
+		useApiRequest(
+			`/api/subjects/${subjectId}/topics/${topicId}/questions/verify`,
+			"POST",
+			null,
+			false
+		);
+
 	useEffect(() => {
 		if (questionsData) {
 			const questionsWithSelected = questionsData.map((q: Question) => ({
 				...q,
 				selected: selectedQuestions.includes(q.id),
+				verified: false,
+				rejected: false,
 			}));
 			setQuestions(questionsWithSelected);
 			setFilteredQuestions(questionsWithSelected);
@@ -183,6 +281,39 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 		}
 	};
 
+	const handleToggleDetails = (id: string) => {
+		setShowQuestionDetails(showQuestionDetails === id ? null : id);
+	};
+
+	const handleVerifyQuestion = async (id: string, isValid: boolean) => {
+		try {
+			// Llamada a la API para verificar/rechazar pregunta
+			await verifyQuestion({
+				questionId: id,
+				isValid,
+			});
+
+			// Actualizar estado local
+			setQuestions(
+				questions.map((q) =>
+					q.id === id
+						? { ...q, verified: isValid, rejected: !isValid }
+						: q
+				)
+			);
+
+			setFilteredQuestions(
+				filteredQuestions.map((q) =>
+					q.id === id
+						? { ...q, verified: isValid, rejected: !isValid }
+						: q
+				)
+			);
+		} catch (error) {
+			console.error("Error al verificar pregunta:", error);
+		}
+	};
+
 	const handleGenerateQuestionnaire = async () => {
 		if (selectedQuestions.length === 0 || !generationTitle.trim()) return;
 
@@ -221,9 +352,25 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 				`Descargando ${selectedQuestions.length} preguntas en formato ${format}`
 			);
 
-			// En producción, aquí se procesaría la respuesta para descargar el archivo
+			// Cerrar menú desplegable
+			setShowFormatOptions(false);
 		} catch (error) {
 			console.error("Error al descargar preguntas:", error);
+		}
+	};
+
+	const handleGenerateNewQuestions = async () => {
+		try {
+			const response = await generateNewQuestions({
+				count: 5, // Número predeterminado de preguntas nuevas
+			});
+
+			if (response.success && response.questions) {
+				// Actualizar con las nuevas preguntas
+				await fetchQuestions();
+			}
+		} catch (error) {
+			console.error("Error al generar nuevas preguntas:", error);
 		}
 	};
 
@@ -241,9 +388,12 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 				<div className="flex space-x-2">
 					{selectedQuestions.length > 0 && (
 						<>
-							<div className="relative inline-block text-left">
+							<div className="relative">
 								<button
 									className="bg-blue-600 text-white py-2 px-4 rounded-md flex items-center"
+									onClick={() =>
+										setShowFormatOptions(!showFormatOptions)
+									}
 									disabled={loading}
 								>
 									<svg
@@ -261,7 +411,11 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 									</svg>
 									{t("topicDetail.download") || "Descargar"}
 									<svg
-										className="w-4 h-4 ml-1"
+										className={`w-4 h-4 ml-1 transition-transform ${
+											showFormatOptions
+												? "rotate-180"
+												: ""
+										}`}
 										fill="none"
 										stroke="currentColor"
 										viewBox="0 0 24 24"
@@ -274,8 +428,8 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 										/>
 									</svg>
 								</button>
-								<div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10 hidden group-hover:block">
-									<div className="py-1">
+								{showFormatOptions && (
+									<div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
 										<button
 											onClick={() =>
 												handleDownloadQuestions("pdf")
@@ -297,7 +451,7 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 											Moodle XML
 										</button>
 									</div>
-								</div>
+								)}
 							</div>
 
 							<button
@@ -323,6 +477,56 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 							</button>
 						</>
 					)}
+
+					<button
+						onClick={handleGenerateNewQuestions}
+						className="bg-indigo-600 text-white py-2 px-4 rounded-md flex items-center"
+						disabled={generatingNewQuestions}
+					>
+						{generatingNewQuestions ? (
+							<>
+								<svg
+									className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+									xmlns="http://www.w3.org/2000/svg"
+									fill="none"
+									viewBox="0 0 24 24"
+								>
+									<circle
+										className="opacity-25"
+										cx="12"
+										cy="12"
+										r="10"
+										stroke="currentColor"
+										strokeWidth="4"
+									></circle>
+									<path
+										className="opacity-75"
+										fill="currentColor"
+										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+									></path>
+								</svg>
+								{t("common.processing")}
+							</>
+						) : (
+							<>
+								<svg
+									className="w-5 h-5 mr-1"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth="2"
+										d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+									/>
+								</svg>
+								{t("topicDetail.generateNewQuestions") ||
+									"Generar nuevas"}
+							</>
+						)}
+					</button>
 				</div>
 			</div>
 
@@ -344,106 +548,323 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 						</p>
 					</div>
 				) : (
-					<table className="min-w-full divide-y divide-gray-200">
-						<thead className="bg-gray-50">
-							<tr>
-								<th
-									scope="col"
-									className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-								>
-									<div className="flex items-center">
-										<input
-											type="checkbox"
-											className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-											checked={selectAll}
-											onChange={handleSelectAll}
-										/>
-									</div>
-								</th>
-								<th
-									scope="col"
-									className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-								>
-									{t("topicDetail.questionText") ||
-										"Pregunta"}
-								</th>
-								<th
-									scope="col"
-									className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-								>
-									{t("topicDetail.type") || "Tipo"}
-								</th>
-								<th
-									scope="col"
-									className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-								>
-									{t("topicDetail.difficulty") ||
-										"Dificultad"}
-								</th>
-								<th
-									scope="col"
-									className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-								>
-									{t("topicDetail.createdAt") ||
-										"Fecha de creación"}
-								</th>
-							</tr>
-						</thead>
-						<tbody className="bg-white divide-y divide-gray-200">
-							{filteredQuestions.map((question) => (
-								<tr
-									key={question.id}
-									className={`hover:bg-gray-50 ${
-										selectedQuestions.includes(question.id)
-											? "bg-blue-50"
-											: ""
-									}`}
-								>
-									<td className="px-6 py-4 whitespace-nowrap">
+					<div className="overflow-hidden">
+						<table className="min-w-full divide-y divide-gray-200">
+							<thead className="bg-gray-50">
+								<tr>
+									<th
+										scope="col"
+										className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
 										<div className="flex items-center">
 											<input
 												type="checkbox"
 												className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-												checked={selectedQuestions.includes(
-													question.id
-												)}
-												onChange={() =>
-													handleSelectQuestion(
-														question.id
-													)
-												}
+												checked={selectAll}
+												onChange={handleSelectAll}
 											/>
 										</div>
-									</td>
-									<td className="px-6 py-4 text-sm font-medium text-gray-900 max-w-md truncate">
-										{question.text}
-									</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-										{question.type}
-									</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-										<span
-											className={`px-2 py-1 rounded-full text-xs font-medium ${
-												question.difficulty === "Fácil"
-													? "bg-green-100 text-green-800"
-													: question.difficulty ===
-													  "Medio"
-													? "bg-yellow-100 text-yellow-800"
-													: "bg-red-100 text-red-800"
+									</th>
+									<th
+										scope="col"
+										className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
+										{t("topicDetail.questionText") ||
+											"Pregunta"}
+									</th>
+									<th
+										scope="col"
+										className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
+										{t("topicDetail.type") || "Tipo"}
+									</th>
+									<th
+										scope="col"
+										className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
+										{t("topicDetail.difficulty") ||
+											"Dificultad"}
+									</th>
+									<th
+										scope="col"
+										className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
+										{t("topicDetail.actions") || "Acciones"}
+									</th>
+								</tr>
+							</thead>
+							<tbody className="bg-white divide-y divide-gray-200">
+								{filteredQuestions.map((question) => (
+									<>
+										<tr
+											key={question.id}
+											className={`hover:bg-gray-50 ${
+												selectedQuestions.includes(
+													question.id
+												)
+													? "bg-blue-50"
+													: ""
+											} ${
+												question.verified
+													? "bg-green-50"
+													: question.rejected
+													? "bg-red-50"
+													: ""
 											}`}
 										>
-											{question.difficulty}
-										</span>
-									</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-										{new Date(
-											question.createdAt
-										).toLocaleDateString()}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
+											<td className="px-6 py-4 whitespace-nowrap">
+												<div className="flex items-center">
+													<input
+														type="checkbox"
+														className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+														checked={selectedQuestions.includes(
+															question.id
+														)}
+														onChange={() =>
+															handleSelectQuestion(
+																question.id
+															)
+														}
+													/>
+												</div>
+											</td>
+											<td className="px-6 py-4 text-sm font-medium text-gray-900 max-w-md">
+												<button
+													className="text-left hover:text-blue-600 focus:outline-none w-full overflow-ellipsis overflow-hidden"
+													onClick={() =>
+														handleToggleDetails(
+															question.id
+														)
+													}
+												>
+													{question.text}
+													{showQuestionDetails ===
+													question.id ? (
+														<svg
+															className="w-4 h-4 ml-1 inline-block"
+															fill="none"
+															stroke="currentColor"
+															viewBox="0 0 24 24"
+														>
+															<path
+																strokeLinecap="round"
+																strokeLinejoin="round"
+																strokeWidth="2"
+																d="M5 15l7-7 7 7"
+															/>
+														</svg>
+													) : (
+														<svg
+															className="w-4 h-4 ml-1 inline-block"
+															fill="none"
+															stroke="currentColor"
+															viewBox="0 0 24 24"
+														>
+															<path
+																strokeLinecap="round"
+																strokeLinejoin="round"
+																strokeWidth="2"
+																d="M19 9l-7 7-7-7"
+															/>
+														</svg>
+													)}
+												</button>
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+												{question.type}
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+												<span
+													className={`px-2 py-1 rounded-full text-xs font-medium ${
+														question.difficulty ===
+														"Fácil"
+															? "bg-green-100 text-green-800"
+															: question.difficulty ===
+															  "Medio"
+															? "bg-yellow-100 text-yellow-800"
+															: "bg-red-100 text-red-800"
+													}`}
+												>
+													{question.difficulty}
+												</span>
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+												<div className="flex justify-center space-x-2">
+													<button
+														onClick={() =>
+															handleVerifyQuestion(
+																question.id,
+																true
+															)
+														}
+														disabled={
+															question.verified ||
+															question.rejected
+														}
+														className={`p-1 rounded-full ${
+															question.verified
+																? "bg-green-100 text-green-700"
+																: "hover:bg-green-100 text-gray-500 hover:text-green-700"
+														}`}
+														title={
+															t(
+																"topicDetail.verify"
+															) || "Verificar"
+														}
+													>
+														<svg
+															className="w-6 h-6"
+															fill="none"
+															stroke="currentColor"
+															viewBox="0 0 24 24"
+														>
+															<path
+																strokeLinecap="round"
+																strokeLinejoin="round"
+																strokeWidth="2"
+																d="M5 13l4 4L19 7"
+															/>
+														</svg>
+													</button>
+													<button
+														onClick={() =>
+															handleVerifyQuestion(
+																question.id,
+																false
+															)
+														}
+														disabled={
+															question.verified ||
+															question.rejected
+														}
+														className={`p-1 rounded-full ${
+															question.rejected
+																? "bg-red-100 text-red-700"
+																: "hover:bg-red-100 text-gray-500 hover:text-red-700"
+														}`}
+														title={
+															t(
+																"topicDetail.reject"
+															) || "Rechazar"
+														}
+													>
+														<svg
+															className="w-6 h-6"
+															fill="none"
+															stroke="currentColor"
+															viewBox="0 0 24 24"
+														>
+															<path
+																strokeLinecap="round"
+																strokeLinejoin="round"
+																strokeWidth="2"
+																d="M6 18L18 6M6 6l12 12"
+															/>
+														</svg>
+													</button>
+												</div>
+											</td>
+										</tr>
+										{showQuestionDetails ===
+											question.id && (
+											<tr className="bg-gray-50">
+												<td
+													colSpan={5}
+													className="px-6 py-4"
+												>
+													<div className="text-sm text-gray-800">
+														{question.type ===
+															"Opción múltiple" &&
+														question.choices ? (
+															<div className="space-y-2">
+																<h4 className="font-medium">
+																	Opciones:
+																</h4>
+																<ul className="ml-4 space-y-1">
+																	{question.choices.map(
+																		(
+																			choice,
+																			index
+																		) => (
+																			<li
+																				key={
+																					index
+																				}
+																				className={`flex items-start ${
+																					choice.isCorrect
+																						? "text-green-700 font-medium"
+																						: ""
+																				}`}
+																			>
+																				<span
+																					className={`mr-2 ${
+																						choice.isCorrect
+																							? "text-green-600"
+																							: "text-gray-400"
+																					}`}
+																				>
+																					{choice.isCorrect ? (
+																						<svg
+																							className="w-5 h-5"
+																							fill="none"
+																							stroke="currentColor"
+																							viewBox="0 0 24 24"
+																						>
+																							<path
+																								strokeLinecap="round"
+																								strokeLinejoin="round"
+																								strokeWidth="2"
+																								d="M5 13l4 4L19 7"
+																							/>
+																						</svg>
+																					) : (
+																						<svg
+																							className="w-5 h-5"
+																							fill="none"
+																							stroke="currentColor"
+																							viewBox="0 0 24 24"
+																						>
+																							<path
+																								strokeLinecap="round"
+																								strokeLinejoin="round"
+																								strokeWidth="2"
+																								d="M6 18L18 6M6 6l12 12"
+																							/>
+																						</svg>
+																					)}
+																				</span>
+																				{
+																					choice.text
+																				}
+																			</li>
+																		)
+																	)}
+																</ul>
+															</div>
+														) : (
+															<div>
+																<h4 className="font-medium mb-2">
+																	Pregunta de
+																	desarrollo
+																</h4>
+																<p className="italic text-gray-600">
+																	Esta
+																	pregunta
+																	requiere una
+																	respuesta
+																	escrita.
+																</p>
+															</div>
+														)}
+													</div>
+												</td>
+											</tr>
+										)}
+									</>
+								))}
+							</tbody>
+						</table>
+					</div>
 				)}
 			</div>
 
@@ -542,7 +963,8 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 									type="submit"
 									disabled={
 										generatingQuestionnaire ||
-										!generationTitle.trim()
+										!generationTitle.trim() ||
+										selectedQuestions.length === 0
 									}
 									className="px-4 py-2 bg-green-600 text-white rounded-md disabled:opacity-50 flex items-center"
 								>
