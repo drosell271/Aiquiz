@@ -5,6 +5,70 @@ import useApiRequest from "../../hooks/useApiRequest";
 import SearchBar from "../subject/SearchBar";
 import { ConfirmationModal } from "../common";
 
+type StatusFilter = "all" | "unverified" | "verified" | "rejected";
+
+interface QuestionStatusFilterProps {
+	currentFilter: StatusFilter;
+	onFilterChange: (filter: StatusFilter) => void;
+}
+
+const QuestionStatusFilter = ({
+	currentFilter,
+	onFilterChange,
+}: QuestionStatusFilterProps) => {
+	const { t } = useTranslation();
+
+	return (
+		<div className="flex space-x-2 items-center">
+			<span className="text-sm font-medium text-gray-700">
+				{t("topicDetail.filterByStatus") || "Filtrar por estado:"}
+			</span>
+			<div className="bg-white border border-gray-300 rounded-md flex divide-x">
+				<button
+					className={`px-3 py-1 text-sm ${
+						currentFilter === "unverified"
+							? "bg-gray-100 text-gray-900 font-medium"
+							: "text-gray-700 hover:bg-gray-50"
+					}`}
+					onClick={() => onFilterChange("unverified")}
+				>
+					{t("topicDetail.unverified") || "No verificadas"}
+				</button>
+				<button
+					className={`px-3 py-1 text-sm ${
+						currentFilter === "verified"
+							? "bg-gray-100 text-gray-900 font-medium"
+							: "text-gray-700 hover:bg-gray-50"
+					}`}
+					onClick={() => onFilterChange("verified")}
+				>
+					{t("topicDetail.verified") || "Verificadas"}
+				</button>
+				<button
+					className={`px-3 py-1 text-sm ${
+						currentFilter === "rejected"
+							? "bg-gray-100 text-gray-900 font-medium"
+							: "text-gray-700 hover:bg-gray-50"
+					}`}
+					onClick={() => onFilterChange("rejected")}
+				>
+					{t("topicDetail.rejected") || "Rechazadas"}
+				</button>
+				<button
+					className={`px-3 py-1 text-sm ${
+						currentFilter === "all"
+							? "bg-gray-100 text-gray-900 font-medium"
+							: "text-gray-700 hover:bg-gray-50"
+					}`}
+					onClick={() => onFilterChange("all")}
+				>
+					{t("topicDetail.allQuestions") || "Todas"}
+				</button>
+			</div>
+		</div>
+	);
+};
+
 interface Choice {
 	text: string;
 	isCorrect: boolean;
@@ -37,8 +101,12 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 	const [showQuestionDetails, setShowQuestionDetails] = useState<
 		string | null
 	>(null);
+	const [expandAllQuestions, setExpandAllQuestions] = useState(false);
+	const [statusFilter, setStatusFilter] =
+		useState<StatusFilter>("unverified");
+	const [searchQuery, setSearchQuery] = useState("");
 
-	// Estado para modal de generación de cuestionario
+	// Modal para generar cuestionario
 	const [showGenerateModal, setShowGenerateModal] = useState(false);
 	const [generationTitle, setGenerationTitle] = useState("");
 	const [generationDescription, setGenerationDescription] = useState("");
@@ -60,6 +128,8 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 				type: "Opción múltiple",
 				difficulty: "Fácil",
 				createdAt: "2023-11-15T10:00:00Z",
+				verified: false,
+				rejected: false,
 				choices: [
 					{
 						text: "protocolo://dominio:puerto/ruta?parámetros#fragmento",
@@ -79,6 +149,8 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 				type: "Opción múltiple",
 				difficulty: "Fácil",
 				createdAt: "2023-11-16T11:30:00Z",
+				verified: true,
+				rejected: false,
 				choices: [
 					{ text: "Hypertext Transfer Protocol", isCorrect: true },
 					{ text: "Hyper Transfer Text Protocol", isCorrect: false },
@@ -92,9 +164,29 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 			{
 				id: "q3",
 				text: "Explica la diferencia entre los métodos HTTP GET y POST",
-				type: "Desarrollo",
+				type: "Opción múltiple",
 				difficulty: "Medio",
 				createdAt: "2023-11-18T14:20:00Z",
+				verified: false,
+				rejected: true,
+				choices: [
+					{
+						text: "GET envía datos en la URL, POST en el cuerpo del mensaje",
+						isCorrect: true,
+					},
+					{
+						text: "GET no tiene limitación de tamaño, POST sí",
+						isCorrect: false,
+					},
+					{
+						text: "GET es más seguro que POST para datos sensibles",
+						isCorrect: false,
+					},
+					{
+						text: "No hay diferencia, ambos envían datos al servidor",
+						isCorrect: false,
+					},
+				],
 			},
 			{
 				id: "q4",
@@ -102,6 +194,8 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 				type: "Opción múltiple",
 				difficulty: "Medio",
 				createdAt: "2023-11-20T09:15:00Z",
+				verified: false,
+				rejected: false,
 				choices: [
 					{ text: "Errores del cliente", isCorrect: true },
 					{ text: "Errores del servidor", isCorrect: false },
@@ -112,9 +206,29 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 			{
 				id: "q5",
 				text: "Explica el propósito de la cabecera Cache-Control en HTTP",
-				type: "Desarrollo",
+				type: "Opción múltiple",
 				difficulty: "Avanzado",
 				createdAt: "2023-11-22T16:45:00Z",
+				verified: true,
+				rejected: false,
+				choices: [
+					{
+						text: "Especifica directivas para mecanismos de caché en solicitudes y respuestas",
+						isCorrect: true,
+					},
+					{
+						text: "Controla el tiempo de vida de una conexión HTTP",
+						isCorrect: false,
+					},
+					{
+						text: "Define reglas de compresión para el contenido",
+						isCorrect: false,
+					},
+					{
+						text: "Establece prioridades de carga de recursos",
+						isCorrect: false,
+					},
+				],
 			},
 			{
 				id: "q6",
@@ -122,6 +236,8 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 				type: "Opción múltiple",
 				difficulty: "Medio",
 				createdAt: "2023-12-05T08:30:00Z",
+				verified: false,
+				rejected: false,
 				choices: [
 					{ text: "Authorization", isCorrect: true },
 					{ text: "Accept", isCorrect: false },
@@ -135,6 +251,8 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 				type: "Opción múltiple",
 				difficulty: "Medio",
 				createdAt: "2023-12-10T14:20:00Z",
+				verified: false,
+				rejected: false,
 				choices: [
 					{
 						text: "301 es redirección permanente, 302 es temporal",
@@ -160,6 +278,8 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 				type: "Opción múltiple",
 				difficulty: "Fácil",
 				createdAt: "2023-12-15T11:45:00Z",
+				verified: false,
+				rejected: false,
 				choices: [
 					{ text: "Método, URI y versión HTTP", isCorrect: true },
 					{
@@ -176,16 +296,56 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 			{
 				id: "q9",
 				text: "Explica el concepto de idempotencia en métodos HTTP y menciona cuáles son idempotentes",
-				type: "Desarrollo",
+				type: "Opción múltiple",
 				difficulty: "Avanzado",
 				createdAt: "2024-01-05T10:15:00Z",
+				verified: false,
+				rejected: false,
+				choices: [
+					{
+						text: "GET, PUT, DELETE son idempotentes; POST no lo es",
+						isCorrect: true,
+					},
+					{
+						text: "POST, PUT, DELETE son idempotentes; GET no lo es",
+						isCorrect: false,
+					},
+					{
+						text: "Solo GET y HEAD son idempotentes",
+						isCorrect: false,
+					},
+					{
+						text: "Todos los métodos HTTP son idempotentes",
+						isCorrect: false,
+					},
+				],
 			},
 			{
 				id: "q10",
 				text: "¿Qué es un token JWT y para qué se utiliza en aplicaciones web?",
-				type: "Desarrollo",
+				type: "Opción múltiple",
 				difficulty: "Medio",
 				createdAt: "2024-01-10T09:30:00Z",
+				verified: true,
+				rejected: false,
+				choices: [
+					{
+						text: "Un formato compacto para transmitir información de forma segura entre partes como un objeto JSON",
+						isCorrect: true,
+					},
+					{
+						text: "Un protocolo para encriptar datos en tránsito",
+						isCorrect: false,
+					},
+					{
+						text: "Un tipo de cookie HTTP para almacenar sesiones",
+						isCorrect: false,
+					},
+					{
+						text: "Un método de compresión para transferir datos JSON",
+						isCorrect: false,
+					},
+				],
 			},
 		],
 		true
@@ -236,28 +396,56 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 			const questionsWithSelected = questionsData.map((q: Question) => ({
 				...q,
 				selected: selectedQuestions.includes(q.id),
-				verified: false,
-				rejected: false,
+				verified: q.verified !== undefined ? q.verified : false,
+				rejected: q.rejected !== undefined ? q.rejected : false,
 			}));
 			setQuestions(questionsWithSelected);
-			setFilteredQuestions(questionsWithSelected);
+			applyFilters(questionsWithSelected, searchQuery, statusFilter);
 		}
 	}, [questionsData, selectedQuestions]);
 
-	const handleSearch = (query: string) => {
-		if (!query) {
-			setFilteredQuestions(questions);
-			return;
+	// Aplica filtros por estado y búsqueda
+	const applyFilters = (
+		questionsList: Question[],
+		query: string,
+		filter: StatusFilter
+	) => {
+		let filtered = [...questionsList];
+
+		// Filtrar por estado
+		if (filter !== "all") {
+			if (filter === "unverified") {
+				filtered = filtered.filter((q) => !q.verified && !q.rejected);
+			} else if (filter === "verified") {
+				filtered = filtered.filter((q) => q.verified);
+			} else if (filter === "rejected") {
+				filtered = filtered.filter((q) => q.rejected);
+			}
 		}
 
-		const filtered = questions.filter(
-			(question) =>
-				question.text.toLowerCase().includes(query.toLowerCase()) ||
-				question.type.toLowerCase().includes(query.toLowerCase()) ||
-				question.difficulty.toLowerCase().includes(query.toLowerCase())
-		);
+		// Filtrar por búsqueda
+		if (query) {
+			filtered = filtered.filter(
+				(question) =>
+					question.text.toLowerCase().includes(query.toLowerCase()) ||
+					question.type.toLowerCase().includes(query.toLowerCase()) ||
+					question.difficulty
+						.toLowerCase()
+						.includes(query.toLowerCase())
+			);
+		}
 
 		setFilteredQuestions(filtered);
+	};
+
+	const handleSearch = (query: string) => {
+		setSearchQuery(query);
+		applyFilters(questions, query, statusFilter);
+	};
+
+	const handleStatusFilterChange = (filter: StatusFilter) => {
+		setStatusFilter(filter);
+		applyFilters(questions, searchQuery, filter);
 	};
 
 	const handleSelectQuestion = (id: string) => {
@@ -281,7 +469,12 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 		}
 	};
 
+	const toggleExpandAllQuestions = () => {
+		setExpandAllQuestions(!expandAllQuestions);
+	};
+
 	const handleToggleDetails = (id: string) => {
+		if (expandAllQuestions) return;
 		setShowQuestionDetails(showQuestionDetails === id ? null : id);
 	};
 
@@ -294,33 +487,29 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 			});
 
 			// Actualizar estado local
-			setQuestions(
-				questions.map((q) =>
-					q.id === id
-						? { ...q, verified: isValid, rejected: !isValid }
-						: q
-				)
+			const updatedQuestions = questions.map((q) =>
+				q.id === id
+					? { ...q, verified: isValid, rejected: !isValid }
+					: q
 			);
 
-			setFilteredQuestions(
-				filteredQuestions.map((q) =>
-					q.id === id
-						? { ...q, verified: isValid, rejected: !isValid }
-						: q
-				)
-			);
+			setQuestions(updatedQuestions);
+			applyFilters(updatedQuestions, searchQuery, statusFilter);
 		} catch (error) {
 			console.error("Error al verificar pregunta:", error);
 		}
 	};
 
-	const handleGenerateQuestionnaire = async () => {
-		if (selectedQuestions.length === 0 || !generationTitle.trim()) return;
+	const handleGenerateQuestionnaire = async (
+		title: string,
+		description: string
+	) => {
+		if (selectedQuestions.length === 0 || !title.trim()) return;
 
 		try {
 			const response = await generateQuestionnaire({
-				title: generationTitle,
-				description: generationDescription,
+				title: title,
+				description: description,
 				questionIds: selectedQuestions,
 			});
 
@@ -377,13 +566,15 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 	return (
 		<div>
 			<div className="flex items-center justify-between mb-4">
-				<SearchBar
-					placeholder={
-						t("topicDetail.searchQuestionsPlaceholder") ||
-						"Buscar preguntas..."
-					}
-					onSearch={handleSearch}
-				/>
+				<div className="flex-1">
+					<SearchBar
+						placeholder={
+							t("topicDetail.searchQuestionsPlaceholder") ||
+							"Buscar preguntas..."
+						}
+						onSearch={handleSearch}
+					/>
+				</div>
 
 				<div className="flex space-x-2">
 					{selectedQuestions.length > 0 && (
@@ -530,6 +721,45 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 				</div>
 			</div>
 
+			{/* Filtros y controles */}
+			<div className="flex justify-between items-center mb-4">
+				<QuestionStatusFilter
+					currentFilter={statusFilter}
+					onFilterChange={handleStatusFilterChange}
+				/>
+
+				<button
+					onClick={toggleExpandAllQuestions}
+					className="flex items-center text-gray-700 hover:text-blue-600"
+				>
+					<svg
+						className="w-5 h-5 mr-1"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						{expandAllQuestions ? (
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth="2"
+								d="M5 15l7-7 7 7"
+							/>
+						) : (
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth="2"
+								d="M19 9l-7 7-7-7"
+							/>
+						)}
+					</svg>
+					{expandAllQuestions
+						? t("topicDetail.collapseAll") || "Contraer todas"
+						: t("topicDetail.expandAll") || "Expandir todas"}
+				</button>
+			</div>
+
 			<div className="bg-white shadow overflow-hidden rounded-md">
 				{loading ? (
 					<div className="flex justify-center my-8">
@@ -589,6 +819,12 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 										scope="col"
 										className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
 									>
+										{t("topicDetail.status") || "Estado"}
+									</th>
+									<th
+										scope="col"
+										className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+									>
 										{t("topicDetail.actions") || "Acciones"}
 									</th>
 								</tr>
@@ -638,34 +874,29 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 													}
 												>
 													{question.text}
-													{showQuestionDetails ===
-													question.id ? (
+													{!expandAllQuestions && (
 														<svg
 															className="w-4 h-4 ml-1 inline-block"
 															fill="none"
 															stroke="currentColor"
 															viewBox="0 0 24 24"
 														>
-															<path
-																strokeLinecap="round"
-																strokeLinejoin="round"
-																strokeWidth="2"
-																d="M5 15l7-7 7 7"
-															/>
-														</svg>
-													) : (
-														<svg
-															className="w-4 h-4 ml-1 inline-block"
-															fill="none"
-															stroke="currentColor"
-															viewBox="0 0 24 24"
-														>
-															<path
-																strokeLinecap="round"
-																strokeLinejoin="round"
-																strokeWidth="2"
-																d="M19 9l-7 7-7-7"
-															/>
+															{showQuestionDetails ===
+															question.id ? (
+																<path
+																	strokeLinecap="round"
+																	strokeLinejoin="round"
+																	strokeWidth="2"
+																	d="M5 15l7-7 7 7"
+																/>
+															) : (
+																<path
+																	strokeLinecap="round"
+																	strokeLinejoin="round"
+																	strokeWidth="2"
+																	d="M19 9l-7 7-7-7"
+																/>
+															)}
 														</svg>
 													)}
 												</button>
@@ -686,6 +917,29 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 													}`}
 												>
 													{question.difficulty}
+												</span>
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+												<span
+													className={`px-2 py-1 rounded-full text-xs font-medium ${
+														question.verified
+															? "bg-green-100 text-green-800"
+															: question.rejected
+															? "bg-red-100 text-red-800"
+															: "bg-gray-100 text-gray-800"
+													}`}
+												>
+													{question.verified
+														? t(
+																"topicDetail.verified"
+														  ) || "Verificada"
+														: question.rejected
+														? t(
+																"topicDetail.rejected"
+														  ) || "Rechazada"
+														: t(
+																"topicDetail.unverified"
+														  ) || "No verificada"}
 												</span>
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
@@ -765,17 +1019,16 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 												</div>
 											</td>
 										</tr>
-										{showQuestionDetails ===
-											question.id && (
+										{(expandAllQuestions ||
+											showQuestionDetails ===
+												question.id) && (
 											<tr className="bg-gray-50">
 												<td
-													colSpan={5}
+													colSpan={6}
 													className="px-6 py-4"
 												>
 													<div className="text-sm text-gray-800">
-														{question.type ===
-															"Opción múltiple" &&
-														question.choices ? (
+														{question.choices ? (
 															<div className="space-y-2">
 																<h4 className="font-medium">
 																	Opciones:
@@ -845,15 +1098,10 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 															<div>
 																<h4 className="font-medium mb-2">
 																	Pregunta de
-																	desarrollo
+																	tipo test
+																	sin opciones
+																	definidas
 																</h4>
-																<p className="italic text-gray-600">
-																	Esta
-																	pregunta
-																	requiere una
-																	respuesta
-																	escrita.
-																</p>
 															</div>
 														)}
 													</div>
@@ -908,7 +1156,10 @@ const QuestionsTab = ({ topicId, subjectId }: QuestionsTabProps) => {
 						<form
 							onSubmit={(e) => {
 								e.preventDefault();
-								handleGenerateQuestionnaire();
+								handleGenerateQuestionnaire(
+									generationTitle,
+									generationDescription
+								);
 							}}
 						>
 							<div className="mb-4">

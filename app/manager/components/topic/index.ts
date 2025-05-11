@@ -6,6 +6,7 @@ import AddSubtopicModal from "./AddSubtopicModal";
 import EditSubtopicModal from "./EditSubtopicModal";
 import QuestionnaireTab from "./QuestionnarieTab";
 import SettingsTab from "./SettingsTab";
+import QuestionStatusFilter from "./QuestionStatusFilter";
 
 export {
 	SubtopicsTab,
@@ -15,4 +16,5 @@ export {
 	EditSubtopicModal,
 	QuestionnaireTab,
 	SettingsTab,
+	QuestionStatusFilter,
 };

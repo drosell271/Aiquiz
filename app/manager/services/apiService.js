@@ -5,7 +5,7 @@
 import subjectsData from "../data/subjects.json";
 import subjectDetailsData from "../data/subject-details.json";
 import topicDetailsData from "../data/topic-details.json";
-import questionsHttpData from "../data/questions-http.json";
+import questionsHttpStatusData from "../data/questions-http-status.json"; // Nuevo archivo para preguntas con estado
 import questionnairesHttpData from "../data/questionnaires-http.json";
 
 class ApiService {
@@ -34,7 +34,7 @@ class ApiService {
 			subjects: subjectsData,
 			subjectDetails: subjectDetailsData,
 			topicDetails: topicDetailsData,
-			questionsHttp: questionsHttpData,
+			questionsHttp: questionsHttpStatusData, // Usar el nuevo archivo con estados
 			questionnairesHttp: questionnairesHttpData,
 		};
 
@@ -371,6 +371,43 @@ class ApiService {
 				};
 			}
 
+			// POST /api/subjects/:id/topics/:topicId/questions/verify
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/questions\/verify$/
+				) &&
+				method === "POST"
+			) {
+				// En datos del cliente debería llegar questionId e isValid
+				const { questionId, isValid } = data;
+
+				// En una implementación real, aquí se actualizaría la base de datos
+				// En nuestra simulación, actualizamos los datos en memoria
+				// Esto solo persiste durante la sesión actual
+				if (this.mockData.questionsHttp) {
+					const questionIndex = this.mockData.questionsHttp.findIndex(
+						(q) => q.id === questionId
+					);
+
+					if (questionIndex >= 0) {
+						this.mockData.questionsHttp[questionIndex].verified =
+							isValid;
+						this.mockData.questionsHttp[questionIndex].rejected =
+							!isValid;
+					}
+				}
+
+				return {
+					success: true,
+					questionId,
+					verified: isValid,
+					rejected: !isValid,
+					message: isValid
+						? "Pregunta verificada correctamente"
+						: "Pregunta rechazada correctamente",
+				};
+			}
+
 			// DELETE /api/subjects/:id/topics/:topicId/questions/:questionId
 			if (
 				endpoint.match(
@@ -515,6 +552,57 @@ class ApiService {
 				return {
 					success: true,
 					message: "Subtema eliminado correctamente",
+				};
+			}
+
+			// === GENERACIÓN DE NUEVAS PREGUNTAS ===
+			// POST /api/subjects/:id/topics/:topicId/generate-questions
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/generate-questions$/
+				) &&
+				method === "POST"
+			) {
+				// Generar nuevas preguntas simuladas
+				const count = data?.count || 5;
+				const newQuestions = Array.from(
+					{ length: count },
+					(_, index) => ({
+						id: `question-new-${Date.now()}-${index}`,
+						text: `Nueva pregunta generada #${
+							index + 1
+						} sobre HTTP`,
+						type: "Opción múltiple",
+						difficulty: ["Fácil", "Medio", "Avanzado"][
+							Math.floor(Math.random() * 3)
+						],
+						createdAt: new Date().toISOString(),
+						verified: false,
+						rejected: false,
+						choices: [
+							{
+								text: "Opción correcta generada",
+								isCorrect: true,
+							},
+							{ text: "Opción incorrecta 1", isCorrect: false },
+							{ text: "Opción incorrecta 2", isCorrect: false },
+							{ text: "Opción incorrecta 3", isCorrect: false },
+						],
+					})
+				);
+
+				// Añadir las nuevas preguntas a nuestra colección simulada
+				if (this.mockData.questionsHttp) {
+					this.mockData.questionsHttp = [
+						...newQuestions,
+						...this.mockData.questionsHttp,
+					];
+				}
+
+				return {
+					success: true,
+					questions: newQuestions,
+					message: `${count} preguntas generadas correctamente`,
 				};
 			}
 
