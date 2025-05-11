@@ -1,0 +1,149 @@
+{
+	"id": "d4735e3a-5caa-4bd7-9db8-c40f4c8a3480",
+	"title": "Estructura básica de un documento HTML",
+	"description": "Un documento HTML básico consiste en una estructura jerárquica de elementos que definen el contenido y su presentación.",
+	"content": "# Estructura básica de HTML\n\nUn documento HTML básico tiene la siguiente estructura:\n\n```html\n<!DOCTYPE html>\n<html>\n<head>\n  <title>Título de la página</title>\n</head>\n<body>\n  <!-- Contenido de la página -->\n</body>\n</html>\n```\n\n## Explicación de los elementos principales\n\n### `<!DOCTYPE html>`\nEs una declaración que informa al navegador qué versión de HTML está utilizando el documento. En este caso, indica que estamos usando HTML5.\n\n### `<html>`\nEs el elemento raíz que envuelve todo el contenido de la página HTML.\n\n### `<head>`\nContiene metadatos sobre el documento, como el título, enlaces a hojas de estilo CSS, scripts JavaScript, y otras informaciones que no se muestran directamente en la página.\n\n### `<title>`\nDefine el título de la página que aparece en la pestaña del navegador.\n\n### `<body>`\nContiene todo el contenido visible de la página web: texto, imágenes, enlaces, etc.\n\n## Elementos HTML esenciales\n\n### Encabezados\nLos encabezados se definen con las etiquetas `<h1>` a `<h6>`, donde `<h1>` es el más importante.\n\n```html\n<h1>Encabezado de nivel 1</h1>\n<h2>Encabezado de nivel 2</h2>\n<h3>Encabezado de nivel 3</h3>\n```\n\n### Párrafos\nLos párrafos se definen con la etiqueta `<p>`.\n\n```html\n<p>Este es un párrafo de texto.</p>\n```\n\n### Enlaces\nLos enlaces se definen con la etiqueta `<a>` y el atributo `href`.\n\n```html\n<a href=\"https://www.ejemplo.com\">Visitar ejemplo.com</a>\n```\n\n### Imágenes\nLas imágenes se insertan con la etiqueta `<img>` y los atributos `src` y `alt`.\n\n```html\n<img src=\"imagen.jpg\" alt=\"Descripción de la imagen\">\n```\n\n## Ejemplo completo\n\n```html\n<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Mi primera página web</title>\n</head>\n<body>\n  <header>\n    <h1>Bienvenido a mi sitio web</h1>\n  </header>\n  \n  <nav>\n    <ul>\n      <li><a href=\"#\">Inicio</a></li>\n      <li><a href=\"#\">Acerca de</a></li>\n      <li><a href=\"#\">Contacto</a></li>\n    </ul>\n  </nav>\n  \n  <main>\n    <section>\n      <h2>Acerca de nosotros</h2>\n      <p>Esta es una página de ejemplo para mostrar la estructura básica de HTML.</p>\n    </section>\n    \n    <section>\n      <h2>Nuestros servicios</h2>\n      <ul>\n        <li>Diseño web</li>\n        <li>Desarrollo frontend</li>\n        <li>Desarrollo backend</li>\n      </ul>\n    </section>\n  </main>\n  \n  <footer>\n    <p>&copy; 2025 Mi Sitio Web</p>\n  </footer>\n</body>\n</html>\n```",
+	"createdAt": "2023-01-15T10:00:00Z",
+	"updatedAt": "2023-05-20T14:30:00Z",
+	"topicId": "6b86b273-6e81-4e47-a252-08a2c3d53778",
+	"topicTitle": "HTML",
+	"subjectId": "550e8400-e29b-41d4-a716-446655440000",
+	"subjectTitle": "Computación en red (CORE)",
+	"questions": [
+		{
+			"id": "q-html-01",
+			"text": "¿Cuál es la función principal de la etiqueta <!DOCTYPE html>?",
+			"type": "Opción múltiple",
+			"difficulty": "Fácil",
+			"createdAt": "2023-11-15T10:00:00Z",
+			"verified": true,
+			"rejected": false,
+			"choices": [
+				{
+					"text": "Indicar al navegador que versión de HTML se está utilizando",
+					"isCorrect": true
+				},
+				{
+					"text": "Definir el título de la página web",
+					"isCorrect": false
+				},
+				{
+					"text": "Establecer el idioma del documento",
+					"isCorrect": false
+				},
+				{
+					"text": "Crear un enlace a una página externa",
+					"isCorrect": false
+				}
+			]
+		},
+		{
+			"id": "q-html-02",
+			"text": "¿Qué elemento HTML se utiliza como contenedor para todo el contenido visible de la página?",
+			"type": "Opción múltiple",
+			"difficulty": "Fácil",
+			"createdAt": "2023-11-16T11:30:00Z",
+			"verified": true,
+			"rejected": false,
+			"choices": [
+				{
+					"text": "<body>",
+					"isCorrect": true
+				},
+				{
+					"text": "<head>",
+					"isCorrect": false
+				},
+				{
+					"text": "<html>",
+					"isCorrect": false
+				},
+				{
+					"text": "<main>",
+					"isCorrect": false
+				}
+			]
+		},
+		{
+			"id": "q-html-03",
+			"text": "¿Cuál de los siguientes elementos NO se incluye típicamente dentro del elemento <head>?",
+			"type": "Opción múltiple",
+			"difficulty": "Medio",
+			"createdAt": "2023-11-18T14:20:00Z",
+			"verified": false,
+			"rejected": false,
+			"choices": [
+				{
+					"text": "<p>",
+					"isCorrect": true
+				},
+				{
+					"text": "<title>",
+					"isCorrect": false
+				},
+				{
+					"text": "<meta>",
+					"isCorrect": false
+				},
+				{
+					"text": "<link>",
+					"isCorrect": false
+				}
+			]
+		},
+		{
+			"id": "q-html-04",
+			"text": "¿Cuál es el elemento HTML correcto para definir un párrafo?",
+			"type": "Opción múltiple",
+			"difficulty": "Fácil",
+			"createdAt": "2023-11-20T09:15:00Z",
+			"verified": true,
+			"rejected": false,
+			"choices": [
+				{
+					"text": "<p>",
+					"isCorrect": true
+				},
+				{
+					"text": "<paragraph>",
+					"isCorrect": false
+				},
+				{
+					"text": "<par>",
+					"isCorrect": false
+				},
+				{
+					"text": "<text>",
+					"isCorrect": false
+				}
+			]
+		},
+		{
+			"id": "q-html-05",
+			"text": "¿Cuál es el atributo necesario para la etiqueta <img>?",
+			"type": "Opción múltiple",
+			"difficulty": "Medio",
+			"createdAt": "2023-11-22T16:45:00Z",
+			"verified": false,
+			"rejected": true,
+			"choices": [
+				{
+					"text": "src",
+					"isCorrect": true
+				},
+				{
+					"text": "alt",
+					"isCorrect": false
+				},
+				{
+					"text": "href",
+					"isCorrect": false
+				},
+				{
+					"text": "title",
+					"isCorrect": false
+				}
+			]
+		}
+	]
+}

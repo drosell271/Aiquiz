@@ -192,5 +192,28 @@
 		"advanced": "ADVANCED",
 		"numberOfQuestions": "Number of questions",
 		"generateQuestions": "Generate questions"
+	},
+	"subtopicDetail": {
+		"documentsAndVideos": "Documents and videos",
+		"settings": "Settings",
+		"loading": "Loading...",
+		"subtopicNotFound": "Subtopic not found",
+		"backToTopic": "Back to topic",
+		"name": "Name",
+		"topic": "Topic",
+		"subject": "Subject",
+		"description": "Description",
+		"deleteSubtopic": "Delete subtopic",
+		"deleteWarning": "This action cannot be undone",
+		"saveChanges": "Save changes",
+		"cancel": "Cancel",
+		"edit": "Editar",
+		"contentDescription": "The content of documents will be used to generate questions for the subtopic.",
+		"uploadDocument": "Upload document",
+		"enterVideoUrl": "Enter URL",
+		"urlOfVideo": "Video URL",
+		"allowedFiles": "Accepted formats: pdf, ppt, doc, docx...",
+		"noFiles": "No documents or videos associated with this subtopic.",
+		"deleteFile": "Delete file"
 	}
 }

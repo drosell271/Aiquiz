@@ -5,8 +5,9 @@
 import subjectsData from "../data/subjects.json";
 import subjectDetailsData from "../data/subject-details.json";
 import topicDetailsData from "../data/topic-details.json";
-import questionsHttpStatusData from "../data/questions-http-status.json"; // Nuevo archivo para preguntas con estado
+import questionsHttpStatusData from "../data/questions-http-status.json";
 import questionnairesHttpData from "../data/questionnaires-http.json";
+import subtopicDetailsData from "../data/subtopic-details.json"; // Nuevo archivo para subtemas
 
 class ApiService {
 	constructor() {
@@ -34,8 +35,9 @@ class ApiService {
 			subjects: subjectsData,
 			subjectDetails: subjectDetailsData,
 			topicDetails: topicDetailsData,
-			questionsHttp: questionsHttpStatusData, // Usar el nuevo archivo con estados
+			questionsHttp: questionsHttpStatusData,
 			questionnairesHttp: questionnairesHttpData,
+			subtopicDetails: subtopicDetailsData, // Datos para subtemas
 		};
 
 		console.log("🚀 ApiService inicializado con datos simulados");
@@ -346,6 +348,178 @@ class ApiService {
 				return this.mockData.topicDetails;
 			}
 
+			// === SUBTEMAS ===
+			// GET /api/subjects/:id/topics/:topicId/subtopics/:subtopicId
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/subtopics\/[\w-]+$/
+				) &&
+				method === "GET"
+			) {
+				// Devolver el subtema de prueba
+				return this.mockData.subtopicDetails;
+			}
+
+			// PUT /api/subjects/:id/topics/:topicId/subtopics/:subtopicId
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/subtopics\/[\w-]+$/
+				) &&
+				method === "PUT"
+			) {
+				// Actualizar propiedades básicas del subtema
+				return {
+					success: true,
+					...data,
+				};
+			}
+
+			// PUT /api/subjects/:id/topics/:topicId/subtopics/:subtopicId/content
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/subtopics\/[\w-]+\/content$/
+				) &&
+				method === "PUT"
+			) {
+				// Actualizar solo el contenido
+				return {
+					success: true,
+					content: data.content,
+					updatedAt: new Date().toISOString(),
+				};
+			}
+
+			// DELETE /api/subjects/:id/topics/:topicId/subtopics/:subtopicId
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/subtopics\/[\w-]+$/
+				) &&
+				method === "DELETE"
+			) {
+				return {
+					success: true,
+					message: "Subtema eliminado correctamente",
+				};
+			}
+
+			// GET /api/subjects/:id/topics/:topicId/subtopics/:subtopicId/questions
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/subtopics\/[\w-]+\/questions$/
+				) &&
+				method === "GET"
+			) {
+				// Devolver las preguntas específicas del subtema
+				return this.mockData.subtopicDetails.questions || [];
+			}
+
+			// POST /api/subjects/:id/topics/:topicId/subtopics/:subtopicId/generate-questions
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/subtopics\/[\w-]+\/generate-questions$/
+				) &&
+				method === "POST"
+			) {
+				// Generar nuevas preguntas simuladas para el subtema
+				const count = data?.count || 3;
+				const newQuestions = Array.from(
+					{ length: count },
+					(_, index) => ({
+						id: `q-subtopic-new-${Date.now()}-${index}`,
+						text: `Nueva pregunta generada #${
+							index + 1
+						} sobre HTML básico`,
+						type: "Opción múltiple",
+						difficulty:
+							data?.difficulty ||
+							["Fácil", "Medio", "Avanzado"][
+								Math.floor(Math.random() * 3)
+							],
+						createdAt: new Date().toISOString(),
+						verified: false,
+						rejected: false,
+						choices: [
+							{
+								text: "Opción correcta generada",
+								isCorrect: true,
+							},
+							{ text: "Opción incorrecta 1", isCorrect: false },
+							{ text: "Opción incorrecta 2", isCorrect: false },
+							{ text: "Opción incorrecta 3", isCorrect: false },
+						],
+					})
+				);
+
+				// Añadir las nuevas preguntas a nuestro subtema simulado
+				if (this.mockData.subtopicDetails.questions) {
+					this.mockData.subtopicDetails.questions = [
+						...newQuestions,
+						...this.mockData.subtopicDetails.questions,
+					];
+				} else {
+					this.mockData.subtopicDetails.questions = newQuestions;
+				}
+
+				return {
+					success: true,
+					questions: newQuestions,
+					message: `${count} preguntas generadas correctamente para el subtema`,
+				};
+			}
+
+			// POST /api/subjects/:id/topics/:topicId/subtopics/:subtopicId/questions/verify
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/subtopics\/[\w-]+\/questions\/verify$/
+				) &&
+				method === "POST"
+			) {
+				// En datos del cliente debería llegar questionId e isValid
+				const { questionId, isValid } = data;
+
+				// Actualizar estado de verificación de la pregunta
+				if (this.mockData.subtopicDetails.questions) {
+					const questionIndex =
+						this.mockData.subtopicDetails.questions.findIndex(
+							(q) => q.id === questionId
+						);
+
+					if (questionIndex >= 0) {
+						this.mockData.subtopicDetails.questions[
+							questionIndex
+						].verified = isValid;
+						this.mockData.subtopicDetails.questions[
+							questionIndex
+						].rejected = !isValid;
+					}
+				}
+
+				return {
+					success: true,
+					questionId,
+					verified: isValid,
+					rejected: !isValid,
+					message: isValid
+						? "Pregunta verificada correctamente"
+						: "Pregunta rechazada correctamente",
+				};
+			}
+
+			// POST /api/subjects/:id/topics/:topicId/subtopics/:subtopicId/download-questions
+			if (
+				endpoint.match(
+					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/subtopics\/[\w-]+\/download-questions$/
+				) &&
+				method === "POST"
+			) {
+				return {
+					success: true,
+					format: data.format,
+					questionIds: data.questionIds,
+					message: `Preguntas del subtema descargadas en formato ${data.format}`,
+				};
+			}
+
 			// === PREGUNTAS ===
 			// GET /api/subjects/:id/topics/:topicId/questions
 			if (
@@ -508,50 +682,6 @@ class ApiService {
 					success: true,
 					format,
 					message: `Cuestionario descargado en formato ${format}`,
-				};
-			}
-
-			// === SUBTEMAS ===
-			// POST /api/subjects/:id/topics/:topicId/subtopics
-			if (
-				endpoint.match(
-					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/subtopics$/
-				) &&
-				method === "POST"
-			) {
-				return {
-					success: true,
-					id: `subtopic-${Date.now()}`,
-					...data,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString(),
-				};
-			}
-
-			// PUT /api/subjects/:id/topics/:topicId/subtopics/:subtopicId
-			if (
-				endpoint.match(
-					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/subtopics\/[\w-]+$/
-				) &&
-				method === "PUT"
-			) {
-				return {
-					success: true,
-					...data,
-					updatedAt: new Date().toISOString(),
-				};
-			}
-
-			// DELETE /api/subjects/:id/topics/:topicId/subtopics/:subtopicId
-			if (
-				endpoint.match(
-					/\/api\/subjects\/[\w-]+\/topics\/[\w-]+\/subtopics\/[\w-]+$/
-				) &&
-				method === "DELETE"
-			) {
-				return {
-					success: true,
-					message: "Subtema eliminado correctamente",
 				};
 			}
 

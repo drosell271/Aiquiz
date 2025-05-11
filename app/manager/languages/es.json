@@ -192,5 +192,29 @@
 		"advanced": "AVANZADO",
 		"numberOfQuestions": "Número de preguntas",
 		"generateQuestions": "Generar preguntas"
+	},
+	"subtopicDetail": {
+		"documentsAndVideos": "Documentos y videos",
+		"settings": "Ajustes",
+		"loading": "Cargando...",
+		"subtopicNotFound": "Subtema no encontrado",
+		"backToTopic": "Volver al tema",
+		"name": "Nombre",
+		"topic": "Tema",
+		"subject": "Asignatura",
+		"description": "Descripción",
+		"noDescription": "Sin descripción",
+		"deleteSubtopic": "Eliminar subtema",
+		"deleteWarning": "Esta acción no se puede deshacer",
+		"saveChanges": "Guardar cambios",
+		"cancel": "Cancelar",
+		"edit": "Editar",
+		"contentDescription": "El contenido de los documentos se utilizará para generar preguntas del subtema.",
+		"uploadDocument": "Subir documento",
+		"enterVideoUrl": "Inserta la URL",
+		"urlOfVideo": "URL de video",
+		"allowedFiles": "Formatos admitidos: pdf, ppt, doc, docx...",
+		"noFiles": "No hay documentos ni videos asociados a este subtema.",
+		"deleteFile": "Eliminar archivo"
 	}
 }
