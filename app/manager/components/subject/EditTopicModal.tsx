@@ -1,5 +1,5 @@
-// /app/manager/components/topics/EditTopicModal.tsx
-import { useState } from "react";
+// /app/manager/components/subject/EditTopicModal.tsx
+import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Topic } from "../../contexts/SubjectContext";
 
@@ -10,20 +10,46 @@ interface EditTopicModalProps {
 	isLoading?: boolean;
 }
 
-const EditTopicModal = ({
+/**
+ * Modal para editar un tema de asignatura
+ */
+const EditTopicModal: React.FC<EditTopicModalProps> = ({
 	topic,
 	onClose,
 	onSave,
 	isLoading = false,
-}: EditTopicModalProps) => {
+}) => {
 	const { t } = useTranslation();
-	const [title, setTitle] = useState(topic.title);
+	const [title, setTitle] = useState<string>(topic.title);
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!title.trim()) return;
+	/**
+	 * Maneja los cambios en el campo de título
+	 */
+	const handleTitleChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			setTitle(e.target.value);
+		},
+		[]
+	);
 
-		onSave(topic.id, title);
+	/**
+	 * Maneja el envío del formulario
+	 */
+	const handleSubmit = useCallback(
+		(e: React.FormEvent) => {
+			e.preventDefault();
+			if (!title.trim()) return;
+
+			onSave(topic.id, title);
+		},
+		[topic.id, title, onSave]
+	);
+
+	/**
+	 * Verifica si el formulario es válido
+	 */
+	const isFormValid = (): boolean => {
+		return Boolean(title.trim());
 	};
 
 	return (
@@ -37,6 +63,7 @@ const EditTopicModal = ({
 						onClick={onClose}
 						className="text-gray-500 hover:text-gray-700"
 						disabled={isLoading}
+						aria-label="Cerrar"
 					>
 						<svg
 							className="w-6 h-6"
@@ -66,7 +93,7 @@ const EditTopicModal = ({
 							type="text"
 							id="topicTitle"
 							value={title}
-							onChange={(e) => setTitle(e.target.value)}
+							onChange={handleTitleChange}
 							className="w-full p-2 border rounded-md"
 							required
 							disabled={isLoading}
@@ -84,7 +111,7 @@ const EditTopicModal = ({
 						</button>
 						<button
 							type="submit"
-							disabled={isLoading || !title.trim()}
+							disabled={isLoading || !isFormValid()}
 							className="px-4 py-2 bg-gray-800 text-white rounded-md disabled:opacity-50 flex items-center"
 						>
 							{isLoading ? (

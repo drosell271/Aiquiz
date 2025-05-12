@@ -13,7 +13,10 @@ interface ConfirmationModalProps {
 	isDanger?: boolean;
 }
 
-const ConfirmationModal = ({
+/**
+ * Modal de confirmación reutilizable para acciones importantes
+ */
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 	isOpen,
 	title,
 	message,
@@ -23,10 +26,18 @@ const ConfirmationModal = ({
 	onCancel,
 	isLoading = false,
 	isDanger = true,
-}: ConfirmationModalProps) => {
+}) => {
 	const { t } = useTranslation();
 
+	// No renderizar nada si el modal no está abierto
 	if (!isOpen) return null;
+
+	// Determinar clases para el botón de confirmación
+	const confirmButtonClassName = `px-4 py-2 ${
+		isDanger
+			? "bg-red-600 hover:bg-red-700 text-white"
+			: "bg-gray-800 hover:bg-gray-700 text-white"
+	} rounded-md disabled:opacity-50 flex items-center`;
 
 	return (
 		<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -43,6 +54,7 @@ const ConfirmationModal = ({
 						onClick={onCancel}
 						className="text-gray-500 hover:text-gray-700"
 						disabled={isLoading}
+						aria-label="Cerrar"
 					>
 						<svg
 							className="w-6 h-6"
@@ -75,11 +87,7 @@ const ConfirmationModal = ({
 						type="button"
 						onClick={onConfirm}
 						disabled={isLoading}
-						className={`px-4 py-2 ${
-							isDanger
-								? "bg-red-600 hover:bg-red-700 text-white"
-								: "bg-gray-800 hover:bg-gray-700 text-white"
-						} rounded-md disabled:opacity-50 flex items-center`}
+						className={confirmButtonClassName}
 					>
 						{isLoading ? (
 							<>

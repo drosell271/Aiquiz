@@ -1,5 +1,5 @@
-// /app/manager/components/topics/SearchBar.tsx
-import { useState } from "react";
+// /app/manager/components/subject/SearchBar.tsx
+import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 interface SearchBarProps {
@@ -7,15 +7,32 @@ interface SearchBarProps {
 	onSearch: (query: string) => void;
 }
 
-const SearchBar = ({ placeholder, onSearch }: SearchBarProps) => {
-	const [query, setQuery] = useState("");
+/**
+ * Componente de barra de búsqueda reutilizable
+ */
+const SearchBar: React.FC<SearchBarProps> = ({ placeholder, onSearch }) => {
+	const [query, setQuery] = useState<string>("");
 	const { t } = useTranslation();
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value;
-		setQuery(value);
-		onSearch(value);
-	};
+	/**
+	 * Maneja el cambio en el campo de búsqueda
+	 */
+	const handleChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			const value = e.target.value;
+			setQuery(value);
+			onSearch(value);
+		},
+		[onSearch]
+	);
+
+	/**
+	 * Limpia el campo de búsqueda
+	 */
+	const handleClear = useCallback(() => {
+		setQuery("");
+		onSearch("");
+	}, [onSearch]);
 
 	return (
 		<div className="relative w-full max-w-md">
@@ -25,6 +42,7 @@ const SearchBar = ({ placeholder, onSearch }: SearchBarProps) => {
 				value={query}
 				onChange={handleChange}
 				className="w-full p-2 pl-10 border rounded-md"
+				aria-label="Campo de búsqueda"
 			/>
 			<div className="absolute inset-y-0 left-0 flex items-center pl-3">
 				<svg
@@ -32,6 +50,7 @@ const SearchBar = ({ placeholder, onSearch }: SearchBarProps) => {
 					fill="none"
 					stroke="currentColor"
 					viewBox="0 0 24 24"
+					aria-hidden="true"
 				>
 					<path
 						strokeLinecap="round"
@@ -43,11 +62,9 @@ const SearchBar = ({ placeholder, onSearch }: SearchBarProps) => {
 			</div>
 			{query && (
 				<button
-					onClick={() => {
-						setQuery("");
-						onSearch("");
-					}}
+					onClick={handleClear}
 					className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+					aria-label="Limpiar búsqueda"
 				>
 					<svg
 						className="w-5 h-5"

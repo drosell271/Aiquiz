@@ -1,4 +1,4 @@
-// Exportamos todos los componentes relacionados con el tema
+// /app/manager/components/topic/index.ts
 import SubtopicsTab from "./SubtopicsTab";
 import InformationTab from "./InformationTab";
 import QuestionsTab from "./QuestionsTab";

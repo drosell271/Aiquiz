@@ -1,5 +1,5 @@
-// app/manager/components/topic/GenerateQuestionsModal.tsx
-import { useState } from "react";
+// /app/manager/components/topic/GenerateQuestionsModal.tsx
+import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 interface GenerateQuestionsModalProps {
@@ -9,31 +9,107 @@ interface GenerateQuestionsModalProps {
 	isLoading?: boolean;
 }
 
-export default function GenerateQuestionsModal({
+/**
+ * Modal para generar preguntas automáticamente
+ */
+const GenerateQuestionsModal: React.FC<GenerateQuestionsModalProps> = ({
 	isOpen,
 	onClose,
 	onGenerate,
 	isLoading = false,
-}: GenerateQuestionsModalProps) {
+}) => {
 	const { t } = useTranslation();
+
+	// Estados para el formulario
 	const [difficulty, setDifficulty] = useState<string>("FÁCIL");
 	const [count, setCount] = useState<number>(15);
 
-	const handleGenerate = () => {
+	/**
+	 * Maneja el cambio de dificultad
+	 */
+	const handleDifficultyChange = useCallback((difficulty: string) => {
+		setDifficulty(difficulty);
+	}, []);
+
+	/**
+	 * Maneja el cambio en el número de preguntas
+	 */
+	const handleCountChange = useCallback((count: number) => {
+		setCount(count);
+	}, []);
+
+	/**
+	 * Inicia la generación de preguntas
+	 */
+	const handleGenerate = useCallback(() => {
 		onGenerate(difficulty, count);
+	}, [difficulty, count, onGenerate]);
+
+	// No renderizar nada si el modal no está abierto
+	if (!isOpen) return null;
+
+	/**
+	 * Genera la clase para el botón de dificultad
+	 */
+	const getDifficultyButtonClass = (value: string): string => {
+		if (value === "FÁCIL") {
+			return `px-4 py-2 rounded-md flex items-center w-full ${
+				difficulty === "FÁCIL"
+					? "bg-green-100 text-green-800 border border-green-300"
+					: "bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200"
+			}`;
+		} else if (value === "INTERMEDIO") {
+			return `px-4 py-2 rounded-md flex items-center w-full ${
+				difficulty === "INTERMEDIO"
+					? "bg-yellow-100 text-yellow-800 border border-yellow-300"
+					: "bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200"
+			}`;
+		} else {
+			return `px-4 py-2 rounded-md flex items-center w-full ${
+				difficulty === "AVANZADO"
+					? "bg-red-100 text-red-800 border border-red-300"
+					: "bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200"
+			}`;
+		}
 	};
 
-	if (!isOpen) return null;
+	/**
+	 * Genera la clase para el indicador de dificultad
+	 */
+	const getIndicatorClass = (value: string): string => {
+		if (value === "FÁCIL") {
+			return `w-3 h-3 rounded-full ${
+				difficulty === "FÁCIL" ? "bg-green-500" : "bg-gray-300"
+			} mr-2`;
+		} else if (value === "INTERMEDIO") {
+			return `w-3 h-3 rounded-full ${
+				difficulty === "INTERMEDIO" ? "bg-yellow-500" : "bg-gray-300"
+			} mr-2`;
+		} else {
+			return `w-3 h-3 rounded-full ${
+				difficulty === "AVANZADO" ? "bg-red-500" : "bg-gray-300"
+			} mr-2`;
+		}
+	};
+
+	/**
+	 * Genera la clase para el botón de cantidad
+	 */
+	const getCountButtonClass = (value: number): string => {
+		return `flex-1 py-2 px-4 rounded-full ${
+			count === value
+				? "bg-indigo-100 text-indigo-700 border-2 border-indigo-500"
+				: "bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200"
+		}`;
+	};
 
 	return (
 		<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 			<div className="bg-white rounded-lg p-6 w-full max-w-xl">
 				<div className="flex justify-between items-center mb-4">
 					<h2 className="text-xl font-semibold">
-						{t(
-							"topicDetail.generateQuestionsTitle",
-							"Generar preguntas de HTTP > URL"
-						)}
+						{t("topicDetail.generateQuestionsTitle") ||
+							"Generar preguntas"}
 					</h2>
 					<button
 						onClick={onClose}
@@ -58,80 +134,52 @@ export default function GenerateQuestionsModal({
 
 				<div className="mb-6">
 					<label className="block text-sm font-medium text-gray-700 mb-2">
-						{t("topicDetail.difficulty", "Dificultad")}
+						{t("topicDetail.difficulty") || "Dificultad"}
 					</label>
 					<div className="flex flex-wrap md:flex-nowrap gap-2">
 						<button
-							className={`px-4 py-2 rounded-md flex items-center w-full ${
-								difficulty === "FÁCIL"
-									? "bg-green-100 text-green-800 border border-green-300"
-									: "bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200"
-							}`}
-							onClick={() => setDifficulty("FÁCIL")}
+							className={getDifficultyButtonClass("FÁCIL")}
+							onClick={() => handleDifficultyChange("FÁCIL")}
+							aria-label="Dificultad fácil"
 						>
-							<div
-								className={`w-3 h-3 rounded-full ${
-									difficulty === "FÁCIL"
-										? "bg-green-500"
-										: "bg-gray-300"
-								} mr-2`}
-							></div>
-							{t("topicDetail.easy", "FÁCIL")}
+							<div className={getIndicatorClass("FÁCIL")}></div>
+							{t("topicDetail.easy") || "FÁCIL"}
 						</button>
 						<button
-							className={`px-4 py-2 rounded-md flex items-center w-full ${
-								difficulty === "INTERMEDIO"
-									? "bg-yellow-100 text-yellow-800 border border-yellow-300"
-									: "bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200"
-							}`}
-							onClick={() => setDifficulty("INTERMEDIO")}
+							className={getDifficultyButtonClass("INTERMEDIO")}
+							onClick={() => handleDifficultyChange("INTERMEDIO")}
+							aria-label="Dificultad intermedia"
 						>
 							<div
-								className={`w-3 h-3 rounded-full ${
-									difficulty === "INTERMEDIO"
-										? "bg-yellow-500"
-										: "bg-gray-300"
-								} mr-2`}
+								className={getIndicatorClass("INTERMEDIO")}
 							></div>
-							{t("topicDetail.intermediate", "INTERMEDIO")}
+							{t("topicDetail.intermediate") || "INTERMEDIO"}
 						</button>
 						<button
-							className={`px-4 py-2 rounded-md flex items-center w-full ${
-								difficulty === "AVANZADO"
-									? "bg-red-100 text-red-800 border border-red-300"
-									: "bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200"
-							}`}
-							onClick={() => setDifficulty("AVANZADO")}
+							className={getDifficultyButtonClass("AVANZADO")}
+							onClick={() => handleDifficultyChange("AVANZADO")}
+							aria-label="Dificultad avanzada"
 						>
 							<div
-								className={`w-3 h-3 rounded-full ${
-									difficulty === "AVANZADO"
-										? "bg-red-500"
-										: "bg-gray-300"
-								} mr-2`}
+								className={getIndicatorClass("AVANZADO")}
 							></div>
-							{t("topicDetail.advanced", "AVANZADO")}
+							{t("topicDetail.advanced") || "AVANZADO"}
 						</button>
 					</div>
 				</div>
 
 				<div className="mb-6">
 					<label className="block text-sm font-medium text-gray-700 mb-2">
-						{t(
-							"topicDetail.numberOfQuestions",
-							"Número de preguntas"
-						)}
+						{t("topicDetail.numberOfQuestions") ||
+							"Número de preguntas"}
 					</label>
 					<div className="flex justify-between gap-2">
 						{[5, 10, 15, 20].map((num) => (
 							<button
 								key={num}
-								className={`flex-1 py-2 px-4 rounded-full ${
-									count === num
-										? "bg-indigo-100 text-indigo-700 border-2 border-indigo-500"
-										: "bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200"
-								}`}
-								onClick={() => setCount(num)}
+								className={getCountButtonClass(num)}
+								onClick={() => handleCountChange(num)}
+								aria-label={`${num} preguntas`}
 							>
 								{num}
 							</button>
@@ -144,6 +192,7 @@ export default function GenerateQuestionsModal({
 						className="bg-gray-800 text-white py-2 px-4 rounded-md flex items-center disabled:opacity-50"
 						onClick={handleGenerate}
 						disabled={isLoading}
+						aria-label="Generar preguntas"
 					>
 						{isLoading ? (
 							<>
@@ -167,17 +216,17 @@ export default function GenerateQuestionsModal({
 										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
 									></path>
 								</svg>
-								{t("common.processing", "Procesando...")}
+								{t("common.processing") || "Procesando..."}
 							</>
 						) : (
-							t(
-								"topicDetail.generateQuestions",
-								"Generar preguntas"
-							)
+							t("topicDetail.generateQuestions") ||
+							"Generar preguntas"
 						)}
 					</button>
 				</div>
 			</div>
 		</div>
 	);
-}
+};
+
+export default GenerateQuestionsModal;

@@ -2,5 +2,6 @@
 import Header from "./Header";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ConfirmationModal from "./ConfirmationModal";
+import SubjectDetailSidebar from "./SubjectDetailSidebar";
 
-export { Header, LanguageSwitcher, ConfirmationModal };
+export { Header, LanguageSwitcher, ConfirmationModal, SubjectDetailSidebar };

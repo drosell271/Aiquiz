@@ -12,25 +12,31 @@ interface SubjectDetailSidebarProps {
 	topics: Topic[];
 }
 
+/**
+ * Barra lateral para la navegación detallada de una asignatura
+ */
 const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 	subjectId,
 	subjectTitle,
-	topics = [], // Proporcionar un valor predeterminado
+	topics = [], // Valor predeterminado seguro
 }) => {
 	const pathname = usePathname();
 	const [expandedTopics, setExpandedTopics] = useState<
 		Record<string, boolean>
 	>({});
 
-	// Inicializar expandiendo todos los temas que tienen subtemas
+	/**
+	 * Inicializa los temas expandidos al cargar el componente
+	 */
 	useEffect(() => {
-		const initialExpanded: Record<string, boolean> = {};
-
-		// Protección contra topics indefinido
+		// Skip if topics not available
 		if (!topics || topics.length === 0) return;
 
+		const initialExpanded: Record<string, boolean> = {};
+
+		// Expand topics with subtopics by default
 		topics.forEach((topic) => {
-			if (topic && topic.subtopics && topic.subtopics.length > 0) {
+			if (topic?.subtopics?.length > 0) {
 				initialExpanded[topic.id] = true;
 			}
 		});
@@ -38,34 +44,60 @@ const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 		setExpandedTopics(initialExpanded);
 	}, [topics]);
 
-	// Adicionalmente, asegurarse de mantener expandido el tema activo
+	/**
+	 * Mantiene expandido el tema activo cuando cambia la ruta
+	 */
 	useEffect(() => {
 		if (!pathname) return;
 
+		// Check if we're on a topic page
 		if (pathname?.includes("/topics/")) {
 			const pathParts = pathname.split("/");
-			// Buscamos el id del topic en la URL
+			// Find topic ID in URL
 			const topicIndex = pathParts.findIndex((part) => part === "topics");
 			const topicId =
 				topicIndex >= 0 && pathParts.length > topicIndex + 1
 					? pathParts[topicIndex + 1]
 					: null;
 
-			if (topicId) {
-				// Solo actualizar si hay cambios para evitar re-renders innecesarios
-				setExpandedTopics((prev) => {
-					const newState = { ...prev };
-					if (!newState[topicId]) {
-						newState[topicId] = true;
-						return newState;
-					}
-					return prev;
-				});
+			// Only update state if we have a topic ID and it's not already expanded
+			if (topicId && !expandedTopics[topicId]) {
+				setExpandedTopics((prev) => ({
+					...prev,
+					[topicId]: true,
+				}));
 			}
 		}
-	}, [pathname]);
+	}, [pathname, expandedTopics]);
 
-	// Si no hay temas, mostrar un mensaje
+	/**
+	 * Alterna la expansión de un tema
+	 * @param topicId ID del tema a expandir/contraer
+	 */
+	const toggleTopic = (topicId: string): void => {
+		setExpandedTopics((prev) => ({
+			...prev,
+			[topicId]: !prev[topicId],
+		}));
+	};
+
+	/**
+	 * Verifica si la ruta actual corresponde a un tema específico
+	 * @param topicId ID del tema a verificar
+	 */
+	const isTopicActive = (topicId: string): boolean => {
+		return pathname?.includes(`/topics/${topicId}`) || false;
+	};
+
+	/**
+	 * Verifica si la ruta actual corresponde a un subtema específico
+	 * @param subtopicId ID del subtema a verificar
+	 */
+	const isSubtopicActive = (subtopicId: string): boolean => {
+		return pathname?.includes(`/subtopics/${subtopicId}`) || false;
+	};
+
+	// Renderizar mensaje si no hay temas
 	if (!topics || topics.length === 0) {
 		return (
 			<div className="bg-white border-r border-gray-200 h-full overflow-y-auto">
@@ -81,13 +113,6 @@ const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 		);
 	}
 
-	const toggleTopic = (topicId: string) => {
-		setExpandedTopics((prev) => ({
-			...prev,
-			[topicId]: !prev[topicId],
-		}));
-	};
-
 	return (
 		<div className="bg-white border-r border-gray-200 h-full overflow-y-auto">
 			<div className="p-6 border-b border-gray-200">
@@ -100,9 +125,7 @@ const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 						<button
 							onClick={() => toggleTopic(topic.id)}
 							className={`flex items-center w-full py-2 px-6 text-left hover:bg-gray-100 ${
-								pathname?.includes(`/topics/${topic.id}`)
-									? "font-bold"
-									: ""
+								isTopicActive(topic.id) ? "font-bold" : ""
 							}`}
 						>
 							<span>{topic.title}</span>
@@ -136,9 +159,7 @@ const SubjectDetailSidebar: React.FC<SubjectDetailSidebarProps> = ({
 											key={subtopic.id}
 											href={`/manager/subjects/${subjectId}/topics/${topic.id}/subtopics/${subtopic.id}`}
 											className={`block py-2 px-4 hover:bg-gray-100 ${
-												pathname?.includes(
-													`/subtopics/${subtopic.id}`
-												)
+												isSubtopicActive(subtopic.id)
 													? "font-bold"
 													: ""
 											}`}

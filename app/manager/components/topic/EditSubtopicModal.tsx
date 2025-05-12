@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+// /app/manager/components/topic/EditSubtopicModal.tsx
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Subtopic } from "../../contexts/TopicContext";
 
@@ -9,26 +10,65 @@ interface EditSubtopicModalProps {
 	isLoading?: boolean;
 }
 
-const EditSubtopicModal = ({
+/**
+ * Modal para editar un subtema existente
+ */
+const EditSubtopicModal: React.FC<EditSubtopicModalProps> = ({
 	subtopic,
 	onClose,
 	onSave,
 	isLoading = false,
-}: EditSubtopicModalProps) => {
+}) => {
 	const { t } = useTranslation();
-	const [title, setTitle] = useState(subtopic.title);
-	const [description, setDescription] = useState(subtopic.description);
 
+	// Estado unificado para el formulario
+	const [formData, setFormData] = useState({
+		title: subtopic.title,
+		description: subtopic.description || "",
+	});
+
+	/**
+	 * Actualiza el formulario cuando cambia el subtema
+	 */
 	useEffect(() => {
-		setTitle(subtopic.title);
-		setDescription(subtopic.description || "");
+		setFormData({
+			title: subtopic.title,
+			description: subtopic.description || "",
+		});
 	}, [subtopic]);
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!title.trim()) return;
+	/**
+	 * Maneja los cambios en los campos del formulario
+	 */
+	const handleInputChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+			const { name, value } = e.target;
+			setFormData((prev) => ({
+				...prev,
+				[name]: value,
+			}));
+		},
+		[]
+	);
 
-		onSave(subtopic.id, title, description);
+	/**
+	 * Maneja el envío del formulario
+	 */
+	const handleSubmit = useCallback(
+		(e: React.FormEvent) => {
+			e.preventDefault();
+			if (!formData.title.trim()) return;
+
+			onSave(subtopic.id, formData.title, formData.description);
+		},
+		[subtopic.id, formData, onSave]
+	);
+
+	/**
+	 * Verifica si el formulario es válido
+	 */
+	const isFormValid = (): boolean => {
+		return Boolean(formData.title.trim());
 	};
 
 	return (
@@ -42,6 +82,7 @@ const EditSubtopicModal = ({
 						onClick={onClose}
 						className="text-gray-500 hover:text-gray-700"
 						disabled={isLoading}
+						aria-label="Cerrar"
 					>
 						<svg
 							className="w-6 h-6"
@@ -62,16 +103,17 @@ const EditSubtopicModal = ({
 				<form onSubmit={handleSubmit}>
 					<div className="mb-4">
 						<label
-							htmlFor="subtopicTitle"
+							htmlFor="title"
 							className="block text-sm font-medium text-gray-700 mb-1"
 						>
 							{t("topicDetail.name") || "Nombre"}
 						</label>
 						<input
 							type="text"
-							id="subtopicTitle"
-							value={title}
-							onChange={(e) => setTitle(e.target.value)}
+							id="title"
+							name="title"
+							value={formData.title}
+							onChange={handleInputChange}
 							className="w-full p-2 border rounded-md"
 							required
 							disabled={isLoading}
@@ -80,15 +122,16 @@ const EditSubtopicModal = ({
 
 					<div className="mb-6">
 						<label
-							htmlFor="subtopicDescription"
+							htmlFor="description"
 							className="block text-sm font-medium text-gray-700 mb-1"
 						>
 							{t("topicDetail.description") || "Descripción"}
 						</label>
 						<textarea
-							id="subtopicDescription"
-							value={description}
-							onChange={(e) => setDescription(e.target.value)}
+							id="description"
+							name="description"
+							value={formData.description}
+							onChange={handleInputChange}
 							className="w-full p-2 border rounded-md h-32"
 							disabled={isLoading}
 						/>
@@ -105,7 +148,7 @@ const EditSubtopicModal = ({
 						</button>
 						<button
 							type="submit"
-							disabled={isLoading || !title.trim()}
+							disabled={isLoading || !isFormValid()}
 							className="px-4 py-2 bg-gray-800 text-white rounded-md disabled:opacity-50 flex items-center"
 						>
 							{isLoading ? (

@@ -1,18 +1,46 @@
-// app/manager/components/topic/QuestionStatusFilter.tsx
+// /app/manager/components/topic/QuestionStatusFilter.tsx
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-type StatusFilter = "all" | "unverified" | "verified" | "rejected";
+export type StatusFilter = "all" | "unverified" | "verified" | "rejected";
 
 interface QuestionStatusFilterProps {
 	currentFilter: StatusFilter;
 	onFilterChange: (filter: StatusFilter) => void;
 }
 
-const QuestionStatusFilter = ({
+/**
+ * Componente para filtrar preguntas por estado
+ */
+const QuestionStatusFilter: React.FC<QuestionStatusFilterProps> = ({
 	currentFilter,
 	onFilterChange,
-}: QuestionStatusFilterProps) => {
+}) => {
 	const { t } = useTranslation();
+
+	/**
+	 * Determina la clase del botón según el filtro activo
+	 */
+	const getButtonClassName = useCallback(
+		(filter: StatusFilter): string => {
+			return `px-3 py-1 text-sm ${
+				currentFilter === filter
+					? "bg-gray-100 text-gray-900 font-medium"
+					: "text-gray-700 hover:bg-gray-50"
+			}`;
+		},
+		[currentFilter]
+	);
+
+	/**
+	 * Maneja el cambio de filtro
+	 */
+	const handleFilterChange = useCallback(
+		(filter: StatusFilter) => {
+			onFilterChange(filter);
+		},
+		[onFilterChange]
+	);
 
 	return (
 		<div className="flex space-x-2 items-center">
@@ -21,42 +49,30 @@ const QuestionStatusFilter = ({
 			</span>
 			<div className="bg-white border border-gray-300 rounded-md flex divide-x">
 				<button
-					className={`px-3 py-1 text-sm ${
-						currentFilter === "unverified"
-							? "bg-gray-100 text-gray-900 font-medium"
-							: "text-gray-700 hover:bg-gray-50"
-					}`}
-					onClick={() => onFilterChange("unverified")}
+					className={getButtonClassName("unverified")}
+					onClick={() => handleFilterChange("unverified")}
+					aria-label="Filtrar preguntas no verificadas"
 				>
 					{t("topicDetail.unverified") || "No verificadas"}
 				</button>
 				<button
-					className={`px-3 py-1 text-sm ${
-						currentFilter === "verified"
-							? "bg-gray-100 text-gray-900 font-medium"
-							: "text-gray-700 hover:bg-gray-50"
-					}`}
-					onClick={() => onFilterChange("verified")}
+					className={getButtonClassName("verified")}
+					onClick={() => handleFilterChange("verified")}
+					aria-label="Filtrar preguntas verificadas"
 				>
 					{t("topicDetail.verified") || "Verificadas"}
 				</button>
 				<button
-					className={`px-3 py-1 text-sm ${
-						currentFilter === "rejected"
-							? "bg-gray-100 text-gray-900 font-medium"
-							: "text-gray-700 hover:bg-gray-50"
-					}`}
-					onClick={() => onFilterChange("rejected")}
+					className={getButtonClassName("rejected")}
+					onClick={() => handleFilterChange("rejected")}
+					aria-label="Filtrar preguntas rechazadas"
 				>
 					{t("topicDetail.rejected") || "Rechazadas"}
 				</button>
 				<button
-					className={`px-3 py-1 text-sm ${
-						currentFilter === "all"
-							? "bg-gray-100 text-gray-900 font-medium"
-							: "text-gray-700 hover:bg-gray-50"
-					}`}
-					onClick={() => onFilterChange("all")}
+					className={getButtonClassName("all")}
+					onClick={() => handleFilterChange("all")}
+					aria-label="Mostrar todas las preguntas"
 				>
 					{t("topicDetail.allQuestions") || "Todas"}
 				</button>

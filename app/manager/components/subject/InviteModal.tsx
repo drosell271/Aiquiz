@@ -1,5 +1,5 @@
-// /app/manager/components/topics/InviteModal.tsx
-import { useState } from "react";
+// /app/manager/components/subject/InviteModal.tsx
+import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 interface InviteModalProps {
@@ -8,20 +8,56 @@ interface InviteModalProps {
 	isLoading?: boolean;
 }
 
-const InviteModal = ({
+/**
+ * Modal para invitar a un profesor a una asignatura
+ */
+const InviteModal: React.FC<InviteModalProps> = ({
 	onClose,
 	onInvite,
 	isLoading = false,
-}: InviteModalProps) => {
+}) => {
 	const { t } = useTranslation();
-	const [name, setName] = useState("");
-	const [email, setEmail] = useState("");
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!name || !email) return;
+	// Estado unificado para el formulario
+	const [formData, setFormData] = useState({
+		name: "",
+		email: "",
+	});
 
-		onInvite(name, email);
+	/**
+	 * Maneja los cambios en los campos del formulario
+	 */
+	const handleInputChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			const { name, value } = e.target;
+			setFormData((prev) => ({
+				...prev,
+				[name]: value,
+			}));
+		},
+		[]
+	);
+
+	/**
+	 * Maneja el envío del formulario
+	 */
+	const handleSubmit = useCallback(
+		(e: React.FormEvent) => {
+			e.preventDefault();
+
+			const { name, email } = formData;
+			if (!name || !email) return;
+
+			onInvite(name, email);
+		},
+		[formData, onInvite]
+	);
+
+	/**
+	 * Verifica si el formulario es válido
+	 */
+	const isFormValid = (): boolean => {
+		return Boolean(formData.name.trim() && formData.email.trim());
 	};
 
 	return (
@@ -35,6 +71,7 @@ const InviteModal = ({
 						onClick={onClose}
 						className="text-gray-500 hover:text-gray-700"
 						disabled={isLoading}
+						aria-label="Cerrar"
 					>
 						<svg
 							className="w-6 h-6"
@@ -63,8 +100,9 @@ const InviteModal = ({
 						<input
 							type="text"
 							id="name"
-							value={name}
-							onChange={(e) => setName(e.target.value)}
+							name="name"
+							value={formData.name}
+							onChange={handleInputChange}
 							placeholder={t("subjectDetail.namePlaceholder")}
 							className="w-full p-2 border rounded-md"
 							required
@@ -82,8 +120,9 @@ const InviteModal = ({
 						<input
 							type="email"
 							id="email"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
+							name="email"
+							value={formData.email}
+							onChange={handleInputChange}
 							placeholder={t("subjectDetail.emailPlaceholder")}
 							className="w-full p-2 border rounded-md"
 							required
@@ -102,7 +141,7 @@ const InviteModal = ({
 						</button>
 						<button
 							type="submit"
-							disabled={isLoading || !name || !email}
+							disabled={isLoading || !isFormValid()}
 							className="px-4 py-2 bg-gray-800 text-white rounded-md disabled:opacity-50 flex items-center"
 						>
 							{isLoading ? (

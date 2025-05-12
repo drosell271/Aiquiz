@@ -1,11 +1,12 @@
-// Importamos y exportamos todos los componentes desde un solo archivo
+// /app/manager/components/subject/index.ts
 import SearchBar from "./SearchBar";
-import TopicsTab from "../subject/TopicsTab";
-import ProfessorsTab from "../subject/ProfessorsTab";
-import SettingsTab from "../subject/SettingsTab";
+import TopicsTab from "./TopicsTab";
+import ProfessorsTab from "./ProfessorsTab";
+import SettingsTab from "./SettingsTab";
 import InviteModal from "./InviteModal";
 import EditTopicModal from "./EditTopicModal";
-import SubjectDetailSidebar from "../common/SubjectDetailSidebar";
+import SubjectCard from "./SubjectCard";
+import SubjectTags from "./SubjectTags";
 
 export {
 	SearchBar,
@@ -14,5 +15,6 @@ export {
 	SettingsTab,
 	InviteModal,
 	EditTopicModal,
-	SubjectDetailSidebar,
+	SubjectCard,
+	SubjectTags,
 };

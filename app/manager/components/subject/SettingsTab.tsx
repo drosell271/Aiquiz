@@ -1,5 +1,5 @@
-// /app/manager/components/topics/SettingsTab.tsx (actualizado)
-import { useState } from "react";
+// /app/manager/components/subject/SettingsTab.tsx
+import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import { Subject, Topic } from "../../contexts/SubjectContext";
@@ -20,7 +20,10 @@ interface SettingsTabProps {
 	isDeletingTopic?: boolean;
 }
 
-const SettingsTab = ({
+/**
+ * Componente de pestaña para ajustes de una asignatura
+ */
+const SettingsTab: React.FC<SettingsTabProps> = ({
 	subject,
 	editMode,
 	editedSubject,
@@ -32,115 +35,141 @@ const SettingsTab = ({
 	onDeleteSubject,
 	isLoading = false,
 	isDeletingTopic = false,
-}: SettingsTabProps) => {
+}) => {
 	const { t } = useTranslation();
 	const router = useRouter();
-	const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
-	const [editingTopicTitle, setEditingTopicTitle] = useState("");
 
-	const handleStartEditTopic = (topic: Topic) => {
+	// Estados para edición de temas
+	const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
+	const [editingTopicTitle, setEditingTopicTitle] = useState<string>("");
+
+	/**
+	 * Prepara el tema para su edición
+	 */
+	const handleStartEditTopic = useCallback((topic: Topic) => {
 		setEditingTopicId(topic.id);
 		setEditingTopicTitle(topic.title);
-	};
+	}, []);
 
-	const handleSaveTopicEdit = () => {
+	/**
+	 * Guarda los cambios en el tema
+	 */
+	const handleSaveTopicEdit = useCallback(() => {
 		if (editingTopicId && editingTopicTitle.trim()) {
 			onEditTopic(editingTopicId, editingTopicTitle);
 			setEditingTopicId(null);
 			setEditingTopicTitle("");
 		}
-	};
+	}, [editingTopicId, editingTopicTitle, onEditTopic]);
 
-	const handleCancelTopicEdit = () => {
+	/**
+	 * Cancela la edición del tema
+	 */
+	const handleCancelTopicEdit = useCallback(() => {
 		setEditingTopicId(null);
 		setEditingTopicTitle("");
+	}, []);
+
+	/**
+	 * Renderiza los botones de acción del modo edición
+	 */
+	const renderEditButtons = (): JSX.Element => {
+		return (
+			<div className="flex gap-4 mb-6">
+				<button
+					className="bg-gray-800 text-white py-2 px-4 rounded-md flex items-center disabled:opacity-50"
+					onClick={onSaveChanges}
+					disabled={isLoading}
+				>
+					{isLoading ? (
+						<>
+							<svg
+								className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+							>
+								<circle
+									className="opacity-25"
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									strokeWidth="4"
+								></circle>
+								<path
+									className="opacity-75"
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+								></path>
+							</svg>
+							{t("common.saving")}
+						</>
+					) : (
+						<>
+							<svg
+								className="w-5 h-5 mr-1"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth="2"
+									d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+								/>
+							</svg>
+							{t("subjectDetail.saveChanges")}
+						</>
+					)}
+				</button>
+
+				<button
+					className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md disabled:opacity-50"
+					onClick={onEditToggle}
+					disabled={isLoading}
+				>
+					{t("subjectDetail.cancel")}
+				</button>
+			</div>
+		);
 	};
 
-	return (
-		<div>
-			{editMode ? (
-				<div className="flex gap-4 mb-6">
-					<button
-						className="bg-gray-800 text-white py-2 px-4 rounded-md flex items-center disabled:opacity-50"
-						onClick={onSaveChanges}
-						disabled={isLoading}
+	/**
+	 * Renderiza el botón de editar
+	 */
+	const renderEditButton = (): JSX.Element => {
+		return (
+			<div className="mb-6">
+				<button
+					className="bg-gray-800 text-white py-2 px-4 rounded-md flex items-center"
+					onClick={onEditToggle}
+				>
+					<svg
+						className="w-5 h-5 mr-1"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
 					>
-						{isLoading ? (
-							<>
-								<svg
-									className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-								>
-									<circle
-										className="opacity-25"
-										cx="12"
-										cy="12"
-										r="10"
-										stroke="currentColor"
-										strokeWidth="4"
-									></circle>
-									<path
-										className="opacity-75"
-										fill="currentColor"
-										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-									></path>
-								</svg>
-								{t("common.saving")}
-							</>
-						) : (
-							<>
-								<svg
-									className="w-5 h-5 mr-1"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth="2"
-										d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-									/>
-								</svg>
-								{t("subjectDetail.saveChanges")}
-							</>
-						)}
-					</button>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth="2"
+							d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+						/>
+					</svg>
+					{t("subjectDetail.editSubject")}
+				</button>
+			</div>
+		);
+	};
 
-					<button
-						className="bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md disabled:opacity-50"
-						onClick={onEditToggle}
-						disabled={isLoading}
-					>
-						{t("subjectDetail.cancel")}
-					</button>
-				</div>
-			) : (
-				<div className="mb-6">
-					<button
-						className="bg-gray-800 text-white py-2 px-4 rounded-md flex items-center"
-						onClick={onEditToggle}
-					>
-						<svg
-							className="w-5 h-5 mr-1"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth="2"
-								d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-							/>
-						</svg>
-						{t("subjectDetail.editSubject")}
-					</button>
-				</div>
-			)}
-
+	/**
+	 * Renderiza el campo de título
+	 */
+	const renderTitleField = (): JSX.Element => {
+		return (
 			<div className="mb-6">
 				<label className="block text-sm font-medium text-gray-700 mb-1">
 					{t("subjectDetail.name")}
@@ -160,7 +189,14 @@ const SettingsTab = ({
 					</div>
 				)}
 			</div>
+		);
+	};
 
+	/**
+	 * Renderiza el campo de siglas
+	 */
+	const renderAcronymField = (): JSX.Element => {
+		return (
 			<div className="mb-6">
 				<label className="block text-sm font-medium text-gray-700 mb-1">
 					{t("subjectDetail.acronym")}
@@ -180,7 +216,14 @@ const SettingsTab = ({
 					</div>
 				)}
 			</div>
+		);
+	};
 
+	/**
+	 * Renderiza el campo de descripción
+	 */
+	const renderDescriptionField = (): JSX.Element => {
+		return (
 			<div className="mb-6">
 				<label className="block text-sm font-medium text-gray-700 mb-1">
 					{t("subjectDetail.description")}
@@ -199,13 +242,19 @@ const SettingsTab = ({
 					</div>
 				)}
 			</div>
+		);
+	};
 
-			{/* Sección de temas */}
+	/**
+	 * Renderiza la lista de temas
+	 */
+	const renderTopicsList = (): JSX.Element => {
+		return (
 			<div className="mb-10">
 				<h3 className="text-lg font-medium mb-2">
 					{t("subjectDetail.topicsList")}
 				</h3>
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					{subject.topics.map((topic) => (
 						<div
 							key={topic.id}
@@ -249,6 +298,7 @@ const SettingsTab = ({
 													handleStartEditTopic(topic)
 												}
 												disabled={isLoading}
+												aria-label="Editar tema"
 											>
 												<svg
 													className="w-5 h-5"
@@ -272,6 +322,7 @@ const SettingsTab = ({
 												disabled={
 													isLoading || isDeletingTopic
 												}
+												aria-label="Eliminar tema"
 											>
 												{isDeletingTopic ? (
 													<svg
@@ -318,8 +369,14 @@ const SettingsTab = ({
 					))}
 				</div>
 			</div>
+		);
+	};
 
-			{/* Sección para eliminar asignatura */}
+	/**
+	 * Renderiza la sección para eliminar asignatura
+	 */
+	const renderDeleteSection = (): JSX.Element => {
+		return (
 			<div className="mt-16 p-6 bg-red-50 rounded-md border border-red-200">
 				<h3 className="text-lg font-medium text-red-800 mb-2">
 					{t("subjectDetail.deleteSubject")}
@@ -376,6 +433,18 @@ const SettingsTab = ({
 					)}
 				</button>
 			</div>
+		);
+	};
+
+	return (
+		<div>
+			{editMode ? renderEditButtons() : renderEditButton()}
+
+			{renderTitleField()}
+			{renderAcronymField()}
+			{renderDescriptionField()}
+			{renderTopicsList()}
+			{renderDeleteSection()}
 		</div>
 	);
 };

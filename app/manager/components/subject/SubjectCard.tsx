@@ -1,4 +1,4 @@
-// /app/manager/components/SubjectCard.tsx
+// /app/manager/components/subject/SubjectCard.tsx
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import SubjectTags from "./SubjectTags";
@@ -11,23 +11,36 @@ export interface SubjectCardProps {
 	topics: string[];
 }
 
-const SubjectCard = ({
+/**
+ * Componente de tarjeta para mostrar la información básica de una asignatura
+ */
+const SubjectCard: React.FC<SubjectCardProps> = ({
 	id,
 	title,
 	description,
 	administrator,
 	topics,
-}: SubjectCardProps) => {
+}) => {
 	const { t } = useTranslation();
+
+	/**
+	 * Obtiene la descripción truncada si es necesario
+	 */
+	const getTruncatedDescription = (
+		text: string,
+		maxLength: number = 150
+	): string => {
+		return text.length > maxLength
+			? `${text.substring(0, maxLength)}(...)`
+			: text;
+	};
 
 	return (
 		<div className="bg-gray-100 rounded-md p-6">
 			<h2 className="text-xl font-bold mb-2">{title}</h2>
 
 			<p className="text-gray-700 mb-2">
-				{description.length > 150
-					? `${description.substring(0, 150)}(...)`
-					: description}
+				{getTruncatedDescription(description)}
 			</p>
 
 			<Link
