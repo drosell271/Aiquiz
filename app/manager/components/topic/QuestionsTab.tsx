@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import useApiRequest from "../../hooks/useApiRequest";
 import SearchBar from "../subject/SearchBar";
 import { ConfirmationModal } from "../common";
-import { StatusFilter, QuestionStatusFilter } from "./QuestionStatusFilter";
+import QuestionStatusFilter, { StatusFilter } from "./QuestionStatusFilter";
 import GenerateQuestionsModal from "./GenerateQuestionsModal";
 
 interface Choice {
