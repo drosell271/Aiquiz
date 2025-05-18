@@ -1,7 +1,9 @@
 import mongoose from "mongoose";
 
+// Configuración para la conexión a MongoDB en Docker
 const MONGODB_URI =
-	process.env.MONGODB_URI || "mongodb://localhost:27017/aiquiz";
+	process.env.MONGODB_URI ||
+	"mongodb://admin:password@localhost:27017/aiquiz?authSource=admin";
 
 if (!MONGODB_URI) {
 	throw new Error("Por favor, define la variable de entorno MONGODB_URI");

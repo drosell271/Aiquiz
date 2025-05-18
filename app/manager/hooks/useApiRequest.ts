@@ -1,6 +1,5 @@
 // /app/manager/hooks/useApiRequest.ts
 import { useState, useEffect, useRef } from "react";
-import apiService from "../services/apiService";
 
 /**
  * Hook personalizado para realizar solicitudes a la API con manejo de estados
@@ -49,18 +48,46 @@ export function useApiRequest(
 						.join("/")}/${customEndpoint}`
 				: endpoint;
 
-			// TODO: Cuando implementes la API real, modifica esta llamada
-			// para usar la API real en lugar de la simulación
-			const response = await apiService.simulateApiCall(
-				targetEndpoint,
-				method,
-				requestData,
-				800,
-				forceCall
+			// Crear la URL completa para el endpoint con el nuevo prefijo
+			const apiEndpoint = targetEndpoint.replace(
+				/^\/api/,
+				"/manager/api"
 			);
 
-			setData(response);
-			return response;
+			// Configurar opciones para la solicitud fetch
+			const options: RequestInit = {
+				method,
+				headers: {
+					"Content-Type": "application/json",
+					// Incluir token de autenticación si está disponible
+					...(localStorage.getItem("jwt_token")
+						? {
+								Authorization: `Bearer ${localStorage.getItem(
+									"jwt_token"
+								)}`,
+						  }
+						: {}),
+				},
+			};
+
+			// Añadir cuerpo de la solicitud para métodos que lo requieren
+			if (requestData && ["POST", "PUT", "PATCH"].includes(method)) {
+				options.body = JSON.stringify(requestData);
+			}
+
+			// Realizar la solicitud HTTP real
+			const response = await fetch(apiEndpoint, options);
+			const responseData = await response.json();
+
+			// Comprobar si la respuesta es exitosa
+			if (!response.ok) {
+				throw new Error(
+					responseData.message || "Error en la solicitud"
+				);
+			}
+
+			setData(responseData);
+			return responseData;
 		} catch (err) {
 			const errorObj =
 				err instanceof Error ? err : new Error("Error desconocido");
