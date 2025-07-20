@@ -1,6 +1,6 @@
 // /app/manager/components/topic/QuestionsTab.tsx
 import { useState, useEffect, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import useApiRequest from "../../hooks/useApiRequest";
 import SearchBar from "../subject/SearchBar";
 import { ConfirmationModal } from "../common";
@@ -32,7 +32,7 @@ interface QuestionsTabProps {
  * Componente de pestaña para gestionar preguntas
  */
 const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	// Estados para los datos
 	const [questions, setQuestions] = useState<Question[]>([]);

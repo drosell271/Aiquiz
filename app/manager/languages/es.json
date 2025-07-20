@@ -118,6 +118,39 @@
 		"description": "Descripción",
 		"add": "Añadir"
 	},
+	"resetPassword": {
+		"title": "AIQUIZ",
+		"subtitle": "Restablecer contraseña",
+		"newPassword": "Nueva contraseña",
+		"confirmPassword": "Confirmar contraseña",
+		"resetButton": "Restablecer contraseña",
+		"backToLogin": "Volver al inicio de sesión",
+		"processing": "Procesando...",
+		"success": "Contraseña restablecida exitosamente",
+		"error": "Error al restablecer la contraseña",
+		"invalidToken": "Token de recuperación inválido o expirado",
+		"passwordsNotMatch": "Las contraseñas no coinciden",
+		"passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
+		"tokenRequired": "Token de recuperación requerido"
+	},
+	"acceptInvitation": {
+		"title": "AIQUIZ",
+		"subtitle": "Aceptar invitación",
+		"name": "Nombre completo",
+		"email": "Correo electrónico",
+		"password": "Contraseña",
+		"confirmPassword": "Confirmar contraseña",
+		"acceptButton": "Aceptar invitación",
+		"backToLogin": "Volver al inicio de sesión",
+		"processing": "Procesando...",
+		"success": "Invitación aceptada exitosamente",
+		"error": "Error al aceptar la invitación",
+		"invalidToken": "Token de invitación inválido o expirado",
+		"passwordsNotMatch": "Las contraseñas no coinciden",
+		"passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
+		"emailNotMatch": "El correo no coincide con la invitación",
+		"tokenRequired": "Token de invitación requerido"
+	},
 	"confirmation": {
 		"deleteSubject": {
 			"title": "Eliminar asignatura",

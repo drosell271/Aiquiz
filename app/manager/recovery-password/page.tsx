@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useContext, FormEvent, ChangeEvent, useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../hooks/useManagerTranslation";
 import { ClientSideContext } from "../I18nProvider";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import Link from "next/link";
@@ -9,7 +9,7 @@ import useApiRequest from "../hooks/useApiRequest";
 
 const RecoveryPasswordPage = () => {
 	const isClient = useContext(ClientSideContext);
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	const [email, setEmail] = useState<string>("");
 	const [isEmailSent, setIsEmailSent] = useState<boolean>(false);

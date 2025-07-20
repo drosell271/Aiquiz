@@ -1,7 +1,7 @@
 // /app/manager/subjects/page.tsx
 "use client";
 
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../hooks/useManagerTranslation";
 import Link from "next/link";
 import SubjectCard, {
 	SubjectCardProps,
@@ -11,7 +11,7 @@ import useApiRequest from "../hooks/useApiRequest";
 interface Subject extends SubjectCardProps {}
 
 export default function SubjectsPage() {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	// Usar el hook personalizado para gestionar la petición
 	const {

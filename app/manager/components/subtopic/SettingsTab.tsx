@@ -1,6 +1,6 @@
 // /app/manager/components/subtopic/SettingsTab.tsx
 import { useState, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import { useRouter } from "next/navigation";
 import { Subtopic } from "../../contexts/SubtopicContext";
 import { ConfirmationModal } from "../common";
@@ -25,7 +25,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 	onDeleteSubtopic,
 	isLoading = false,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const router = useRouter();
 
 	// Estados para UI

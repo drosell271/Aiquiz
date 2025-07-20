@@ -9,7 +9,7 @@ async function loadRAGManager() {
 	if (isDevelopment) {
 		console.log('[RAG Search API] Usando Mock RAG Manager');
 		try {
-			const MockRAGManager = require("../../../../manager/rag-system/src/core/mockRAGManager");
+			const MockRAGManager = require("../../../../lib/rag/src/core/mockRAGManager");
 			const ragManager = new MockRAGManager();
 			return { ragManager, isMock: true };
 		} catch (mockError) {
@@ -20,14 +20,14 @@ async function loadRAGManager() {
 	
 	try {
 		console.log('[RAG Search API] Intentando cargar RAG Manager real...');
-		const RAGManager = require("../../../../manager/rag-system/src/core/ragManager");
+		const RAGManager = require("../../../../lib/rag/src/core/ragManager");
 		const ragManager = new RAGManager();
 		return { ragManager, isMock: false };
 	} catch (error) {
 		console.warn('[RAG Search API] RAG Manager real no disponible, usando Mock:', error.message);
 		
 		try {
-			const MockRAGManager = require("../../../../manager/rag-system/src/core/mockRAGManager");
+			const MockRAGManager = require("../../../../lib/rag/src/core/mockRAGManager");
 			const ragManager = new MockRAGManager();
 			return { ragManager, isMock: true };
 		} catch (mockError) {

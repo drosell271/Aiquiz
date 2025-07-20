@@ -1,11 +1,8 @@
 "use client";
 
-import "./i18n";
+import "../i18n"; // Usar la configuración principal de i18n
 import { I18nProvider } from "./I18nProvider";
 import { ReactNode } from "react";
-
-// Temporarily disable next/font to fix quick-lru dependency error
-// const inter = Inter({ subsets: ["latin"] });
 
 export default function ManagerLayout({ children }: { children: ReactNode }) {
 	return (

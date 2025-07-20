@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import Link from "next/link";
 import Header from "../../components/common/Header";
 import useApiRequest from "../../hooks/useApiRequest";
@@ -16,7 +16,7 @@ interface Professor {
 }
 
 const NewSubjectPage = () => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const router = useRouter();
 
 	// Estados para el formulario

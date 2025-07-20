@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useTranslation } from 'react-i18next';
+import { useManagerTranslation } from '../hooks/useManagerTranslation';
 
 interface FormData {
     password: string;
@@ -15,7 +15,7 @@ interface FormErrors {
 }
 
 export default function AcceptInvitationPage() {
-    const { t } = useTranslation();
+    const { t } = useManagerTranslation();
     const searchParams = useSearchParams();
     const router = useRouter();
     const [loading, setLoading] = useState(false);

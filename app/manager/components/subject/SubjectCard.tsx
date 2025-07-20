@@ -1,6 +1,6 @@
 // /app/manager/components/subject/SubjectCard.tsx
 import Link from "next/link";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import SubjectTags from "./SubjectTags";
 
 export interface SubjectCardProps {
@@ -21,7 +21,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
 	administrator,
 	topics,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	/**
 	 * Obtiene la descripción truncada si es necesario

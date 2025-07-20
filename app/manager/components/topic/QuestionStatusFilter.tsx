@@ -1,6 +1,6 @@
 // /app/manager/components/topic/QuestionStatusFilter.tsx
 import { useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 
 export type StatusFilter = "all" | "unverified" | "verified" | "rejected";
 
@@ -16,7 +16,7 @@ const QuestionStatusFilter: React.FC<QuestionStatusFilterProps> = ({
 	currentFilter,
 	onFilterChange,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	/**
 	 * Determina la clase del botón según el filtro activo

@@ -1,6 +1,6 @@
 // /app/manager/components/subject/EditTopicModal.tsx
 import { useState, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import { Topic } from "../../contexts/SubjectContext";
 
 interface EditTopicModalProps {
@@ -19,7 +19,7 @@ const EditTopicModal: React.FC<EditTopicModalProps> = ({
 	onSave,
 	isLoading = false,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const [title, setTitle] = useState<string>(topic.title);
 
 	/**

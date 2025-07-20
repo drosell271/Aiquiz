@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import useApiRequest from "../../hooks/useApiRequest";
 import { useClipboard } from "../../hooks/useClipboard";
 import { Topic, useSubject } from "../../contexts/SubjectContext";
@@ -22,7 +22,7 @@ import ConfirmationModal from "../../components/common/ConfirmationModal"; // Im
 export default function SubjectDetailPage() {
 	const { id } = useParams();
 	const router = useRouter();
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const { copied, copyToClipboard } = useClipboard();
 
 	// Usar el hook useSubject en lugar del contexto directo

@@ -27,6 +27,9 @@
       "Bash(node:*)",
       "Bash(docker-compose up:*)",
       "Bash(docker-compose:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
       "Bash(cd:*)"
     ],
     "deny": []

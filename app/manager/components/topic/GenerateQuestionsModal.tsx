@@ -1,6 +1,6 @@
 // /app/manager/components/topic/GenerateQuestionsModal.tsx
 import { useState, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 
 interface GenerateQuestionsModalProps {
 	isOpen: boolean;
@@ -18,7 +18,7 @@ const GenerateQuestionsModal: React.FC<GenerateQuestionsModalProps> = ({
 	onGenerate,
 	isLoading = false,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	// Estados para el formulario
 	const [difficulty, setDifficulty] = useState<string>("FÁCIL");

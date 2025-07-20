@@ -1,6 +1,6 @@
 // /app/manager/components/subject/SettingsTab.tsx
 import { useState, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import { useRouter } from "next/navigation";
 import { Subject, Topic } from "../../contexts/SubjectContext";
 
@@ -36,7 +36,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 	isLoading = false,
 	isDeletingTopic = false,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const router = useRouter();
 
 	// Estados para edición de temas

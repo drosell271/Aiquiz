@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../hooks/useManagerTranslation";
 import Header from "../components/common/Header";
 import useApiRequest from "../hooks/useApiRequest";
 
@@ -17,7 +17,7 @@ const FACULTIES = [
 ];
 
 const AccountPage = () => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const router = useRouter();
 
 	const [profileData, setProfileData] = useState({

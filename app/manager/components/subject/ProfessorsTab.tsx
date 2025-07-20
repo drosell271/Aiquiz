@@ -1,5 +1,5 @@
 // /app/manager/components/subject/ProfessorsTab.tsx
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 
 interface Professor {
 	id: string;
@@ -26,7 +26,7 @@ const ProfessorsTab: React.FC<ProfessorsTabProps> = ({
 	onRemoveProfessor,
 	isLoading = false,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	/**
 	 * Verifica si un profesor puede ser eliminado

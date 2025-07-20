@@ -1,7 +1,7 @@
 // /app/manager/components/subject/TopicsTab.tsx
 import { useState, useCallback, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import SearchBar from "./SearchBar";
 
 interface SubTopic {
@@ -36,7 +36,7 @@ const TopicsTab: React.FC<TopicsTabProps> = ({
 	isLoading = false,
 	deletingTopicId = "",
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const [filteredTopics, setFilteredTopics] = useState<Topic[]>(topics || []);
 
 	// Sincronizar filteredTopics cuando topics cambie

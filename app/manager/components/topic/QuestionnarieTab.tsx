@@ -1,6 +1,6 @@
 // /app/manager/components/topic/QuestionnarieTab.tsx
 import { useState, useEffect, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import useApiRequest from "../../hooks/useApiRequest";
 import SearchBar from "../subject/SearchBar";
 import { ConfirmationModal } from "../common";
@@ -26,7 +26,7 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 	topicId,
 	subjectId,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	// Estados para UI
 	const [filteredQuestionnaires, setFilteredQuestionnaires] = useState<

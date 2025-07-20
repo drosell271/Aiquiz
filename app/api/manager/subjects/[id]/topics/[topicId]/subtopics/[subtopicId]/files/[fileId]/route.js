@@ -18,7 +18,7 @@ async function loadRAGManager() {
 			console.log('[Delete File API] ✅ Qdrant disponible, intentando RAG Manager V2...');
 			
 			try {
-				const RAGManagerV2 = require("../../../../../../../../../../manager/rag-system/src/core/ragManagerV2");
+				const RAGManagerV2 = require("../../../../../../../../../../lib/rag/src/core/ragManagerV2");
 				const ragManager = new RAGManagerV2({
 					enableLogging: true,
 					chunkSize: 512,
@@ -31,7 +31,7 @@ async function loadRAGManager() {
 				
 				// Fallback al RAG Manager original
 				try {
-					const RAGManager = require("../../../../../../../../../../manager/rag-system/src/core/ragManager");
+					const RAGManager = require("../../../../../../../../../../lib/rag/src/core/ragManager");
 					const ragManager = new RAGManager();
 					return { ragManager, isMock: false };
 				} catch (fallbackError) {
@@ -48,7 +48,7 @@ async function loadRAGManager() {
 	// Fallback a Mock si Qdrant no está disponible o hay errores
 	console.log('[Delete File API] Usando Mock RAG Manager como fallback');
 	try {
-		const MockRAGManager = require("../../../../../../../../../../manager/rag-system/src/core/mockRAGManager");
+		const MockRAGManager = require("../../../../../../../../../../lib/rag/src/core/mockRAGManager");
 		const ragManager = new MockRAGManager();
 		return { ragManager, isMock: true };
 	} catch (mockError) {

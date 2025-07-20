@@ -3,13 +3,13 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 
 /**
  * Componente de cabecera principal para la aplicación
  */
 const Header: React.FC = () => {
-	const { t, i18n } = useTranslation();
+	const { t, i18n } = useManagerTranslation();
 	const pathname = usePathname();
 	const router = useRouter();
 

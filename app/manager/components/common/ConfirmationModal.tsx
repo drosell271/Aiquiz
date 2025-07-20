@@ -1,5 +1,5 @@
 // /app/manager/components/common/ConfirmationModal.tsx
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 
 interface ConfirmationModalProps {
 	isOpen: boolean;
@@ -27,7 +27,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 	isLoading = false,
 	isDanger = true,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	// No renderizar nada si el modal no está abierto
 	if (!isOpen) return null;

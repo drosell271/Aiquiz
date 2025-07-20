@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../../../hooks/useManagerTranslation";
 import {
 	useTopic,
 	TopicProvider,
@@ -28,7 +28,7 @@ const TopicDetailContent = () => {
 	const topicId = params.topicId as string;
 
 	const router = useRouter();
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const { topic, loading, setTopic, refetchTopic } = useTopic();
 
 	// Estados para UI

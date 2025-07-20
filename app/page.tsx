@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Footer from "./components/ui/Footer";
 import Header from "./components/ui/Header";
@@ -6,6 +7,67 @@ import { useTranslation } from "react-i18next";
 
 const HomePage = () => {
   const { t, i18n } = useTranslation();
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Debug i18n
+  useEffect(() => {
+    console.log('i18n ready:', i18n.isInitialized);
+    console.log('Current language:', i18n.language);
+    console.log('Available resources:', Object.keys(i18n.getResourceBundle(i18n.language, 'translation') || {}));
+    console.log('front.title translation:', t('front.title'));
+  }, [i18n, t]);
+
+  useEffect(() => {
+    fetchSubjects();
+  }, []);
+
+  const fetchSubjects = async () => {
+    try {
+      const response = await fetch('/api/subjects');
+      const data = await response.json();
+      
+      if (data.success) {
+        setSubjects(data.subjects);
+      } else {
+        setError('Error loading subjects');
+      }
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+      setError('Error loading subjects');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <main className='container-layout'>
+        <Header/>
+        <div className="container-content">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-lg">{t("common.loading") || "Loading..."}</div>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className='container-layout'>
+        <Header/>
+        <div className="container-content">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-lg text-red-600">{error}</div>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
 
   return (
     <main className='container-layout'> 
@@ -23,62 +85,17 @@ const HomePage = () => {
             {/* <h2> Elige la Asignatura:</h2> */}
           </div>
           <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-4 mt-3 gap-3">
-            <Link
-              className="subject-button "
-              href={{ pathname: "/quiz/CORE" }}
-              id="core"
-            >
-              <p>Computación en Red </p>
-              <p className="subject-acronym ">CORE</p>
-            </Link>
-            <Link
-              className="subject-button "
-              href={{ pathname: "/quiz/IBDN" }}
-              id="ibdn"
-            >
-              <p> Ingeniería de Big Data en la Nube</p>
-              <p className="subject-acronym ">IBDN</p>
-            </Link>
-            <Link
-              className="subject-button "
-              href={{ pathname: "/quiz/TECW" }}
-              id="tecw"
-            >
-              <p> Tecnologías Web </p>
-              <p className="subject-acronym ">TECW</p>
-            </Link>
-            <Link
-              className="subject-button"
-              href={{ pathname: "/quiz/BBDD" }}
-              id="bbdd"
-            >
-              <p> Bases de Datos </p>
-              <p className="subject-acronym ">BBDD</p>
-            </Link>
-            <Link
-              className="subject-button"
-              href={{ pathname: "/quiz/IWEB" }}
-              id="iweb"
-            >
-              <p>Ingeniería Web</p>
-              <p className="subject-acronym ">IWEB</p>
-            </Link>
-            <Link
-              className="subject-button "
-              href={{ pathname: "/quiz/CDPS" }}
-              id="cdps"
-            >
-              <p> Centros de datos y provisión de servicios </p>
-              <p className="subject-acronym">CDPS</p>
-            </Link>
-            <Link
-              className="subject-button"
-              href={{ pathname: "/quiz/PRG" }}
-              id="prg"
-            >
-              <p> Programación</p>
-              <p className="subject-acronym">PRG</p>
-            </Link>
+            {subjects.map((subject) => (
+              <Link
+                key={subject._id}
+                className="subject-button"
+                href={{ pathname: `/quiz/${subject.acronym}` }}
+                id={subject.acronym.toLowerCase()}
+              >
+                <p>{subject.name}</p>
+                <p className="subject-acronym">{subject.acronym}</p>
+              </Link>
+            ))}
           </div>
         </div>
    

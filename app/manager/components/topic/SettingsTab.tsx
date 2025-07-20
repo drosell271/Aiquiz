@@ -1,6 +1,6 @@
 // /app/manager/components/topic/SettingsTab.tsx
 import { useState, useCallback, useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import { Topic, Subtopic } from "../../contexts/TopicContext";
 import { ConfirmationModal } from "../common";
 
@@ -20,7 +20,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 	onDeleteSubtopic,
 	isLoading = false,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	// Estados para edición del tema
 	const [editMode, setEditMode] = useState(false);

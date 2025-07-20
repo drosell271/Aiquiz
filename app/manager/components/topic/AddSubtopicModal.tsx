@@ -1,6 +1,6 @@
 // /app/manager/components/topic/AddSubtopicModal.tsx
 import { useState, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 
 interface AddSubtopicModalProps {
 	onClose: () => void;
@@ -16,7 +16,7 @@ const AddSubtopicModal: React.FC<AddSubtopicModalProps> = ({
 	onAdd,
 	isLoading = false,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	// Estado unificado para el formulario
 	const [formData, setFormData] = useState({

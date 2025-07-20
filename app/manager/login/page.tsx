@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useContext, FormEvent, ChangeEvent } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../hooks/useManagerTranslation";
 import { useRouter, useSearchParams } from "next/navigation";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import { ClientSideContext } from "../I18nProvider";
@@ -16,7 +16,7 @@ interface Credentials {
 
 const LoginPage = () => {
 	const isClient = useContext(ClientSideContext);
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const router = useRouter();
 	const searchParams = useSearchParams();
 

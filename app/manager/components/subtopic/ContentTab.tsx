@@ -1,6 +1,6 @@
 // /app/manager/components/subtopic/ContentTab.tsx
 import { useState, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import { Subtopic } from "../../contexts/SubtopicContext";
 
 interface ContentFile {
@@ -57,7 +57,7 @@ const ContentTab: React.FC<ContentTabProps> = ({
 	isUploading = false,
 	uploadProgress = { step: '', progress: 0 },
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const [videoUrl, setVideoUrl] = useState<string>("");
 
 	// Formatear tamaño de archivo

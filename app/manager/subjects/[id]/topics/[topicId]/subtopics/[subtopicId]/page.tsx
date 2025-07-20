@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../../../../../hooks/useManagerTranslation";
 import {
 	SubtopicProvider,
 	useSubtopic,
@@ -23,7 +23,7 @@ const SubtopicDetailContent = () => {
 	const subtopicId = params.subtopicId as string;
 
 	const router = useRouter();
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const { subtopic, loading, setSubtopic, refetchSubtopic } = useSubtopic();
 
 	// Estados para UI
