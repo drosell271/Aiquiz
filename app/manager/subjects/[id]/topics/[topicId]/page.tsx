@@ -33,8 +33,6 @@ const TopicDetailContent = () => {
 
 	// Estados para UI
 	const [activeTab, setActiveTab] = useState("subtopics");
-	const [editMode, setEditMode] = useState(false);
-	const [editedTopic, setEditedTopic] = useState(topic);
 	const [showDeleteSubtopicModal, setShowDeleteSubtopicModal] =
 		useState(false);
 	const [subtopicToDelete, setSubtopicToDelete] = useState<string>("");
@@ -44,7 +42,7 @@ const TopicDetailContent = () => {
 		null
 	);
 
-	// API para modificaciones de tema
+	// API para modificaciones de tema 
 	const { makeRequest: updateTopic, loading: updatingTopic } = useApiRequest(
 		`/api/subjects/${id}/topics/${topicId}`,
 		"PUT",
@@ -66,42 +64,18 @@ const TopicDetailContent = () => {
 	const { makeRequest: deleteSubtopic, loading: deletingSubtopic } =
 		useApiRequest("", "DELETE", null, false);
 
-	// Sincronizar estado local cuando cambia el topic en el contexto
-	useEffect(() => {
-		if (topic) {
-			setEditedTopic(topic);
-		}
-	}, [topic]);
-
 	const handleTabChange = (tab: string) => {
 		setActiveTab(tab);
 	};
 
-	// Manejadores para temas
-	const handleEditToggle = () => {
-		setEditMode(!editMode);
-		if (editMode && topic) {
-			// Reset to original values if canceling edit
-			setEditedTopic(topic);
-		}
-	};
-
-	const handleInputChange = (
-		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-	) => {
-		const { name, value } = e.target;
-		setEditedTopic((prev) => (prev ? { ...prev, [name]: value } : null));
-	};
-
-	const handleSaveTopicChanges = async () => {
-		if (!editedTopic) return;
+	// Manejar actualización del tema
+	const handleUpdateTopic = async (title: string, description: string) => {
+		if (!topic) return;
 
 		try {
-			const response = await updateTopic(editedTopic);
-
+			const response = await updateTopic({ title, description });
 			if (response.success) {
 				await refetchTopic();
-				setEditMode(false);
 			}
 		} catch (error) {
 			console.error("Error al actualizar el tema:", error);
@@ -143,7 +117,7 @@ const TopicDetailContent = () => {
 			const response = await editSubtopic(
 				{ title, description },
 				false,
-				`${id}/topics/${topicId}/subtopics/${subtopicId}`
+				`/api/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}`
 			);
 
 			if (response.success) {
@@ -169,7 +143,7 @@ const TopicDetailContent = () => {
 			const response = await deleteSubtopic(
 				null,
 				false,
-				`${id}/topics/${topicId}/subtopics/${subtopicToDelete}`
+				`/api/subjects/${id}/topics/${topicId}/subtopics/${subtopicToDelete}`
 			);
 
 			if (response.success) {
@@ -232,7 +206,7 @@ const TopicDetailContent = () => {
 						href={`/manager/subjects/${id}`}
 						className="hover:text-gray-700"
 					>
-						{topic.subjectTitle}
+						{topic.subject?.title || "Asignatura"}
 					</Link>
 					<span className="mx-2">&gt;</span>
 					<span className="text-gray-900">{topic.title}</span>
@@ -308,16 +282,12 @@ const TopicDetailContent = () => {
 					<QuestionsTab topicId={topicId} subjectId={id} />
 				)}
 
-				{activeTab === "settings" && topic && editedTopic && (
+				{activeTab === "settings" && topic && (
 					<SettingsTab
 						topic={topic}
-						editMode={editMode}
-						editedTopic={editedTopic}
-						onEditToggle={handleEditToggle}
-						onInputChange={handleInputChange}
-						onSaveChanges={handleSaveTopicChanges}
+						onUpdateTopic={handleUpdateTopic}
 						onDeleteSubtopic={handleConfirmDeleteSubtopic}
-						isLoading={updatingTopic}
+						isLoading={updatingTopic || deletingSubtopic}
 					/>
 				)}
 			</div>

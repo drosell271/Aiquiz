@@ -53,6 +53,26 @@ const FileSchema = new Schema(
 			enum: ["local", "youtube", "vimeo", "other"],
 			default: "local",
 		},
+		// Campos específicos para integración RAG
+		ragProcessed: {
+			type: Boolean,
+			default: false,
+		},
+		ragDocumentId: {
+			type: String,
+			trim: true,
+		},
+		ragStats: {
+			chunks: Number,
+			pages: Number,
+			processingTime: Number,
+			textLength: Number,
+			quality: String,
+		},
+		description: {
+			type: String,
+			trim: true,
+		},
 	},
 	{
 		timestamps: true,
@@ -72,6 +92,7 @@ FileSchema.index({ subtopic: 1 });
 FileSchema.index({ fileType: 1 });
 FileSchema.index({ fileName: "text", originalName: "text" });
 
-const File = mongoose.model("File", FileSchema);
+// Export the model, avoiding OverwriteModelError during development
+const File = mongoose.models.File || mongoose.model("File", FileSchema);
 
 module.exports = File;

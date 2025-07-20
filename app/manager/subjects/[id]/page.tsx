@@ -15,6 +15,7 @@ import ProfessorsTab from "../../components/subject/ProfessorsTab";
 import SettingsTab from "../../components/subject/SettingsTab";
 import InviteModal from "../../components/subject/InviteModal";
 import EditTopicModal from "../../components/subject/EditTopicModal";
+import AddTopicModal from "../../components/subject/AddTopicModal";
 import SubjectDetailSidebar from "../../components/common/SubjectDetailSidebar";
 import ConfirmationModal from "../../components/common/ConfirmationModal"; // Importación del nuevo componente
 
@@ -27,12 +28,31 @@ export default function SubjectDetailPage() {
 	// Usar el hook useSubject en lugar del contexto directo
 	const { subject, loading, setSubject, refetchSubject } = useSubject();
 
+	// Obtener información del usuario actual del localStorage
+	const getCurrentUser = () => {
+		try {
+			const token = localStorage.getItem('jwt_token');
+			if (!token) return null;
+			
+			// Decodificar el JWT básico (sin verificación, solo para obtener la info)
+			const payload = JSON.parse(atob(token.split('.')[1]));
+			return {
+				id: payload.userId,
+				role: payload.role || 'professor'
+			};
+		} catch (error) {
+			console.error('Error obteniendo usuario actual:', error);
+			return null;
+		}
+	};
+
 	// Estados para UI
 	const [activeTab, setActiveTab] = useState("topics");
 	const [editMode, setEditMode] = useState(false);
 	const [editedSubject, setEditedSubject] = useState(subject);
 	const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
 	const [showInviteModal, setShowInviteModal] = useState(false);
+	const [showAddTopicModal, setShowAddTopicModal] = useState(false);
 	const [deletingTopicId, setDeletingTopicId] = useState<string>("");
 
 	// Estados para modales de confirmación
@@ -51,7 +71,7 @@ export default function SubjectDetailPage() {
 
 	// API para añadir profesor
 	const { makeRequest: addProfessor, loading: addingProfessor } =
-		useApiRequest(`/api/subjects/${id}/professors`, "POST", null, false);
+		useApiRequest(`/api/manager/subjects/${id}/professors`, "POST", null, false);
 
 	// API para eliminar profesor
 	const { makeRequest: removeProfessor, loading: removingProfessor } =
@@ -59,7 +79,7 @@ export default function SubjectDetailPage() {
 
 	// API para añadir tema
 	const { makeRequest: addTopic, loading: addingTopic } = useApiRequest(
-		`/api/subjects/${id}/topics`,
+		`/api/manager/subjects/${id}/topics`,
 		"POST",
 		null,
 		false
@@ -71,7 +91,7 @@ export default function SubjectDetailPage() {
 
 	// API para eliminar tema
 	const { makeRequest: deleteTopic, loading: deletingTopic } = useApiRequest(
-		"",
+		`/api/manager/subjects/${id}/topics`,
 		"DELETE",
 		null,
 		false
@@ -79,7 +99,7 @@ export default function SubjectDetailPage() {
 
 	// API para guardar cambios de la asignatura
 	const { makeRequest: saveSubject, loading: savingSubject } = useApiRequest(
-		`/api/subjects/${id}`,
+		`/api/manager/subjects/${id}`,
 		"PUT",
 		null,
 		false
@@ -87,7 +107,7 @@ export default function SubjectDetailPage() {
 
 	// API para eliminar la asignatura
 	const { makeRequest: deleteSubjectRequest, loading: deletingSubject } =
-		useApiRequest(`/api/subjects/${id}`, "DELETE", null, false);
+		useApiRequest(`/api/manager/subjects/${id}`, "DELETE", null, false);
 
 	const handleTabChange = (tab: string) => {
 		setActiveTab(tab);
@@ -157,7 +177,7 @@ export default function SubjectDetailPage() {
 			const response = await removeProfessor(
 				null,
 				false,
-				`${id}/professors/${itemToDelete}`
+				`/api/manager/subjects/${id}/professors/${itemToDelete}`
 			);
 			if (response.success) {
 				refetchSubject(); // Usar refetchSubject del contexto
@@ -169,18 +189,23 @@ export default function SubjectDetailPage() {
 		}
 	};
 
-	const handleAddTopicRequest = async () => {
+	const handleAddTopicRequest = () => {
+		setShowAddTopicModal(true);
+	};
+
+	const handleAddTopicConfirm = async (title: string, description: string) => {
 		if (!subject) return;
 
 		try {
 			const newTopic = {
-				title: t("subjectDetail.newTopic"),
-				description: "",
+				title: title.trim(),
+				description: description?.trim() || "",
 			};
 
 			const response = await addTopic(newTopic, true); // Forzar nueva llamada
 			if (response.success) {
 				refetchSubject(); // Usar refetchSubject del contexto
+				setShowAddTopicModal(false);
 			}
 		} catch (error) {
 			console.error("Error al añadir tema:", error);
@@ -197,7 +222,7 @@ export default function SubjectDetailPage() {
 			const response = await editTopic(
 				{ title: newTitle },
 				false,
-				`${id}/topics/${topicId}`
+				`/api/manager/subjects/${id}/topics/${topicId}`
 			);
 
 			if (response.success) {
@@ -223,7 +248,7 @@ export default function SubjectDetailPage() {
 			const response = await deleteTopic(
 				null,
 				false,
-				`${id}/topics/${itemToDelete}`
+				`/api/manager/subjects/${id}/topics/${itemToDelete}`
 			);
 
 			if (response.success) {
@@ -429,6 +454,8 @@ export default function SubjectDetailPage() {
 
 							<ProfessorsTab
 								professors={subject.professors}
+								administrators={subject.administrators || []}
+								currentUser={getCurrentUser()}
 								onRemoveProfessor={handleConfirmDeleteProfessor} // Cambiado para usar la confirmación
 								isLoading={removingProfessor}
 							/>
@@ -466,6 +493,14 @@ export default function SubjectDetailPage() {
 							onClose={() => setEditingTopic(null)}
 							onSave={handleEditTopicRequest}
 							isLoading={editingTopicLoading}
+						/>
+					)}
+
+					{showAddTopicModal && (
+						<AddTopicModal
+							onClose={() => setShowAddTopicModal(false)}
+							onAdd={handleAddTopicConfirm}
+							isLoading={addingTopic}
 						/>
 					)}
 

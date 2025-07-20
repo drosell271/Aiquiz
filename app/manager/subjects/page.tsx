@@ -18,7 +18,7 @@ export default function SubjectsPage() {
 		data: subjects = [],
 		loading: isLoading,
 		error,
-	} = useApiRequest("/api/subjects", "GET", [], true);
+	} = useApiRequest("/api/manager/subjects", "GET", [], true);
 
 	return (
 		<div>

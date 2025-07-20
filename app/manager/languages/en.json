@@ -101,7 +101,9 @@
 		"copyLink": "Copy link",
 		"copied": "Link copied!",
 		"save": "Save",
-		"confirmDelete": "Confirm"
+		"confirmDelete": "Confirm",
+		"topicTitlePlaceholder": "Enter the topic title",
+		"topicDescriptionPlaceholder": "Enter an optional description"
 	},
 	"common": {
 		"processing": "Processing...",
@@ -111,7 +113,10 @@
 		"cancel": "Cancel",
 		"confirm": "Confirm",
 		"delete": "Delete",
-		"confirmDelete": "Confirm deletion"
+		"confirmDelete": "Confirm deletion",
+		"title": "Title",
+		"description": "Description",
+		"add": "Add"
 	},
 	"confirmation": {
 		"deleteSubject": {

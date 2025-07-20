@@ -1,5 +1,5 @@
 // /app/manager/components/subject/TopicsTab.tsx
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import SearchBar from "./SearchBar";
@@ -37,7 +37,12 @@ const TopicsTab: React.FC<TopicsTabProps> = ({
 	deletingTopicId = "",
 }) => {
 	const { t } = useTranslation();
-	const [filteredTopics, setFilteredTopics] = useState<Topic[]>(topics);
+	const [filteredTopics, setFilteredTopics] = useState<Topic[]>(topics || []);
+
+	// Sincronizar filteredTopics cuando topics cambie
+	useEffect(() => {
+		setFilteredTopics(topics || []);
+	}, [topics]);
 
 	/**
 	 * Maneja la búsqueda de temas
@@ -45,16 +50,16 @@ const TopicsTab: React.FC<TopicsTabProps> = ({
 	const handleSearch = useCallback(
 		(query: string) => {
 			if (!query) {
-				setFilteredTopics(topics);
+				setFilteredTopics(topics || []);
 				return;
 			}
 
 			const queryLower = query.toLowerCase();
-			const filtered = topics.filter(
+			const filtered = (topics || []).filter(
 				(topic) =>
 					topic.title.toLowerCase().includes(queryLower) ||
 					topic.description.toLowerCase().includes(queryLower) ||
-					topic.subtopics.some((subtopic) =>
+					(topic.subtopics || []).some((subtopic) =>
 						subtopic.title.toLowerCase().includes(queryLower)
 					)
 			);

@@ -1,6 +1,6 @@
 // models/User.js
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const SALT_WORK_FACTOR = 10;
 
@@ -43,6 +43,12 @@ const UserSchema = new mongoose.Schema(
 		},
 		resetPasswordToken: String,
 		resetPasswordExpires: Date,
+		invitationToken: String,
+		invitationExpires: Date,
+		isActive: {
+			type: Boolean,
+			default: true,
+		},
 	},
 	{
 		timestamps: true,
@@ -83,15 +89,17 @@ UserSchema.methods.createPasswordResetToken = function () {
 	return resetToken;
 };
 
-// Ocultar la contraseña cuando el usuario sea convertido a JSON
+// Ocultar campos sensibles cuando el usuario sea convertido a JSON
 UserSchema.methods.toJSON = function () {
 	const userObject = this.toObject();
 	delete userObject.password;
 	delete userObject.resetPasswordToken;
 	delete userObject.resetPasswordExpires;
+	delete userObject.invitationToken;
 	return userObject;
 };
 
-const User = mongoose.model("User", UserSchema);
+// Export the model, avoiding OverwriteModelError during development
+const User = mongoose.models.User || mongoose.model("User", UserSchema);
 
 module.exports = User;

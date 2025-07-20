@@ -311,23 +311,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 				)}
 			</div>
 
-			<div className="mb-6">
-				<label className="block text-sm font-medium text-gray-700 mb-1">
-					{t("subtopicDetail.topic") || "Tema"}
-				</label>
-				<div className="p-2 bg-gray-100 rounded-md">
-					{subtopic.topicTitle}
-				</div>
-			</div>
-
-			<div className="mb-6">
-				<label className="block text-sm font-medium text-gray-700 mb-1">
-					{t("subtopicDetail.subject") || "Asignatura"}
-				</label>
-				<div className="p-2 bg-gray-100 rounded-md">
-					{subtopic.subjectTitle}
-				</div>
-			</div>
 
 			{renderDeleteSection()}
 

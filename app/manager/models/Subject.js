@@ -66,6 +66,7 @@ SubjectSchema.methods.removeProfessor = async function (professorId) {
 // Índices para optimizar búsquedas
 SubjectSchema.index({ title: "text", acronym: "text", description: "text" });
 
-const Subject = mongoose.model("Subject", SubjectSchema);
+// Export the model, avoiding OverwriteModelError during development
+const Subject = mongoose.models.Subject || mongoose.model("Subject", SubjectSchema);
 
 module.exports = Subject;

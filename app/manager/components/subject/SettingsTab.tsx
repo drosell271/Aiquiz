@@ -255,7 +255,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 					{t("subjectDetail.topicsList")}
 				</h3>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-					{subject.topics.map((topic) => (
+					{(subject.topics || []).map((topic) => (
 						<div
 							key={topic.id}
 							className="p-4 bg-gray-100 rounded-md"

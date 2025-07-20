@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(ls:*)",
+      "Bash(timeout 10 npm run dev)",
+      "Bash(npm run build:*)",
+      "Bash(cp:*)",
+      "Bash(cd:*)",
+      "Bash(curl:*)",
+      "Bash(timeout 10 curl -s http://localhost:3000/api/manager/swagger)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(mongo:*)",
+      "Bash(mongod:*)",
+      "Bash(grep:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm install:*)",
+      "Bash(rm:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(ss:*)",
+      "Bash(rg:*)",
+      "Bash(git rm:*)",
+      "Bash(node:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose:*)",
+      "Bash(cd:*)"
+    ],
+    "deny": []
+  }
+}

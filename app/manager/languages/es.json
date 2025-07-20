@@ -101,7 +101,9 @@
 		"copyLink": "Copiar enlace",
 		"copied": "¡Enlace copiado!",
 		"save": "Guardar",
-		"confirmDelete": "Confirmar"
+		"confirmDelete": "Confirmar",
+		"topicTitlePlaceholder": "Ingrese el título del tema",
+		"topicDescriptionPlaceholder": "Ingrese una descripción opcional"
 	},
 	"common": {
 		"processing": "Procesando...",
@@ -111,7 +113,10 @@
 		"cancel": "Cancelar",
 		"confirm": "Confirmar",
 		"delete": "Eliminar",
-		"confirmDelete": "Confirmar eliminación"
+		"confirmDelete": "Confirmar eliminación",
+		"title": "Título",
+		"description": "Descripción",
+		"add": "Añadir"
 	},
 	"confirmation": {
 		"deleteSubject": {

@@ -6,8 +6,8 @@ const nextConfig = require("./next.config");
 const basePath = nextConfig.basePath || "";
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = nextConfig.env.HOST_SERVER || "localhost";
-const port = nextConfig.env.PORT_SERVER || 3000;
+const hostname = process.env.HOST_SERVER || "localhost";
+const port = process.env.PORT_SERVER || 3000;
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 

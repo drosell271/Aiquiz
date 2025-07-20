@@ -28,7 +28,7 @@ const SubjectTags: React.FC<SubjectTagsProps> = ({ tags, category }) => {
 		<div className="mb-3">
 			<span className="font-bold mr-2">{category}:</span>
 			<div className="flex flex-wrap gap-2 mt-1">
-				{tags.map((tag, index) => renderTag(tag, index))}
+				{(tags || []).map((tag, index) => renderTag(tag, index))}
 			</div>
 		</div>
 	);

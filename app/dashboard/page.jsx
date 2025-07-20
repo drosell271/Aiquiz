@@ -18,19 +18,19 @@ const DashboardPage = () => {
           {t('dashboard.choose')}
           </h2>
           <div className='grid grid-cols-4 mt-3 gap-3'>
-            <Link  className="subject-button" id="core" href={{pathname: '/dashboard/CORE'}}> <p>Computación en Red </p>
+            <Link  className="subject-button" id="core" href={{pathname: '/dashboard/subject/CORE'}}> <p>Computación en Red </p>
             <p className="subject-acronym ">CORE</p></Link>
-            <Link  className="subject-button" id="ibdn" href={{pathname: '/dashboard/IBDN'}}> <p> Ingeniería de Big Data en la Nube</p>
+            <Link  className="subject-button" id="ibdn" href={{pathname: '/dashboard/subject/IBDN'}}> <p> Ingeniería de Big Data en la Nube</p>
             <p className="subject-acronym ">IBDN</p></Link>
-            <Link  className="subject-button" id="tecw" href={{pathname: '/dashboard/TECW'}}> <p> Tecnologías Web </p>
+            <Link  className="subject-button" id="tecw" href={{pathname: '/dashboard/subject/TECW'}}> <p> Tecnologías Web </p>
             <p className="subject-acronym ">TECW</p></Link>
-            <Link  className="subject-button" id="bbdd" href={{pathname: '/dashboard/BBDD'}}><p> Bases de Datos </p>
+            <Link  className="subject-button" id="bbdd" href={{pathname: '/dashboard/subject/BBDD'}}><p> Bases de Datos </p>
             <p className="subject-acronym ">BBDD</p></Link>
-            <Link  className="subject-button" id="iweb" href={{pathname: '/dashboard/IWEB'}}>  <p>Ingeniería Web</p>
+            <Link  className="subject-button" id="iweb" href={{pathname: '/dashboard/subject/IWEB'}}>  <p>Ingeniería Web</p>
             <p className="subject-acronym ">IWEB</p></Link>
-            <Link  className="subject-button" id="cdps" href={{pathname: '/dashboard/CDPS'}}> <p> Centros de datos y provisión de servicios </p>
+            <Link  className="subject-button" id="cdps" href={{pathname: '/dashboard/subject/CDPS'}}> <p> Centros de datos y provisión de servicios </p>
             <p className="subject-acronym">CDPS</p></Link>
-            <Link  className="subject-button"  id="prg" href={{pathname: '/dashboard/PRG'}}> <p> Programación</p>
+            <Link  className="subject-button"  id="prg" href={{pathname: '/dashboard/subject/PRG'}}> <p> Programación</p>
             <p className="subject-acronym">PRG</p></Link>
           </div>
         </div>

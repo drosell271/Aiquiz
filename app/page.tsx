@@ -25,7 +25,7 @@ const HomePage = () => {
           <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-4 mt-3 gap-3">
             <Link
               className="subject-button "
-              href={{ pathname: "/CORE" }}
+              href={{ pathname: "/quiz/CORE" }}
               id="core"
             >
               <p>Computación en Red </p>
@@ -33,7 +33,7 @@ const HomePage = () => {
             </Link>
             <Link
               className="subject-button "
-              href={{ pathname: "/IBDN" }}
+              href={{ pathname: "/quiz/IBDN" }}
               id="ibdn"
             >
               <p> Ingeniería de Big Data en la Nube</p>
@@ -41,7 +41,7 @@ const HomePage = () => {
             </Link>
             <Link
               className="subject-button "
-              href={{ pathname: "/TECW" }}
+              href={{ pathname: "/quiz/TECW" }}
               id="tecw"
             >
               <p> Tecnologías Web </p>
@@ -49,7 +49,7 @@ const HomePage = () => {
             </Link>
             <Link
               className="subject-button"
-              href={{ pathname: "/BBDD" }}
+              href={{ pathname: "/quiz/BBDD" }}
               id="bbdd"
             >
               <p> Bases de Datos </p>
@@ -57,7 +57,7 @@ const HomePage = () => {
             </Link>
             <Link
               className="subject-button"
-              href={{ pathname: "/IWEB" }}
+              href={{ pathname: "/quiz/IWEB" }}
               id="iweb"
             >
               <p>Ingeniería Web</p>
@@ -65,7 +65,7 @@ const HomePage = () => {
             </Link>
             <Link
               className="subject-button "
-              href={{ pathname: "/CDPS" }}
+              href={{ pathname: "/quiz/CDPS" }}
               id="cdps"
             >
               <p> Centros de datos y provisión de servicios </p>
@@ -73,7 +73,7 @@ const HomePage = () => {
             </Link>
             <Link
               className="subject-button"
-              href={{ pathname: "/PRG" }}
+              href={{ pathname: "/quiz/PRG" }}
               id="prg"
             >
               <p> Programación</p>

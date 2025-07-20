@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
@@ -10,6 +10,7 @@ import {
 	Subtopic,
 } from "../../../../../../contexts/SubtopicContext";
 import useApiRequest from "../../../../../../hooks/useApiRequest";
+import apiService from "../../../../../../services";
 
 // Importar los componentes de las pestañas
 import { ContentTab, SettingsTab } from "../../../../../../components/subtopic";
@@ -28,11 +29,14 @@ const SubtopicDetailContent = () => {
 	// Estados para UI
 	const [activeTab, setActiveTab] = useState("content");
 	const [isUploading, setIsUploading] = useState(false);
+	const [uploadProgress, setUploadProgress] = useState({ step: '', progress: 0 });
+	const [files, setFiles] = useState([]);
+	const [filesLoaded, setFilesLoaded] = useState(false);
 
 	// API para modificaciones del subtema
 	const { makeRequest: updateSubtopic, loading: updatingSubtopic } =
 		useApiRequest(
-			`/api/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}`,
+			`/api/manager/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}`,
 			"PUT",
 			null,
 			false
@@ -41,29 +45,36 @@ const SubtopicDetailContent = () => {
 	// API para eliminar subtema
 	const { makeRequest: deleteSubtopic, loading: deletingSubtopic } =
 		useApiRequest(
-			`/api/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}`,
+			`/api/manager/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}`,
 			"DELETE",
 			null,
 			false
 		);
 
-	// API simulada para archivos
+	// API para gestión de archivos
 	const { makeRequest: uploadDocument, loading: uploadingDocument } =
 		useApiRequest(
-			`/api/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}/files`,
+			`/api/manager/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}/files`,
 			"POST",
 			null,
 			false
 		);
 
 	const { makeRequest: addVideoUrl, loading: addingVideoUrl } = useApiRequest(
-		`/api/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}/videos`,
+		`/api/manager/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}/videos`,
 		"POST",
 		null,
 		false
 	);
 
-	const { makeRequest: deleteFile, loading: deletingFile } = useApiRequest(
+	const { makeRequest: getFiles, loading: loadingFiles } = useApiRequest(
+		`/api/manager/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}/files`,
+		"GET",
+		null,
+		false // No cargar automáticamente al montar
+	);
+
+	const { makeRequest: deleteFileAPI, loading: deletingFile } = useApiRequest(
 		"",
 		"DELETE",
 		null,
@@ -74,12 +85,46 @@ const SubtopicDetailContent = () => {
 		setActiveTab(tab);
 	};
 
-	// Simulación de subida de documento con input de archivo
+	// Función para cargar archivos del subtema
+	const loadSubtopicFiles = useCallback(async (forceReload = false) => {
+		if (filesLoaded && !forceReload) {
+			console.log('📋 Archivos ya cargados, omitiendo...');
+			return;
+		}
+		
+		try {
+			console.log('📋 Cargando archivos del subtema...');
+			const response = await getFiles();
+			
+			if (response && response.success) {
+				setFiles(response.data?.files || []);
+				setFilesLoaded(true);
+				console.log(`✅ ${response.data?.files?.length || 0} archivos cargados`);
+			} else {
+				console.error('❌ Error cargando archivos:', response?.message || 'No response');
+				setFiles([]);
+			}
+		} catch (error) {
+			console.error('❌ Error cargando archivos:', error);
+			setFiles([]);
+		}
+	}, [filesLoaded, getFiles]); // Depender del estado de carga y función API
+
+	// Cargar archivos cuando se carga el componente o cambia el subtema
+	useEffect(() => {
+		if (subtopic) {
+			// Force reload when subtopic changes
+			setFilesLoaded(false);
+			loadSubtopicFiles(true);
+		}
+	}, [subtopic?.id]); // Solo depender del ID del subtema, no de la función
+
+	// Subida de documento PDF con procesamiento RAG
 	const handleUploadDocument = () => {
 		// Crear un input de archivo oculto
 		const fileInput = document.createElement("input");
 		fileInput.type = "file";
-		fileInput.accept = ".pdf,.doc,.docx,.ppt,.pptx,.txt";
+		fileInput.accept = ".pdf";  // Solo PDFs para procesamiento RAG
 
 		// Manejar el evento de cambio cuando se selecciona un archivo
 		fileInput.onchange = async (e: Event) => {
@@ -88,23 +133,74 @@ const SubtopicDetailContent = () => {
 
 			if (files && files.length > 0) {
 				const file = files[0];
+				
+				// Validar que es un PDF
+				if (file.type !== 'application/pdf') {
+					alert('Solo se permiten archivos PDF para el procesamiento semántico');
+					return;
+				}
+
+				console.log("🚀 Iniciando subida de documento:", file.name);
 				setIsUploading(true);
+				setUploadProgress({ step: 'Preparando archivo...', progress: 10 });
 
 				try {
-					// En una implementación real, aquí subirías el archivo al servidor
-					console.log("Subiendo documento:", file.name);
-
-					// Simular una llamada a la API
-					await uploadDocument({
+					// Crear FormData con el archivo real
+					setUploadProgress({ step: 'Creando FormData...', progress: 20 });
+					const formData = new FormData();
+					formData.append('file', file);
+					formData.append('description', `Documento: ${file.name}`);
+					
+					console.log('📦 FormData creado:', {
 						fileName: file.name,
-						fileType: "document",
 						fileSize: file.size,
+						fileType: file.type,
+						hasFile: formData.has('file')
 					});
 
-					// Recargar los datos del subtema
-					await refetchSubtopic();
+					// Llamar a la API con FormData
+					setUploadProgress({ step: 'Enviando al servidor...', progress: 30 });
+					console.log('📤 Enviando archivo al servidor...');
+					
+					const result = await uploadDocument(formData);
+					
+					console.log('✅ Respuesta del servidor:', result);
+					
+					// Verificar si se usó modo desarrollo
+					if (result?.data?.ragMode === 'development') {
+						setUploadProgress({ step: 'Procesado en modo desarrollo...', progress: 70 });
+						console.log('ℹ️ Archivo procesado con Mock RAG (modo desarrollo)');
+					} else {
+						setUploadProgress({ step: 'Procesando PDF...', progress: 70 });
+					}
+
+					// Recargar los datos del subtema y archivos
+					setUploadProgress({ step: 'Actualizando datos...', progress: 90 });
+					// Force reload instead of setting flag
+					await Promise.all([
+						refetchSubtopic(),
+						loadSubtopicFiles(true) // Force reload
+					]);
+					
+					// Mensaje de éxito basado en el modo
+					const successMessage = result?.data?.ragMode === 'development' 
+						? 'Completado (desarrollo)' 
+						: 'Completado';
+					setUploadProgress({ step: successMessage, progress: 100 });
+					
+					// Mostrar éxito por 3 segundos (más tiempo para desarrollo)
+					setTimeout(() => {
+						setUploadProgress({ step: '', progress: 0 });
+					}, 3000);
+					
 				} catch (error) {
-					console.error("Error al subir el documento:", error);
+					console.error("❌ Error al subir el documento:", error);
+					setUploadProgress({ step: `Error: ${error.message}`, progress: 0 });
+					
+					// Limpiar mensaje de error después de 5 segundos
+					setTimeout(() => {
+						setUploadProgress({ step: '', progress: 0 });
+					}, 5000);
 				} finally {
 					setIsUploading(false);
 				}
@@ -134,21 +230,28 @@ const SubtopicDetailContent = () => {
 	};
 
 	const handleDeleteFile = async (fileId: string) => {
+		if (!confirm('¿Estás seguro de que quieres eliminar este archivo? Esta acción no se puede deshacer.')) {
+			return;
+		}
+
 		try {
-			// En una implementación real, aquí eliminarías el archivo del servidor
-			console.log("Eliminando archivo:", fileId);
+			console.log("🗑️ Eliminando archivo:", fileId);
 
-			// Simular una llamada a la API
-			await deleteFile(
-				null,
-				false,
-				`${id}/topics/${topicId}/subtopics/${subtopicId}/files/${fileId}`
-			);
+			// Usar el API service directamente
+			const result = await apiService.deleteSubtopicFile(id, topicId, subtopicId, fileId);
 
-			// Recargar los datos del subtema
-			await refetchSubtopic();
+			if (result && result.success) {
+				console.log("✅ Archivo eliminado:", result.data?.fileName);
+				// Recargar la lista de archivos
+				await loadSubtopicFiles(true); // Force reload
+			} else {
+				const errorMessage = result?.message || 'Error desconocido';
+				console.error("❌ Error eliminando archivo:", errorMessage);
+				alert(`Error eliminando archivo: ${errorMessage}`);
+			}
 		} catch (error) {
-			console.error("Error al eliminar el archivo:", error);
+			console.error("❌ Error al eliminar el archivo:", error);
+			alert(`Error eliminando archivo: ${error.message}`);
 		}
 	};
 
@@ -227,14 +330,14 @@ const SubtopicDetailContent = () => {
 						href={`/manager/subjects/${id}`}
 						className="hover:text-gray-700"
 					>
-						{subtopic.subjectTitle}
+						{subtopic.subjectTitle || "Asignatura"}
 					</Link>
 					<span className="mx-2">&gt;</span>
 					<Link
 						href={`/manager/subjects/${id}/topics/${topicId}`}
 						className="hover:text-gray-700"
 					>
-						{subtopic.topicTitle}
+						{subtopic.topicTitle || subtopic.topic?.title || "Tema"}
 					</Link>
 					<span className="mx-2">&gt;</span>
 					<span className="text-gray-900">{subtopic.title}</span>
@@ -278,15 +381,18 @@ const SubtopicDetailContent = () => {
 						subtopic={subtopic}
 						subjectId={id}
 						topicId={topicId}
+						files={files}
 						onUploadDocument={handleUploadDocument}
 						onAddVideoUrl={handleAddVideoUrl}
 						onDeleteFile={handleDeleteFile}
 						isLoading={
-							isUploading ||
 							uploadingDocument ||
 							addingVideoUrl ||
-							deletingFile
+							deletingFile ||
+							loadingFiles
 						}
+						isUploading={isUploading}
+						uploadProgress={uploadProgress}
 					/>
 				)}
 

@@ -51,7 +51,7 @@ const NewSubjectPage = () => {
 		makeRequest: createSubject,
 		loading: isLoading,
 		error: apiError,
-	} = useApiRequest("/api/subjects", "POST", null, false);
+	} = useApiRequest("/api/manager/subjects", "POST", null, false);
 
 	// Comprobar autenticación
 	useEffect(() => {

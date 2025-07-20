@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useContext, FormEvent, ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
 import { ClientSideContext } from "../I18nProvider";
 import Link from "next/link";
@@ -18,6 +18,7 @@ const LoginPage = () => {
 	const isClient = useContext(ClientSideContext);
 	const { t } = useTranslation();
 	const router = useRouter();
+	const searchParams = useSearchParams();
 
 	const [credentials, setCredentials] = useState<Credentials>({
 		email: "",
@@ -25,13 +26,14 @@ const LoginPage = () => {
 	});
 
 	const [loginError, setLoginError] = useState("");
+	const [successMessage, setSuccessMessage] = useState("");
 
 	// API login
 	const {
 		makeRequest: login,
 		loading,
 		error: apiError,
-	} = useApiRequest("/api/auth/login", "POST", null, false);
+	} = useApiRequest("/api/manager/auth/login", "POST", null, false);
 
 	// Actualizar el error de login si hay error en la API
 	useEffect(() => {
@@ -39,6 +41,16 @@ const LoginPage = () => {
 			setLoginError(t("login.loginError"));
 		}
 	}, [apiError, t]);
+
+	// Comprobar si viene de la aceptación de invitación o restablecimiento de contraseña
+	useEffect(() => {
+		const message = searchParams.get('message');
+		if (message === 'invitation-accepted') {
+			setSuccessMessage('Tu cuenta ha sido activada correctamente. Ahora puedes iniciar sesión.');
+		} else if (message === 'password-reset-success') {
+			setSuccessMessage('Tu contraseña ha sido restablecida correctamente. Ahora puedes iniciar sesión.');
+		}
+	}, [searchParams]);
 
 	const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target;
@@ -131,6 +143,12 @@ const LoginPage = () => {
 						{loginError && (
 							<div className="mb-4 p-2 bg-red-100 text-red-700 rounded-md text-sm">
 								{loginError}
+							</div>
+						)}
+
+						{successMessage && (
+							<div className="mb-4 p-2 bg-green-100 text-green-700 rounded-md text-sm">
+								{successMessage}
 							</div>
 						)}
 
