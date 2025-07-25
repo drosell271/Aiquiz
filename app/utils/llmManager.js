@@ -1,15 +1,31 @@
 import fs from 'fs';
 import OpenAI from "openai";
-import Anthropic from '@anthropic-ai/sdk';
 import Groq from "groq-sdk";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import logger from "@utils/logger.js";
+
+// Logger específico para LLM
+const llmLogger = logger.create('LLM');
+
+// Importación dinámica para Anthropic SDK para evitar problemas de shims
+let Anthropic;
+const loadAnthropic = async () => {
+    if (!Anthropic) {
+        const anthropicModule = await import('@anthropic-ai/sdk');
+        Anthropic = anthropicModule.default;
+    }
+    return Anthropic;
+};
 
 const models = JSON.parse(fs.readFileSync('models.json'));
 
 export async function getModelResponse(modelName, prompt) {
+    llmLogger.debug(`Solicitando respuesta del modelo: ${modelName}`);
+    
     const config = models.models.find(m => m.name === modelName);
 
     if (!config) {
+        llmLogger.error(`Modelo ${modelName} no encontrado`);
         throw new Error(`Modelo ${modelName} no encontrado.`);
     }
 
@@ -84,10 +100,16 @@ async function OpenAI_API_Request(config, prompt, responseFormat) {
         throw new Error(`Falta la ${config.name} API Key`);
     }
 
-    const openai = new OpenAI({
+    const openaiConfig = {
         apiKey: config.api_key,
-        organization: config.organization_id,
-    });
+    };
+    
+    // Solo agregar organization si existe y no es null
+    if (config.organization_id && config.organization_id !== null && config.organization_id !== "YOUR_OPENAI_ORG_ID") {
+        openaiConfig.organization = config.organization_id;
+    }
+    
+    const openai = new OpenAI(openaiConfig);
 
     try {
         // console.log("--------------------------------------------------");
@@ -112,8 +134,7 @@ async function OpenAI_API_Request(config, prompt, responseFormat) {
         return textResponse;
 
     } catch (error) {
-        console.error("Error during OpenAI request: ", error);
-        console.log("--------------------------------------------------");
+        llmLogger.error(`Error durante petición OpenAI`, error);
         throw error;
     }
 
@@ -124,7 +145,8 @@ async function Anthropic_API_Request(config, prompt) {
         throw new Error(`Falta la ${config.name} API Key`);
     }
 
-    const anthropic = new Anthropic({
+    const AnthropicClient = await loadAnthropic();
+    const anthropic = new AnthropicClient({
         apiKey: config.api_key,
     });
 
@@ -147,8 +169,7 @@ async function Anthropic_API_Request(config, prompt) {
         return textResponse;
 
     } catch (error) {
-        console.error("Error during Anthropic request: ", error);
-        console.log("--------------------------------------------------");
+        llmLogger.error(`Error durante petición Anthropic`, error);
         throw error;
     }
 
@@ -230,8 +251,7 @@ async function Google_API_Request(config, prompt) {
         return result.response.text();
 
     } catch (error) {
-        console.error("Error during Google request: ", error);
-        console.log("--------------------------------------------------");
+        llmLogger.error(`Error durante petición Google`, error);
         throw error;
     }
 }
@@ -267,8 +287,7 @@ async function Groq_API_Request(config, prompt) {
         return textResponse;
 
     } catch (error) {
-        console.error(`Error during ${config.name} request: `, error);
-        console.log("--------------------------------------------------");
+        llmLogger.error(`Error durante petición ${config.name}`, error);
         throw error;
     }
 }

@@ -1,8 +1,12 @@
-import dbConnect from "./dbconnect.js";
-import Subtopic from "../manager/models/Subtopic.js";
-import File from "../manager/models/File.js";
+import dbConnect from "@utils/dbconnect.js";
+import Subtopic from "@models/Subtopic.js";
+import File from "@models/File.js";
+import logger from "@utils/logger.js";
 import fs from 'fs';
 import path from 'path';
+
+// Logger específico para RAG
+const ragLogger = logger.create('RAG');
 
 /**
  * Busca contexto relevante para un subtema específico
@@ -13,10 +17,10 @@ import path from 'path';
  */
 export async function getRAGContextForSubtopic(subtopicId, topic, maxFragments = 3) {
     try {
-        console.log(`🔍 Buscando contexto para subtema: ${subtopicId}`);
+        ragLogger.debug(`Buscando contexto para subtema: ${subtopicId}`, { topic, maxFragments });
         
         if (!subtopicId) {
-            console.log("⚠️ No se proporcionó subtopicId, usando generación sin contexto");
+            ragLogger.warn("No se proporcionó subtopicId, usando generación sin contexto");
             return "";
         }
 
@@ -28,16 +32,16 @@ export async function getRAGContextForSubtopic(subtopicId, topic, maxFragments =
             .lean();
 
         if (!subtopic) {
-            console.log(`❌ Subtema no encontrado: ${subtopicId}`);
+            ragLogger.error(`Subtema no encontrado: ${subtopicId}`);
             return "";
         }
 
         if (!subtopic.files || subtopic.files.length === 0) {
-            console.log(`📁 No hay archivos asociados al subtema: ${subtopic.name}`);
+            ragLogger.info(`No hay archivos asociados al subtema: ${subtopic.name}`);
             return "";
         }
 
-        console.log(`📚 Encontrados ${subtopic.files.length} archivos para el subtema: ${subtopic.name}`);
+        ragLogger.info(`Encontrados ${subtopic.files.length} archivos para el subtema: ${subtopic.name}`);
 
         // 2. Leer archivos de texto disponibles (implementación simple)
         const contextParts = [];
@@ -45,12 +49,19 @@ export async function getRAGContextForSubtopic(subtopicId, topic, maxFragments =
 
         for (const file of subtopic.files) {
             try {
-                const filePath = path.join(uploadsDir, file.filename);
+                // El campo en la DB es fileName, no filename
+                const fileName = file.fileName || file.filename;
+                if (!fileName) {
+                    ragLogger.warn(`Archivo sin nombre válido`, { fileId: file._id });
+                    continue;
+                }
+                
+                const filePath = path.join(uploadsDir, fileName);
                 
                 // Verificar si el archivo existe
                 if (fs.existsSync(filePath)) {
                     // Por ahora, solo procesamos archivos de texto simples
-                    if (file.mimetype && file.mimetype.startsWith('text/')) {
+                    if (file.mimeType && file.mimeType.startsWith('text/')) {
                         const content = fs.readFileSync(filePath, 'utf8');
                         const preview = content.substring(0, 500).trim();
                         
@@ -65,13 +76,13 @@ export async function getRAGContextForSubtopic(subtopicId, topic, maxFragments =
                         // Para PDFs y otros formatos, agregamos información básica
                         contextParts.push({
                             filename: file.originalName,
-                            content: `Documento: ${file.originalName} (${file.mimetype}) - Contenido relacionado con ${subtopic.name}`,
+                            content: `Documento: ${file.originalName} (${file.mimeType || file.mimetype}) - Contenido relacionado con ${subtopic.name}`,
                             relevance: 0.8
                         });
                     }
                 }
             } catch (fileError) {
-                console.warn(`⚠️ Error leyendo archivo ${file.filename}:`, fileError.message);
+                ragLogger.warn(`Error leyendo archivo ${file.fileName || file.filename}`, { error: fileError.message });
             }
         }
 
@@ -94,15 +105,16 @@ export async function getRAGContextForSubtopic(subtopicId, topic, maxFragments =
             .join('\n\n');
 
         if (contextFragments.trim()) {
-            console.log(`✅ Contexto generado: ${contextFragments.length} caracteres de ${contextParts.length} archivos`);
+            ragLogger.success(`Contexto generado: ${contextFragments.length} caracteres de ${contextParts.length} archivos`);
+            ragLogger.trace("Contenido del contexto", { contextFragments });
             return contextFragments;
         } else {
-            console.log("⚠️ No se pudo generar contexto útil");
+            ragLogger.warn("No se pudo generar contexto útil");
             return "";
         }
 
     } catch (error) {
-        console.error("❌ Error al obtener contexto:", error);
+        ragLogger.error("Error al obtener contexto", error);
         // No fallar la generación de preguntas por error en contexto
         return "";
     }

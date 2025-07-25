@@ -1,13 +1,15 @@
-import chalk from "chalk";
+import logger from "@utils/logger.js";
+import { getModelResponse } from "@utils/llmManager.js";
+import { fillPrompt } from "@utils/promptManager.js";
+import { ABC_Testing_List } from "@app/constants/abctesting.js";
+import { assignAIModel } from "@utils/modelManager.js";
+import { getRAGContextForSubtopic, enhancePromptWithRAG } from "@utils/ragContextManager.js";
 
-import { getModelResponse } from "../../utils/llmManager.js";
-import { fillPrompt } from "../../utils/promptManager.js";
-import { ABC_Testing_List } from "../../constants/abctesting.js";
-import { assignAIModel } from "../../utils/modelManager.js";
-import { getRAGContextForSubtopic, enhancePromptWithRAG } from "../../utils/ragContextManager.js";
+import dbConnect from "@utils/dbconnect.js";
+import Student from "@app/models/Student.js";
 
-import dbConnect from "../../utils/dbconnect.js";
-import Student from "../../models/Student.js";
+// Logger específico para questions
+const questionsLogger = logger.create('Questions');
 
 /**
  * @swagger
@@ -138,15 +140,15 @@ export async function POST(request) {
 		);
 
 		// 🔍 INTEGRACIÓN RAG: Buscar contexto específico del subtema
-		console.log(chalk.bgBlue.white("🔍 Buscando contexto RAG para el subtema..."));
+		questionsLogger.progress("Buscando contexto RAG para el subtema", { subtopicId, topic });
 		const ragContext = await getRAGContextForSubtopic(subtopicId, topic, 3);
 		
 		if (ragContext && ragContext.trim() !== "") {
-			console.log(chalk.bgBlue.white(`✅ Contexto RAG obtenido: ${ragContext.length} caracteres`));
+			questionsLogger.success(`Contexto RAG obtenido: ${ragContext.length} caracteres`);
 			finalPrompt = enhancePromptWithRAG(finalPrompt, ragContext);
-			console.log(chalk.bgBlue.white("🚀 Prompt enriquecido con contexto RAG"));
+			questionsLogger.info("Prompt enriquecido con contexto RAG");
 		} else {
-			console.log(chalk.bgYellow.black("⚠️ No se encontró contexto RAG, usando generación estándar"));
+			questionsLogger.warn("No se encontró contexto RAG, usando generación estándar");
 		}
 
 		// SOLICITUD A LA API de modelManager para asignar un modelo de LLM al alumno
@@ -158,22 +160,13 @@ export async function POST(request) {
 			subjectIndex
 		);
 
-		// Imprimimos por pantalla todos los parametros necesarios para la asignacion de modelo para controlar que todo ha ido bien
-		console.log(
-			chalk.bgGreen.black(
-				"--------------------------------------------------------------------------------------------------------------"
-			)
-		);
-		console.log(
-			chalk.bgGreen.black(
-				`Assigned Model to ${studentEmail}: ${assignedModel} - Subject: ${subject} - ABCTesting: ${has_abctesting}    `
-			)
-		);
-		console.log(
-			chalk.bgGreen.black(
-				"--------------------------------------------------------------------------------------------------------------"
-			)
-		);
+		// Log de asignación de modelo
+		questionsLogger.separator("ASIGNACIÓN DE MODELO");
+		questionsLogger.info(`Modelo asignado: ${assignedModel}`, {
+			student: studentEmail,
+			subject: subject,
+			abcTesting: has_abctesting
+		});
 
 		// SOLICITUD A LA API del LLM seleccionado para el alumno
 		const responseLlmManager = await getModelResponse(

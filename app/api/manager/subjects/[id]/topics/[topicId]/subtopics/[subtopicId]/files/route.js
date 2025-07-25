@@ -1,10 +1,10 @@
 // app/api/manager/subjects/[id]/topics/[topicId]/subtopics/[subtopicId]/files/route.js
 import { NextResponse } from "next/server";
-import dbConnect from "../../../../../../../../../utils/dbconnect";
-import Subtopic from "../../../../../../../../../manager/models/Subtopic";
-import File from "../../../../../../../../../manager/models/File";
-import User from "../../../../../../../../../manager/models/User";
-import { withAuth, handleError } from "../../../../../../../../../utils/authMiddleware";
+import dbConnect from "@utils/dbconnect";
+import Subtopic from "@models/Subtopic";
+import File from "@models/File";
+import User from "@models/User";
+import { withAuth, handleError } from "@utils/authMiddleware";
 import path from "path";
 import fs from "fs";
 
@@ -20,7 +20,7 @@ async function loadRAGManager() {
 			console.log('[Files API] ✅ Qdrant disponible, intentando RAG Manager V2...');
 			
 			try {
-				const RAGManagerV2 = require("../../../../../../../../../lib/rag/src/core/ragManagerV2");
+				const RAGManagerV2 = require("@rag/core/ragManagerV2");
 				const ragManager = new RAGManagerV2({
 					enableLogging: true,
 					chunkSize: 512,
@@ -33,7 +33,7 @@ async function loadRAGManager() {
 				
 				// Fallback al RAG Manager original
 				try {
-					const RAGManager = require("../../../../../../../../../lib/rag/src/core/ragManager");
+					const RAGManager = require("@rag/core/ragManager");
 					const ragManager = new RAGManager();
 					return { ragManager, isMock: false };
 				} catch (fallbackError) {
@@ -50,7 +50,7 @@ async function loadRAGManager() {
 	// Fallback a Mock si Qdrant no está disponible o hay errores
 	console.log('[Files API] Usando Mock RAG Manager como fallback');
 	try {
-		const MockRAGManager = require("../../../../../../../../../lib/rag/src/core/mockRAGManager");
+		const MockRAGManager = require("@rag/core/mockRAGManager");
 		const ragManager = new MockRAGManager();
 		return { ragManager, isMock: true };
 	} catch (mockError) {
@@ -312,7 +312,7 @@ async function uploadFile(request, context) {
 			
 			// Fallback final a Mock si todo falla
 			try {
-				const MockRAGManager = require("../../../../../../../../../manager/rag-system/src/core/mockRAGManager");
+				const MockRAGManager = require("@rag/core/mockRAGManager");
 				const mockRagManager = new MockRAGManager();
 				await mockRagManager.initialize();
 				ragResult = await mockRagManager.processPDF(fileForRAG, context_rag, context.user.id);
