@@ -134,10 +134,10 @@ async function getTopic(request, context) {
 		const { id, topicId } = context.params;
 
 		const topic = await Topic.findOne({ _id: topicId, subject: id })
-			.populate("subject", "title acronym")
+			.populate("subject", "name title acronym")
 			.populate({
 				path: "subtopics",
-				select: "title description order",
+				select: "name title description order",
 				options: { sort: { order: 1 } },
 			});
 
@@ -151,7 +151,30 @@ async function getTopic(request, context) {
 			);
 		}
 
-		return NextResponse.json(topic, { status: 200 });
+		// Transformar datos para que coincidan con lo que esperan los componentes
+		const topicObj = topic.toObject();
+		const transformedTopic = {
+			id: topic._id.toString(),
+			_id: topic._id.toString(),
+			title: topic.title || topicObj.name || "Sin título",
+			description: topic.description || "",
+			order: topic.order || 0,
+			subject: topic.subject,
+			subtopics: topic.subtopics ? topic.subtopics.map(subtopic => {
+				const subtopicObj = subtopic.toObject();
+				return {
+					id: subtopic._id.toString(),
+					_id: subtopic._id.toString(),
+					title: subtopic.title || subtopicObj.name || "Sin título",
+					description: subtopic.description || "",
+					order: subtopic.order || 0
+				};
+			}) : [],
+			createdAt: topic.createdAt,
+			updatedAt: topic.updatedAt
+		};
+
+		return NextResponse.json(transformedTopic, { status: 200 });
 
 	} catch (error) {
 		return handleError(error, "Error obteniendo tema");

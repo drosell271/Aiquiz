@@ -30,6 +30,15 @@
       "Bash(cd:*)",
       "Bash(cd:*)",
       "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(sudo systemctl status:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
+      "Bash(cd:*)",
       "Bash(cd:*)"
     ],
     "deny": []

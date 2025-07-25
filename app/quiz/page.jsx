@@ -24,6 +24,7 @@ function QuizPageFun() {
     const topic = params.get('topic')
     const numQuestions = Number(params.get('numQuestions'))
     const subject = params.get('subject')
+    const subtopicId = params.get('subtopicId')
 
     const [quiz, setQuiz] = useState([])
     const [isLoading, setIsLoading] = useState(true);
@@ -65,7 +66,8 @@ function QuizPageFun() {
                     topic,
                     numQuestions,
                     studentEmail,
-                    subject
+                    subject,
+                    subtopicId
                 }),
             })
 

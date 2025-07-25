@@ -4,6 +4,7 @@ import { getModelResponse } from "../../utils/llmManager.js";
 import { fillPrompt } from "../../utils/promptManager.js";
 import { ABC_Testing_List } from "../../constants/abctesting.js";
 import { assignAIModel } from "../../utils/modelManager.js";
+import { getRAGContextForSubtopic, enhancePromptWithRAG } from "../../utils/ragContextManager.js";
 
 import dbConnect from "../../utils/dbconnect.js";
 import Student from "../../models/Student.js";
@@ -46,6 +47,9 @@ import Student from "../../models/Student.js";
  *               subject:
  *                 type: string
  *                 description: Subject code (PRG, CORE, etc.)
+ *               subtopicId:
+ *                 type: string
+ *                 description: Optional ID of the subtopic for RAG context
  *     responses:
  *       200:
  *         description: Successfully generated questions
@@ -93,6 +97,7 @@ export async function POST(request) {
 			numQuestions,
 			studentEmail,
 			subject,
+			subtopicId,
 		} = await request.json();
 
 		// Cargamos variables y objetos de configuración
@@ -131,6 +136,18 @@ export async function POST(request) {
 			studentSubjectData,
 			subjectIndex
 		);
+
+		// 🔍 INTEGRACIÓN RAG: Buscar contexto específico del subtema
+		console.log(chalk.bgBlue.white("🔍 Buscando contexto RAG para el subtema..."));
+		const ragContext = await getRAGContextForSubtopic(subtopicId, topic, 3);
+		
+		if (ragContext && ragContext.trim() !== "") {
+			console.log(chalk.bgBlue.white(`✅ Contexto RAG obtenido: ${ragContext.length} caracteres`));
+			finalPrompt = enhancePromptWithRAG(finalPrompt, ragContext);
+			console.log(chalk.bgBlue.white("🚀 Prompt enriquecido con contexto RAG"));
+		} else {
+			console.log(chalk.bgYellow.black("⚠️ No se encontró contexto RAG, usando generación estándar"));
+		}
 
 		// SOLICITUD A LA API de modelManager para asignar un modelo de LLM al alumno
 		const assignedModel = await assignAIModel(

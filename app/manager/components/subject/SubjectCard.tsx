@@ -37,7 +37,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
 
 	return (
 		<div className="bg-gray-100 rounded-md p-6">
-			<h2 className="text-xl font-bold mb-2">{title}</h2>
+			<h2 className="text-xl font-bold mb-2">{title || "Sin título"}</h2>
 
 			<p className="text-gray-700 mb-2">
 				{getTruncatedDescription(description)}

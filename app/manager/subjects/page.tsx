@@ -20,6 +20,7 @@ export default function SubjectsPage() {
 		error,
 	} = useApiRequest("/api/manager/subjects", "GET", [], true);
 
+
 	return (
 		<div>
 			<div className="flex justify-between items-center mb-6">

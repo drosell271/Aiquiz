@@ -118,7 +118,14 @@ async function getSubtopic(request, context) {
 
 		// Obtener subtema
 		const subtopic = await Subtopic.findOne({ _id: subtopicId, topic: topicId })
-			.populate("topic", "title");
+			.populate({
+				path: "topic",
+				select: "name title description subject",
+				populate: {
+					path: "subject",
+					select: "name title acronym"
+				}
+			});
 
 		if (!subtopic) {
 			return NextResponse.json(
@@ -130,7 +137,28 @@ async function getSubtopic(request, context) {
 			);
 		}
 
-		return NextResponse.json(subtopic, { status: 200 });
+		// Transformar datos para que coincidan con lo que esperan los componentes
+		const subtopicObj = subtopic.toObject();
+		const topicObj = subtopic.topic?.toObject ? subtopic.topic.toObject() : subtopic.topic;
+		const subjectObj = subtopic.topic?.subject?.toObject ? subtopic.topic.subject.toObject() : subtopic.topic?.subject;
+		
+		const transformedSubtopic = {
+			id: subtopic._id.toString(),
+			_id: subtopic._id.toString(),
+			title: subtopic.title || subtopicObj.name || "Sin título",
+			description: subtopic.description || "",
+			content: subtopic.content || "",
+			order: subtopic.order || 0,
+			topic: subtopic.topic,
+			topicTitle: subtopic.topic?.title || topicObj?.name,
+			topicId: subtopic.topic?._id?.toString(),
+			subjectTitle: subtopic.topic?.subject?.title || subjectObj?.name,
+			subjectId: subtopic.topic?.subject?._id?.toString(),
+			createdAt: subtopic.createdAt,
+			updatedAt: subtopic.updatedAt
+		};
+
+		return NextResponse.json(transformedSubtopic, { status: 200 });
 
 	} catch (error) {
 		return handleError(error, "Error obteniendo subtema");

@@ -148,11 +148,11 @@ async function getSubject(request, context) {
 			.populate("professors", "name email")
 			.populate({
 				path: "topics",
-				select: "title description order",
+				select: "name title description order",
 				options: { sort: { order: 1 } },
 				populate: {
 					path: "subtopics",
-					select: "title description order",
+					select: "name title description order",
 					options: { sort: { order: 1 } }
 				}
 			});
@@ -167,7 +167,39 @@ async function getSubject(request, context) {
 			);
 		}
 
-		return NextResponse.json(subject, { status: 200 });
+		// Transformar datos para que coincidan con lo que esperan los componentes
+		const subjectObj = subject.toObject();
+		const transformedSubject = {
+			id: subject._id.toString(),
+			_id: subject._id.toString(),
+			title: subject.title || subjectObj.name || "Sin título",
+			acronym: subject.acronym,
+			description: subject.description || "Sin descripción",
+			administrators: subject.administrators || [],
+			professors: subject.professors || [],
+			topics: subject.topics ? subject.topics.map(topic => {
+				const topicObj = topic.toObject();
+				return {
+					id: topic._id.toString(),
+					_id: topic._id.toString(),
+					title: topic.title || topicObj.name || "Sin título",
+					description: topic.description || "",
+					order: topic.order || 0,
+					subtopics: topic.subtopics ? topic.subtopics.map(subtopic => {
+						const subtopicObj = subtopic.toObject();
+						return {
+							id: subtopic._id.toString(),
+							_id: subtopic._id.toString(),
+							title: subtopic.title || subtopicObj.name || "Sin título",
+							description: subtopic.description || "",
+							order: subtopic.order || 0
+						};
+					}) : []
+				};
+			}) : []
+		};
+
+		return NextResponse.json(transformedSubject, { status: 200 });
 
 	} catch (error) {
 		return handleError(error, "Error obteniendo asignatura");

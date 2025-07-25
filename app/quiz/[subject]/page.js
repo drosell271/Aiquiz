@@ -17,6 +17,7 @@ const HomePage = ({ params: { subject } }) => {
 	const [languageSelected, setLanguageSelected] = useState("");
 	const [topic, setTopic] = useState("");
 	const [isTopicSelected, setIsTopicSelected] = useState(false);
+	const [selectedSubtopicId, setSelectedSubtopicId] = useState("");
 	const [difficulty, setDifficulty] = useState("intermedio");
 	const [numQuestions, setNumQuestions] = useState("5");
 	const [defaultTopic, setDefaultTopic] = useState("");
@@ -362,11 +363,21 @@ const HomePage = ({ params: { subject } }) => {
 											<select
 												value={topic}
 												onChange={(e) => {
-													setTopic(e.target.value);
-													setIsTopicSelected(
-														!!e.target.value
-													); // Actualizar el estado de isTopicSelected
+													const selectedValue = e.target.value;
+													setTopic(selectedValue);
+													setIsTopicSelected(!!selectedValue);
 													setShowAlertTopic("");
+													
+													// Encontrar el subtema seleccionado para obtener su ID
+													const selectedTopicData = subjectData?.topics?.find(t => 
+														t.value === languageSelected
+													);
+													const selectedSubtopic = selectedTopicData?.subtopics?.find(s => 
+														s.title === selectedValue
+													);
+													if (selectedSubtopic) {
+														setSelectedSubtopicId(selectedSubtopic._id);
+													}
 												}}
 												disabled={
 													languageSelected
@@ -640,6 +651,7 @@ const HomePage = ({ params: { subject } }) => {
 													topic: topic.toLowerCase(), // Utilizamos el tema seleccionado
 													numQuestions: numQuestions,
 													subject: subject,
+													subtopicId: selectedSubtopicId, // Agregar el ID del subtema
 												},
 											}}
 										>

@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "../../../utils/dbconnect";
 import Subject from "../../../manager/models/Subject";
+import Topic from "../../../manager/models/Topic";
 import { withAuth, handleError } from "../../../utils/authMiddleware";
 
 /**
@@ -88,9 +89,28 @@ async function getSubjects(request, context) {
 		const subjects = await Subject.find()
 			.populate("administrators", "name email")
 			.populate("professors", "name email")
+			.populate({
+				path: "topics",
+				select: "name title description order"
+			})
 			.sort({ createdAt: -1 });
 
-		return NextResponse.json(subjects, { status: 200 });
+		// Transformar datos para que coincidan con lo que espera SubjectCard
+		const transformedSubjects = subjects.map((subject) => {
+			const subjectObj = subject.toObject();
+			return {
+				id: subject._id?.toString() || 'no-id',
+				title: subject.title || subjectObj.name || 'Sin título',
+				description: subject.description || "Sin descripción",
+				administrator: subject.administrators && subject.administrators.length > 0 
+					? (subject.administrators[0].name || subject.administrators[0].email || 'Sin nombre')
+					: "Sin asignar",
+				topics: subject.topics && Array.isArray(subject.topics) && subject.topics.length > 0 
+					? subject.topics.filter(topic => topic && (topic.title || (topic.toObject && topic.toObject().name))).map(topic => topic.title || (topic.toObject && topic.toObject().name))
+					: []
+			};
+		});
+		return NextResponse.json(transformedSubjects, { status: 200 });
 
 	} catch (error) {
 		console.error("Error in getSubjects:", error);
