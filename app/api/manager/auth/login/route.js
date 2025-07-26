@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import dbConnect from "../../../../utils/dbconnect";
 import User from "../../../../manager/models/User";
-import { initializeDB } from "../../../../utils/initializeDB";
 
 /**
  * @swagger
@@ -109,9 +108,6 @@ export async function POST(request) {
 	try {
 		// Conectar a la base de datos
 		await dbConnect();
-
-		// Inicializar DB con datos de prueba si es necesario
-		await initializeDB();
 
 		// Obtener datos del cuerpo de la petición
 		const { email, password } = await request.json();

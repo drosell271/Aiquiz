@@ -1,9 +1,10 @@
 // app/api/manager/subjects/[id]/topics/[topicId]/subtopics/[subtopicId]/route.js
 import { NextResponse } from "next/server";
-import dbConnect from "../../../../../../../../utils/dbconnect";
-import Subtopic from "../../../../../../../../manager/models/Subtopic";
-import Topic from "../../../../../../../../manager/models/Topic";
-import { withAuth, handleError } from "../../../../../../../../utils/authMiddleware";
+import dbConnect from "@utils/dbconnect";
+import Subtopic from "@models/Subtopic";
+import Topic from "@models/Topic";
+import Subject from "@models/Subject";
+import { withAuth, handleError } from "@utils/authMiddleware";
 
 /**
  * @swagger

@@ -21,6 +21,19 @@ interface ContentFile {
 		textLength: number;
 		quality: string;
 	};
+	transcription?: {
+		content: string;
+		metadata?: {
+			title?: string;
+			author?: string;
+			duration?: string;
+			url?: string;
+			transcribedAt?: string;
+			service?: string;
+			language?: string;
+			characterCount?: number;
+		};
+	};
 	uploadedBy?: {
 		name: string;
 		email: string;
@@ -40,6 +53,8 @@ interface ContentTabProps {
 	isLoading?: boolean;
 	isUploading?: boolean;
 	uploadProgress?: { step: string; progress: number };
+	isProcessingVideo?: boolean;
+	videoProgress?: { step: string; progress: number };
 }
 
 /**
@@ -56,6 +71,8 @@ const ContentTab: React.FC<ContentTabProps> = ({
 	isLoading = false,
 	isUploading = false,
 	uploadProgress = { step: '', progress: 0 },
+	isProcessingVideo = false,
+	videoProgress = { step: '', progress: 0 },
 }) => {
 	const { t } = useManagerTranslation();
 	const [videoUrl, setVideoUrl] = useState<string>("");
@@ -94,16 +111,36 @@ const ContentTab: React.FC<ContentTabProps> = ({
 	 * Añade la URL de video al subtema
 	 */
 	const handleAddVideoUrl = useCallback(() => {
-		if (videoUrl.trim()) {
+		if (videoUrl.trim() && !isProcessingVideo) {
 			onAddVideoUrl(videoUrl);
 			setVideoUrl("");
 		}
-	}, [videoUrl, onAddVideoUrl]);
+	}, [videoUrl, onAddVideoUrl, isProcessingVideo]);
 
 	/**
-	 * Determina el icono adecuado según la extensión del archivo
+	 * Determina el icono adecuado según la extensión del archivo o tipo
 	 */
-	const getFileIcon = useCallback((fileName: string): JSX.Element => {
+	const getFileIcon = useCallback((fileName: string, fileType?: string): JSX.Element => {
+		// Videos externos
+		if (fileType === 'video') {
+			return (
+				<svg
+					className="w-4 h-4 text-red-500"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+					aria-hidden="true"
+				>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						strokeWidth="2"
+						d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+					/>
+				</svg>
+			);
+		}
+
 		const extension = fileName.split(".").pop()?.toLowerCase();
 
 		if (extension === "pdf") {
@@ -178,6 +215,55 @@ const ContentTab: React.FC<ContentTabProps> = ({
 	}, []);
 
 	/**
+	 * Maneja la descarga de un archivo
+	 */
+	const handleDownloadFile = async (file: ContentFile) => {
+		try {
+			console.log('Iniciando descarga de archivo:', file.originalName);
+			
+			// 1. Obtener token de descarga
+			const token = localStorage.getItem('jwt_token') || localStorage.getItem('auth_token');
+			if (!token) {
+				console.error('No hay token de autenticación');
+				return;
+			}
+
+			const response = await fetch(file.url, {
+				headers: {
+					'Authorization': `Bearer ${token}`
+				}
+			});
+
+			if (!response.ok) {
+				console.error('Error obteniendo token de descarga:', response.status);
+				return;
+			}
+
+			const result = await response.json();
+			if (!result.success) {
+				console.error('Error en respuesta:', result.message);
+				return;
+			}
+
+			// 2. Usar la URL de descarga con token temporal
+			const downloadUrl = result.data.downloadUrl;
+			console.log('Descargando desde:', downloadUrl);
+
+			// 3. Crear un enlace temporal y hacer click
+			const link = document.createElement('a');
+			link.href = downloadUrl;
+			link.download = result.data.fileName;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+
+			console.log('Descarga iniciada exitosamente');
+		} catch (error) {
+			console.error('Error durante la descarga:', error);
+		}
+	};
+
+	/**
 	 * Renderiza un archivo individual
 	 */
 	const renderFile = (file: ContentFile): JSX.Element => {
@@ -187,7 +273,7 @@ const ContentTab: React.FC<ContentTabProps> = ({
 				className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
 			>
 				<div className="flex items-center space-x-3 flex-1">
-					{getFileIcon(file.originalName)}
+					{getFileIcon(file.originalName, file.fileType)}
 					<div className="flex-1 min-w-0">
 						<div className="flex items-center space-x-2">
 							<p className="text-sm font-medium text-gray-900 truncate">
@@ -196,6 +282,11 @@ const ContentTab: React.FC<ContentTabProps> = ({
 							{file.ragProcessed && (
 								<span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
 									RAG
+								</span>
+							)}
+							{file.fileType === 'video' && file.transcription && (
+								<span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+									TXT
 								</span>
 							)}
 						</div>
@@ -216,15 +307,20 @@ const ContentTab: React.FC<ContentTabProps> = ({
 								{file.ragStats.chunks} chunks, {file.ragStats.pages} páginas
 							</div>
 						)}
+						{file.fileType === 'video' && file.transcription && (
+							<div className="text-xs text-gray-500 mt-1">
+								Transcripción: {file.transcription.metadata?.characterCount || 'N/A'} caracteres
+								{file.transcription.metadata?.duration && `, ${file.transcription.metadata.duration}`}
+							</div>
+						)}
 					</div>
 				</div>
 				<div className="flex items-center space-x-2">
-					<a
-						href={file.url}
-						target="_blank"
-						rel="noopener noreferrer"
+					<button
+						onClick={() => handleDownloadFile(file)}
 						className="text-gray-400 hover:text-blue-600 transition-colors"
-						title="Descargar archivo"
+						title={file.fileType === 'video' && file.transcription ? "Descargar transcripción (TXT)" : "Descargar archivo"}
+						disabled={isLoading}
 					>
 						<svg
 							className="w-5 h-5"
@@ -239,7 +335,7 @@ const ContentTab: React.FC<ContentTabProps> = ({
 								d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
 							/>
 						</svg>
-					</a>
+					</button>
 					<button
 						onClick={() => onDeleteFile(file._id)}
 						className="text-gray-400 hover:text-red-600 transition-colors"
@@ -344,25 +440,72 @@ const ContentTab: React.FC<ContentTabProps> = ({
 	 */
 	const renderVideoUrlForm = (): JSX.Element => {
 		return (
-			<div className="flex-1 flex items-center gap-2">
-				<input
-					type="text"
-					placeholder={
-						t("subtopicDetail.enterVideoUrl") || "Inserta la URL"
-					}
-					value={videoUrl}
-					onChange={handleVideoUrlChange}
-					className="flex-1 p-2 border rounded-md text-sm"
-					aria-label="URL del video"
-				/>
-				<button
-					onClick={handleAddVideoUrl}
-					disabled={!videoUrl.trim() || isLoading}
-					className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm disabled:opacity-50"
-					aria-label="Añadir URL de video"
-				>
-					{t("subtopicDetail.urlOfVideo") || "URL de video"}
-				</button>
+			<div className="flex-1 space-y-2">
+				<div className="flex items-center gap-2">
+					<input
+						type="text"
+						placeholder="https://www.youtube.com/watch?v=..."
+						value={videoUrl}
+						onChange={handleVideoUrlChange}
+						className="flex-1 p-2 border rounded-md text-sm"
+						aria-label="URL del video de YouTube"
+						disabled={isProcessingVideo}
+					/>
+					<button
+						onClick={handleAddVideoUrl}
+						disabled={!videoUrl.trim() || isLoading || isProcessingVideo}
+						className={`px-3 py-2 rounded-md text-sm transition-colors flex items-center ${
+							isProcessingVideo 
+								? 'bg-blue-600 text-white cursor-not-allowed' 
+								: 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50'
+						}`}
+						aria-label="Añadir URL de video"
+					>
+						{isProcessingVideo ? (
+							<>
+								<div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+								Procesando...
+							</>
+						) : (
+							<>
+								<svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+								</svg>
+								Video
+							</>
+						)}
+					</button>
+				</div>
+				
+				{/* Barra de progreso para video */}
+				{isProcessingVideo && videoProgress.step && (
+					<div className="w-full">
+						<div className="flex justify-between text-xs text-gray-600 mb-1">
+							<span>{videoProgress.step}</span>
+							<span>{videoProgress.progress}%</span>
+						</div>
+						<div className="w-full bg-gray-200 rounded-full h-2">
+							<div 
+								className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+								style={{ width: `${videoProgress.progress}%` }}
+							></div>
+						</div>
+					</div>
+				)}
+				
+				{/* Mensaje de error para video */}
+				{!isProcessingVideo && videoProgress.step && videoProgress.step.startsWith('Error') && (
+					<div className="text-red-600 text-xs">
+						{videoProgress.step}
+					</div>
+				)}
+				
+				{/* Mensaje de éxito para video */}
+				{!isProcessingVideo && videoProgress.step === 'Completado' && (
+					<div className="text-green-600 text-xs">
+						🎥 Video procesado y transcrito exitosamente
+					</div>
+				)}
 			</div>
 		);
 	};
@@ -381,7 +524,7 @@ const ContentTab: React.FC<ContentTabProps> = ({
 
 			<div className="mt-1 text-xs text-gray-500 mb-4">
 				{t("subtopicDetail.allowedFiles") ||
-					"Formatos admitidos: pdf, ppt, doc, docx..."}
+					"Formatos admitidos: PDF, PPT, DOC, DOCX. Videos: YouTube, Vimeo."}
 			</div>
 
 			{/* Lista de archivos */}

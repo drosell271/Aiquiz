@@ -14,7 +14,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - MONGODB_URI=mongodb://aiquiz-mongo:27017/aiquiz_manager
+      - MONGODB_URI=mongodb://aiquiz-mongo:27017/aiquiz
       - QDRANT_HOST=aiquiz-qdrant
       - QDRANT_PORT=6333
 

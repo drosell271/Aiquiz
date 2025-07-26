@@ -5,8 +5,6 @@ import Subtopic from "@models/Subtopic";
 import File from "@models/File";
 import User from "@models/User";
 import { withAuth, handleError } from "@utils/authMiddleware";
-import path from "path";
-import fs from "fs";
 
 // Función para cargar RAG Manager dinámicamente (con fallback a Mock)
 async function loadRAGManager() {
@@ -17,7 +15,7 @@ async function loadRAGManager() {
 	try {
 		const qdrantResponse = await fetch('http://localhost:6333/').catch(() => null);
 		if (qdrantResponse && qdrantResponse.ok) {
-			console.log('[Files API] ✅ Qdrant disponible, intentando RAG Manager V2...');
+			console.log('[Files API] Qdrant available, loading RAG Manager V2');
 			
 			try {
 				const RAGManagerV2 = require("@rag/core/ragManagerV2");
@@ -195,15 +193,15 @@ async function loadRAGManager() {
  */
 
 async function uploadFile(request, context) {
-	console.log('🚀 [Files API] Iniciando procesamiento de subida de archivo');
-	console.log('📋 [Files API] Parámetros:', context.params);
-	console.log('📋 [Files API] Headers:', Object.fromEntries(request.headers.entries()));
-	console.log('📋 [Files API] Method:', request.method);
-	console.log('📋 [Files API] Content-Type:', request.headers.get('content-type'));
+	console.log('[Files API] Starting file upload processing');
+	console.log('[Files API] Parameters:', context.params);
+	console.log('[Files API] Headers:', Object.fromEntries(request.headers.entries()));
+	console.log('[Files API] Method:', request.method);
+	console.log('[Files API] Content-Type:', request.headers.get('content-type'));
 	
 	try {
 		await dbConnect();
-		console.log('✅ [Files API] Conexión a BD establecida');
+		console.log('[Files API] Database connection established');
 
 		const { id, topicId, subtopicId } = context.params;
 		
@@ -227,7 +225,7 @@ async function uploadFile(request, context) {
 		const file = formData.get('file');
 		const description = formData.get('description') || '';
 		
-		console.log('📄 [Files API] Datos recibidos:', {
+		console.log('[Files API] Data received:', {
 			hasFile: !!file,
 			fileName: file?.name,
 			fileSize: file?.size,
@@ -318,7 +316,7 @@ async function uploadFile(request, context) {
 				ragResult = await mockRagManager.processPDF(fileForRAG, context_rag, context.user.id);
 				isMock = true;
 				
-				console.log('[Files API] ✅ Fallback a Mock RAG exitoso');
+				console.log('[Files API] Mock RAG fallback successful');
 			} catch (mockError) {
 				console.error('[Files API] Error crítico - ni RAG real ni Mock funcionan:', mockError.message);
 				throw new Error(`Sistema RAG completamente no disponible: ${mockError.message}`);
@@ -336,31 +334,24 @@ async function uploadFile(request, context) {
 			);
 		}
 
-		// 8. Crear directorio de uploads si no existe
-		const uploadDir = path.join(process.cwd(), 'uploads');
-		if (!fs.existsSync(uploadDir)) {
-			fs.mkdirSync(uploadDir, { recursive: true });
-		}
-
-		// 9. Generar nombre único y guardar archivo
+		// 8. Generar nombre único y crear registro en MongoDB con contenido
 		const uniqueName = `${Date.now()}_${ragResult.documentId}_${file.name}`;
-		const filePath = path.join(uploadDir, uniqueName);
-		
-		fs.writeFileSync(filePath, Buffer.from(buffer));
 
-		// 10. Crear registro en base de datos con información RAG
+		// 9. Crear registro en base de datos con contenido del archivo y información RAG
 		const fileDocument = new File({
 			fileName: uniqueName,
 			originalName: file.name,
 			mimeType: file.type,
 			size: file.size,
-			path: uniqueName,
+			path: '', // No se usa ruta física, el contenido está en MongoDB
 			fileType: "document",
 			subtopic: subtopicId,
 			uploadedBy: context.user.id,
 			isExternal: false,
 			platform: "local",
 			description: description,
+			// Contenido del archivo almacenado en MongoDB
+			fileContent: Buffer.from(buffer),
 			// Campos RAG
 			ragProcessed: true,
 			ragDocumentId: ragResult.documentId,
@@ -390,7 +381,7 @@ async function uploadFile(request, context) {
 					fileType: "document",
 					size: file.size,
 					mimeType: file.type,
-					url: `/uploads/${uniqueName}`,
+					url: `/api/manager/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}/files/${fileDocument._id}`,
 					description: description,
 					
 					// Estado RAG
@@ -443,11 +434,11 @@ async function uploadFile(request, context) {
 
 // Función para obtener archivos del subtema
 async function getFiles(request, context) {
-	console.log('📋 [Files API] Obteniendo archivos del subtema');
+	console.log('[Files API] Getting subtopic files');
 	
 	try {
 		await dbConnect();
-		console.log('✅ [Files API] Conexión a BD establecida');
+		console.log('[Files API] Database connection established');
 
 		const { id, topicId, subtopicId } = context.params;
 		
@@ -463,14 +454,14 @@ async function getFiles(request, context) {
 			);
 		}
 
-		console.log('📄 [Files API] Buscando archivos para subtema:', subtopicId);
+		console.log('[Files API] Searching files for subtopic:', subtopicId);
 
 		// 2. Obtener archivos del subtema
 		const files = await File.find({ subtopic: subtopicId })
 			.populate('uploadedBy', 'name email')
 			.sort({ createdAt: -1 });
 
-		console.log(`📊 [Files API] Encontrados ${files.length} archivos`);
+		console.log(`[Files API] Found ${files.length} files`);
 
 		// 3. Formatear respuesta
 		const formattedFiles = files.map(file => ({
@@ -480,7 +471,7 @@ async function getFiles(request, context) {
 			fileType: file.fileType,
 			size: file.size,
 			mimeType: file.mimeType,
-			url: `/uploads/${file.fileName}`,
+			url: `/api/manager/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}/files/${file._id}`,
 			description: file.description,
 			ragProcessed: file.ragProcessed,
 			ragDocumentId: file.ragDocumentId,
@@ -488,6 +479,7 @@ async function getFiles(request, context) {
 			uploadedBy: file.uploadedBy,
 			createdAt: file.createdAt,
 			updatedAt: file.updatedAt,
+			transcription: file.transcription,
 		}));
 
 		return NextResponse.json(

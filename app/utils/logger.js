@@ -1,4 +1,12 @@
-import chalk from "chalk";
+// Simplified colors for CommonJS compatibility
+const colors = {
+    red: (text) => `\x1b[31m${text}\x1b[0m`,
+    yellow: (text) => `\x1b[33m${text}\x1b[0m`,
+    blue: (text) => `\x1b[34m${text}\x1b[0m`,
+    green: (text) => `\x1b[32m${text}\x1b[0m`,
+    gray: (text) => `\x1b[90m${text}\x1b[0m`,
+    bold: (text) => `\x1b[1m${text}\x1b[0m`
+};
 
 /**
  * Sistema de logging configurable para AIQuiz
@@ -43,15 +51,15 @@ function formatMessage(level, category, message, data = null) {
     // Colores por nivel
     switch (level) {
         case 'ERROR':
-            return chalk.red.bold(fullMessage);
+            return colors.bold(colors.red(fullMessage));
         case 'WARN':
-            return chalk.yellow(fullMessage);
+            return colors.yellow(fullMessage);
         case 'INFO':
-            return chalk.blue(fullMessage);
+            return colors.blue(fullMessage);
         case 'DEBUG':
-            return chalk.green(fullMessage);
+            return colors.green(fullMessage);
         case 'TRACE':
-            return chalk.gray(fullMessage);
+            return colors.gray(fullMessage);
         default:
             return fullMessage;
     }
@@ -105,21 +113,21 @@ class Logger {
     // Métodos especiales para casos específicos
     success(message, data = null) {
         if (shouldLog('INFO')) {
-            const msg = COLORED_OUTPUT ? chalk.green.bold(`✅ ${message}`) : `✅ ${message}`;
+            const msg = COLORED_OUTPUT ? colors.bold(colors.green(`SUCCESS: ${message}`)) : `SUCCESS: ${message}`;
             console.log(`${SHOW_TIMESTAMPS ? `[${new Date().toISOString()}] ` : ''}${this.category ? `[${this.category}] ` : ''}${msg}${data ? ` ${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}` : ''}`);
         }
     }
 
     progress(message, data = null) {
         if (shouldLog('DEBUG')) {
-            const msg = COLORED_OUTPUT ? chalk.blue(`🔍 ${message}`) : `🔍 ${message}`;
+            const msg = COLORED_OUTPUT ? colors.blue(`PROCESSING: ${message}`) : `PROCESSING: ${message}`;
             console.log(`${SHOW_TIMESTAMPS ? `[${new Date().toISOString()}] ` : ''}${this.category ? `[${this.category}] ` : ''}${msg}${data ? ` ${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}` : ''}`);
         }
     }
 
     separator(title = null) {
         if (shouldLog('DEBUG')) {
-            const line = COLORED_OUTPUT ? chalk.bgGreen.black : (str) => str;
+            const line = COLORED_OUTPUT ? colors.green : (str) => str;
             const separator = '─'.repeat(80);
             console.log(line(separator));
             if (title) {
@@ -149,8 +157,8 @@ logger.info('Logger initialized', {
     coloredOutput: COLORED_OUTPUT 
 });
 
-export default logger;
+module.exports = logger;
 
 // Exportaciones adicionales para compatibilidad
-export { Logger };
-export const createLogger = (category) => new Logger(category);
+module.exports.Logger = Logger;
+module.exports.createLogger = (category) => new Logger(category);

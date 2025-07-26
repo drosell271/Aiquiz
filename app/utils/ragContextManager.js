@@ -2,6 +2,7 @@ import dbConnect from "@utils/dbconnect.js";
 import Subtopic from "@models/Subtopic.js";
 import File from "@models/File.js";
 import logger from "@utils/logger.js";
+import videoProcessor from "@utils/videoProcessor.js";
 import fs from 'fs';
 import path from 'path';
 
@@ -49,7 +50,40 @@ export async function getRAGContextForSubtopic(subtopicId, topic, maxFragments =
 
         for (const file of subtopic.files) {
             try {
-                // El campo en la DB es fileName, no filename
+                // Procesar videos de manera especial
+                if (file.fileType === 'video' && file.isExternal) {
+                    ragLogger.debug(`Procesando video: ${file.originalName}`);
+                    
+                    // Obtener transcripción del video
+                    const transcription = await videoProcessor.getVideoTranscription(file._id.toString());
+                    
+                    if (transcription && transcription.trim()) {
+                        // Usar toda la transcripción pero limitada para contexto
+                        const preview = transcription.substring(0, 800).trim();
+                        
+                        contextParts.push({
+                            filename: `🎥 ${file.originalName}`,
+                            content: `Video: ${file.originalName}\nURL: ${file.externalUrl}\nPlataforma: ${file.platform}\n\nTranscripción:\n${preview}${transcription.length > 800 ? '...' : ''}`,
+                            relevance: 1.2, // Videos tienen mayor relevancia
+                            type: 'video'
+                        });
+                        
+                        ragLogger.debug(`Transcripción de video añadida: ${transcription.length} caracteres`);
+                    } else {
+                        // Si no hay transcripción, usar información básica
+                        contextParts.push({
+                            filename: `🎥 ${file.originalName}`,
+                            content: `Video: ${file.originalName} (${file.platform}) - Contenido de video relacionado con ${subtopic.name}\nURL: ${file.externalUrl}`,
+                            relevance: 0.7,
+                            type: 'video'
+                        });
+                        
+                        ragLogger.debug(`Video sin transcripción: ${file.originalName}`);
+                    }
+                    continue;
+                }
+
+                // Procesar archivos normales
                 const fileName = file.fileName || file.filename;
                 if (!fileName) {
                     ragLogger.warn(`Archivo sin nombre válido`, { fileId: file._id });
@@ -69,7 +103,8 @@ export async function getRAGContextForSubtopic(subtopicId, topic, maxFragments =
                             contextParts.push({
                                 filename: file.originalName,
                                 content: preview,
-                                relevance: 1.0
+                                relevance: 1.0,
+                                type: 'document'
                             });
                         }
                     } else {
@@ -77,7 +112,8 @@ export async function getRAGContextForSubtopic(subtopicId, topic, maxFragments =
                         contextParts.push({
                             filename: file.originalName,
                             content: `Documento: ${file.originalName} (${file.mimeType || file.mimetype}) - Contenido relacionado con ${subtopic.name}`,
-                            relevance: 0.8
+                            relevance: 0.8,
+                            type: 'document'
                         });
                     }
                 }
@@ -96,11 +132,15 @@ export async function getRAGContextForSubtopic(subtopicId, topic, maxFragments =
             contextParts.push(subtopicInfo);
         }
 
-        // 4. Construir contexto final
-        const contextFragments = contextParts
-            .slice(0, maxFragments)
+        // 4. Construir contexto final priorizando por relevancia
+        const sortedParts = contextParts
+            .sort((a, b) => (b.relevance || 0) - (a.relevance || 0))
+            .slice(0, maxFragments);
+
+        const contextFragments = sortedParts
             .map((part, index) => {
-                return `[Documento ${index + 1}: ${part.filename}]\n${part.content}`;
+                const typeEmoji = part.type === 'video' ? '🎥' : part.type === 'document' ? '📄' : '📋';
+                return `[${typeEmoji} Fuente ${index + 1}: ${part.filename}]\n${part.content}`;
             })
             .join('\n\n');
 

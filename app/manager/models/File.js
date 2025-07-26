@@ -20,11 +20,22 @@ const FileSchema = new Schema(
 		},
 		size: {
 			type: Number,
-			required: [true, "El tamaño es obligatorio"],
+			required: false, // No obligatorio para archivos externos
+			default: 0,
+			validate: {
+				validator: function(value) {
+					// Si es archivo externo, el tamaño puede ser 0
+					if (this.isExternal) {
+						return true;
+					}
+					// Si no es externo, el tamaño debe ser mayor que 0
+					return value && value > 0;
+				},
+				message: "El tamaño debe ser mayor que 0 para archivos locales"
+			}
 		},
 		path: {
 			type: String,
-			required: [true, "La ruta es obligatoria"],
 		},
 		fileType: {
 			type: String,
@@ -73,6 +84,28 @@ const FileSchema = new Schema(
 			type: String,
 			trim: true,
 		},
+		// Campos para transcripción de videos
+		transcription: {
+			content: {
+				type: String,
+				trim: true,
+			},
+			metadata: {
+				title: String,
+				author: String,
+				duration: String,
+				url: String,
+				transcribedAt: Date,
+				service: String, // 'assemblyai', 'deepgram', etc.
+				language: String,
+				characterCount: Number,
+			}
+		},
+		// Contenido del archivo almacenado en MongoDB
+		fileContent: {
+			type: Buffer,
+			required: false, // Solo para archivos locales, no externos
+		},
 	},
 	{
 		timestamps: true,
@@ -92,7 +125,12 @@ FileSchema.index({ subtopic: 1 });
 FileSchema.index({ fileType: 1 });
 FileSchema.index({ fileName: "text", originalName: "text" });
 
-// Export the model, avoiding OverwriteModelError during development
-const File = mongoose.models.File || mongoose.model("File", FileSchema);
+// Force cache clear for development
+if (mongoose.models.File) {
+	delete mongoose.models.File;
+}
+
+// Export the model
+const File = mongoose.model("File", FileSchema);
 
 module.exports = File;

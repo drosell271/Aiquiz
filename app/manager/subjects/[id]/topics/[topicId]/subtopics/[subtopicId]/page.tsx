@@ -30,6 +30,8 @@ const SubtopicDetailContent = () => {
 	const [activeTab, setActiveTab] = useState("content");
 	const [isUploading, setIsUploading] = useState(false);
 	const [uploadProgress, setUploadProgress] = useState({ step: '', progress: 0 });
+	const [isProcessingVideo, setIsProcessingVideo] = useState(false);
+	const [videoProgress, setVideoProgress] = useState({ step: '', progress: 0 });
 	const [files, setFiles] = useState([]);
 	const [filesLoaded, setFilesLoaded] = useState(false);
 
@@ -212,20 +214,70 @@ const SubtopicDetailContent = () => {
 	};
 
 	const handleAddVideoUrl = async (url: string) => {
-		try {
-			// En una implementación real, aquí validarías la URL y la guardarías
-			console.log("Añadiendo URL de video:", url);
+		console.log("🎥 Iniciando procesamiento de video:", url);
+		setIsProcessingVideo(true);
+		setVideoProgress({ step: 'Validando URL...', progress: 10 });
 
-			// Simular una llamada a la API
-			await addVideoUrl({
+		try {
+			// Validación básica de URL
+			if (!url.includes('youtube.com') && !url.includes('youtu.be') && !url.includes('vimeo.com')) {
+				throw new Error('Solo se admiten URLs de YouTube y Vimeo');
+			}
+
+			setVideoProgress({ step: 'Detectando plataforma...', progress: 20 });
+			
+			const platform = url.includes('youtube') ? 'youtube' : 
+							 url.includes('vimeo') ? 'vimeo' : 'other';
+			
+			console.log("📺 Plataforma detectada:", platform);
+
+			setVideoProgress({ step: 'Enviando al servidor...', progress: 30 });
+
+			// Llamada real a la API
+			const result = await addVideoUrl({
 				url: url,
-				platform: url.includes("youtube") ? "youtube" : "vimeo",
+				platform: platform,
+				title: `Video de ${platform}`,
+				description: `Video educativo procesado automáticamente`
 			});
 
-			// Recargar los datos del subtema
-			await refetchSubtopic();
+			console.log("✅ Respuesta del servidor:", result);
+
+			setVideoProgress({ step: 'Extrayendo metadata...', progress: 50 });
+			
+			// Simular progreso de transcripción
+			setTimeout(() => {
+				setVideoProgress({ step: 'Generando transcripción...', progress: 70 });
+			}, 500);
+
+			setTimeout(() => {
+				setVideoProgress({ step: 'Procesando con RAG...', progress: 90 });
+			}, 1000);
+
+			// Recargar los datos del subtema y archivos
+			setVideoProgress({ step: 'Actualizando datos...', progress: 95 });
+			await Promise.all([
+				refetchSubtopic(),
+				loadSubtopicFiles(true)
+			]);
+
+			setVideoProgress({ step: 'Completado', progress: 100 });
+			
+			// Limpiar mensaje de éxito después de 3 segundos
+			setTimeout(() => {
+				setVideoProgress({ step: '', progress: 0 });
+			}, 3000);
+
 		} catch (error) {
-			console.error("Error al añadir URL de video:", error);
+			console.error("❌ Error al procesar video:", error);
+			setVideoProgress({ step: `Error: ${error.message}`, progress: 0 });
+			
+			// Limpiar mensaje de error después de 5 segundos
+			setTimeout(() => {
+				setVideoProgress({ step: '', progress: 0 });
+			}, 5000);
+		} finally {
+			setIsProcessingVideo(false);
 		}
 	};
 
@@ -393,6 +445,8 @@ const SubtopicDetailContent = () => {
 						}
 						isUploading={isUploading}
 						uploadProgress={uploadProgress}
+						isProcessingVideo={isProcessingVideo}
+						videoProgress={videoProgress}
 					/>
 				)}
 
