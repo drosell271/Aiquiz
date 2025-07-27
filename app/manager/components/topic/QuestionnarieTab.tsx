@@ -1,11 +1,12 @@
 // /app/manager/components/topic/QuestionnarieTab.tsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import useApiRequest from "../../hooks/useApiRequest";
 import SearchBar from "../subject/SearchBar";
 import { ConfirmationModal } from "../common";
 
 interface Questionnaire {
+	_id: string;
 	id: string;
 	title: string;
 	description: string;
@@ -41,6 +42,11 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 	const [showFormatOptions, setShowFormatOptions] = useState<string | null>(
 		null
 	);
+	const [dropdownPosition, setDropdownPosition] = useState<{
+		top: number;
+		left: number;
+	} | null>(null);
+	const buttonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
 
 	// API para obtener cuestionarios
 	const {
@@ -49,7 +55,7 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 		error,
 		makeRequest: fetchQuestionnaires,
 	} = useApiRequest(
-		`/api/subjects/${subjectId}/topics/${topicId}/questionnaires`,
+		`/api/manager/subjects/${subjectId}/topics/${topicId}/questionnaires`,
 		"GET",
 		null,
 		true
@@ -69,26 +75,62 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 	 * Actualiza los cuestionarios filtrados cuando cambian los cuestionarios originales
 	 */
 	useEffect(() => {
+		console.log('[QuestionnarieTab] Datos recibidos:', questionnaires);
+		
 		if (questionnaires) {
-			setFilteredQuestionnaires(questionnaires);
+			// La API devuelve {success: true, questionnaires: [...]}
+			const questionnairesList = questionnaires.questionnaires || questionnaires;
+			console.log('[QuestionnarieTab] Lista de cuestionarios:', questionnairesList);
+			
+			if (Array.isArray(questionnairesList)) {
+				setFilteredQuestionnaires(questionnairesList);
+			} else {
+				console.warn('[QuestionnarieTab] Los datos no son un array:', questionnairesList);
+				setFilteredQuestionnaires([]);
+			}
 		}
 	}, [questionnaires]);
+
+	/**
+	 * Cierra el dropdown en scroll o resize
+	 */
+	useEffect(() => {
+		const handleCloseDropdown = () => {
+			if (showFormatOptions) {
+				setShowFormatOptions(null);
+				setDropdownPosition(null);
+			}
+		};
+
+		if (showFormatOptions) {
+			window.addEventListener('scroll', handleCloseDropdown, true);
+			window.addEventListener('resize', handleCloseDropdown);
+
+			return () => {
+				window.removeEventListener('scroll', handleCloseDropdown, true);
+				window.removeEventListener('resize', handleCloseDropdown);
+			};
+		}
+	}, [showFormatOptions]);
 
 	/**
 	 * Maneja la búsqueda de cuestionarios
 	 */
 	const handleSearch = useCallback(
 		(query: string) => {
+			// Obtener la lista correcta de cuestionarios
+			const questionnairesList = questionnaires?.questionnaires || questionnaires || [];
+			
 			if (!query) {
-				setFilteredQuestionnaires(questionnaires || []);
+				setFilteredQuestionnaires(Array.isArray(questionnairesList) ? questionnairesList : []);
 				return;
 			}
 
 			const queryLower = query.toLowerCase();
-			const filtered = (questionnaires || []).filter(
+			const filtered = (Array.isArray(questionnairesList) ? questionnairesList : []).filter(
 				(questionnaire) =>
 					questionnaire.title.toLowerCase().includes(queryLower) ||
-					questionnaire.description.toLowerCase().includes(queryLower)
+					(questionnaire.description && questionnaire.description.toLowerCase().includes(queryLower))
 			);
 
 			setFilteredQuestionnaires(filtered);
@@ -116,7 +158,7 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 			const response = await deleteQuestionnaire(
 				null,
 				false,
-				`${subjectId}/topics/${topicId}/questionnaires/${questionnaireToDelete}`
+				`/api/manager/subjects/${subjectId}/topics/${topicId}/questionnaires/${questionnaireToDelete}`
 			);
 
 			if (response.success) {
@@ -142,7 +184,25 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 	 */
 	const toggleFormatOptions = useCallback(
 		(id: string) => {
-			setShowFormatOptions(showFormatOptions === id ? null : id);
+			if (showFormatOptions === id) {
+				setShowFormatOptions(null);
+				setDropdownPosition(null);
+			} else {
+				setShowFormatOptions(id);
+				
+				// Calcular posición del dropdown
+				const button = buttonRefs.current[id];
+				if (button) {
+					const rect = button.getBoundingClientRect();
+					const scrollY = window.scrollY;
+					const scrollX = window.scrollX;
+					
+					setDropdownPosition({
+						top: rect.bottom + scrollY + 8, // 8px de margen
+						left: rect.right + scrollX - 192 // 192px = w-48 (12rem)
+					});
+				}
+			}
 		},
 		[showFormatOptions]
 	);
@@ -154,27 +214,25 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 		async (id: string, format: string) => {
 			try {
 				setSelectedQuestionnaire(id);
+				setShowFormatOptions(null);
+				setDropdownPosition(null);
 
+				console.log(`[QuestionnarieTab] Iniciando descarga cuestionario ${id} formato ${format}`);
+
+				const endpoint = `/api/manager/subjects/${subjectId}/topics/${topicId}/questionnaires/${id}/download?format=${format}`;
+				
+				// Llamar al endpoint con manejo de descarga de archivos
 				await downloadQuestionnaire(
 					null,
-					false,
-					`${subjectId}/topics/${topicId}/questionnaires/${id}/download?format=${format}`
+					false, // false porque el endpoint se maneja por patrón
+					endpoint
 				);
 
-				// Simular descarga en desarrollo
-				console.log(
-					`Descargando cuestionario ${id} en formato ${format}`
-				);
-
-				// En producción, aquí se procesaría la respuesta para descargar el archivo
-				setTimeout(() => {
-					setSelectedQuestionnaire(null);
-					setShowFormatOptions(null);
-				}, 1000);
+				console.log(`[QuestionnarieTab] Descarga completada para cuestionario ${id}`);
 			} catch (error) {
 				console.error("Error al descargar cuestionario:", error);
+			} finally {
 				setSelectedQuestionnaire(null);
-				setShowFormatOptions(null);
 			}
 		},
 		[downloadQuestionnaire, subjectId, topicId]
@@ -185,8 +243,9 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 	 */
 	const renderQuestionnairesTable = useCallback((): JSX.Element => {
 		return (
-			<div className="bg-white shadow overflow-hidden rounded-md">
-				<table className="min-w-full divide-y divide-gray-200">
+			<div className="bg-white shadow rounded-md">
+				<div className="overflow-x-auto">
+					<table className="min-w-full divide-y divide-gray-200">
 					<thead className="bg-gray-50">
 						<tr>
 							<th
@@ -229,7 +288,7 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 						</tr>
 					</thead>
 					<tbody className="bg-white divide-y divide-gray-200">
-						{filteredQuestionnaires.map((questionnaire) => (
+						{(Array.isArray(filteredQuestionnaires) ? filteredQuestionnaires : []).map((questionnaire) => (
 							<tr
 								key={questionnaire.id}
 								className="hover:bg-gray-50"
@@ -260,7 +319,8 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 							</tr>
 						))}
 					</tbody>
-				</table>
+					</table>
+				</div>
 			</div>
 		);
 	}, [filteredQuestionnaires, showFormatOptions, selectedQuestionnaire, t]);
@@ -275,9 +335,12 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 				downloadingQuestionnaire;
 
 			return (
-				<div className="relative">
+				<>
 					<button
-						className="text-blue-600 hover:text-blue-900 flex items-center"
+						ref={(el) => {
+							buttonRefs.current[questionnaire.id] = el;
+						}}
+						className="text-blue-600 hover:text-blue-900 flex items-center transition-colors duration-150"
 						title={t("topicDetail.download") || "Descargar"}
 						onClick={() => toggleFormatOptions(questionnaire.id)}
 						disabled={isSelected}
@@ -297,7 +360,7 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 							/>
 						</svg>
 						<svg
-							className={`w-4 h-4 ml-1 transition-transform ${
+							className={`w-4 h-4 ml-1 transition-transform duration-200 ${
 								showFormatOptions === questionnaire.id
 									? "rotate-180"
 									: ""
@@ -314,35 +377,7 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 							/>
 						</svg>
 					</button>
-					{showFormatOptions === questionnaire.id && (
-						<div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-							<button
-								onClick={() =>
-									handleDownloadQuestionnaire(
-										questionnaire.id,
-										"pdf"
-									)
-								}
-								className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-								disabled={isSelected}
-							>
-								PDF
-							</button>
-							<button
-								onClick={() =>
-									handleDownloadQuestionnaire(
-										questionnaire.id,
-										"moodle"
-									)
-								}
-								className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-								disabled={isSelected}
-							>
-								Moodle XML
-							</button>
-						</div>
-					)}
-				</div>
+				</>
 			);
 		},
 		[
@@ -350,7 +385,6 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 			selectedQuestionnaire,
 			downloadingQuestionnaire,
 			toggleFormatOptions,
-			handleDownloadQuestionnaire,
 			t,
 		]
 	);
@@ -440,7 +474,7 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 					{t("topicDetail.errorLoadingQuestionnaires") ||
 						"Error al cargar los cuestionarios"}
 				</div>
-			) : filteredQuestionnaires.length === 0 ? (
+			) : (!Array.isArray(filteredQuestionnaires) || filteredQuestionnaires.length === 0) ? (
 				<div className="text-center py-8 text-gray-500">
 					<p>
 						{t("topicDetail.noQuestionnairesFound") ||
@@ -468,6 +502,59 @@ const QuestionnaireTab: React.FC<QuestionnaireTabProps> = ({
 				isLoading={deletingQuestionnaire}
 				isDanger={true}
 			/>
+
+			{/* Dropdown flotante para opciones de descarga */}
+			{showFormatOptions && dropdownPosition && (
+				<>
+					{/* Overlay para cerrar el dropdown al hacer click fuera */}
+					<div
+						className="fixed inset-0 z-40"
+						onClick={() => {
+							setShowFormatOptions(null);
+							setDropdownPosition(null);
+						}}
+					/>
+					{/* Dropdown menu flotante */}
+					<div
+						className="fixed w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1 z-50 transform transition-all duration-200 ease-out"
+						style={{
+							top: `${dropdownPosition.top}px`,
+							left: `${dropdownPosition.left}px`,
+						}}
+					>
+						<button
+							onClick={() =>
+								handleDownloadQuestionnaire(
+									showFormatOptions,
+									"pdf"
+								)
+							}
+							className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+							disabled={selectedQuestionnaire === showFormatOptions && downloadingQuestionnaire}
+						>
+							<svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+							</svg>
+							{t("topicDetail.pdf") || "PDF"}
+						</button>
+						<button
+							onClick={() =>
+								handleDownloadQuestionnaire(
+									showFormatOptions,
+									"moodle"
+								)
+							}
+							className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+							disabled={selectedQuestionnaire === showFormatOptions && downloadingQuestionnaire}
+						>
+							<svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+							</svg>
+							{t("topicDetail.moodle") || "Moodle XML"}
+						</button>
+					</div>
+				</>
+			)}
 		</div>
 	);
 };

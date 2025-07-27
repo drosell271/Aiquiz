@@ -29,16 +29,16 @@ export async function GET(request, { params }) {
         // Transformar los datos para compatibilidad con la aplicación principal
         const transformedSubject = {
             _id: subject._id,
-            name: subject.name || '',
+            name: subject.title || '',
             acronym: subject.acronym || '',
             description: subject.description || '',
             topics: (subject.topics || []).map(topic => ({
                 _id: topic._id,
-                value: (topic.name || '').toLowerCase().replace(/\s+/g, '_'),
-                label: topic.name || '',
+                value: (topic.title || '').toLowerCase().replace(/\s+/g, '_'),
+                label: topic.title || '',
                 subtopics: (topic.subtopics || []).map(subtopic => ({
                     _id: subtopic._id,
-                    title: subtopic.name || '',
+                    title: subtopic.title || '',
                     comment: subtopic.description || '',
                     files: [] // Por ahora vacío, se puede llenar con archivos relacionados
                 }))
@@ -50,7 +50,7 @@ export async function GET(request, { params }) {
         const topicsData = {};
 
         (subject.topics || []).forEach(topic => {
-            const topicKey = (topic.name || '').toLowerCase().replace(/\s+/g, '_');
+            const topicKey = (topic.title || '').toLowerCase().replace(/\s+/g, '_');
             
             // Para language[subject]
             if (!languageData[subject.acronym]) {
@@ -58,11 +58,11 @@ export async function GET(request, { params }) {
             }
             languageData[subject.acronym].push({
                 value: topicKey,
-                label: topic.name || ''
+                label: topic.title || ''
             });
 
             // Para topics[language]
-            topicsData[topicKey] = (topic.subtopics || []).map(subtopic => subtopic.name || '');
+            topicsData[topicKey] = (topic.subtopics || []).map(subtopic => subtopic.title || '');
         });
 
         return NextResponse.json({

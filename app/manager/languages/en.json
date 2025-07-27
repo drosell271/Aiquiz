@@ -225,11 +225,24 @@
 		"generateNewQuestions": "Generate new",
 		"settings": "Settings",
 		"generateQuestionsTitle": "Generate questions",
-		"easy": "EASY",
-		"intermediate": "INTERMEDIATE",
-		"advanced": "ADVANCED",
+		"easy": "Easy",
+		"intermediate": "Medium",
+		"advanced": "Advanced", 
 		"numberOfQuestions": "Number of questions",
-		"generateQuestions": "Generate questions"
+		"generateQuestions": "Generate questions",
+		"subtopic": "Subtopic (optional)",
+		"allSubtopics": "All subtopics",
+		"searchQuestionsPlaceholder": "Search questions...",
+		"noQuestionsFound": "No questions found",
+		"generatingQuestions": "Generating {{count}} questions with {{difficulty}} difficulty...",
+		"questionsGeneratedSuccess": "✅ {{count}} questions generated successfully",
+		"questionsGenerationError": "❌ Error generating questions: {{error}}",
+		"downloadingFile": "Downloading file...",
+		"downloadSuccess": "✅ File downloaded successfully",
+		"downloadError": "❌ Download error: {{error}}",
+		"selectAtLeastOneQuestion": "Select at least one question to download",
+		"pdf": "PDF",
+		"moodle": "Moodle XML"
 	},
 	"subtopicDetail": {
 		"documentsAndVideos": "Documents and videos",
@@ -254,5 +267,47 @@
 		"allowedFiles": "Accepted formats: pdf, ppt, doc, docx...",
 		"noFiles": "No documents or videos associated with this subtopic.",
 		"deleteFile": "Delete file"
+	},
+	"common": {
+		"processing": "Processing...",
+		"save": "Save",
+		"cancel": "Cancel",
+		"delete": "Delete",
+		"edit": "Edit",
+		"saving": "Saving...",
+		"loading": "Loading...",
+		"success": "Success",
+		"error": "Error",
+		"yes": "Yes",
+		"no": "No",
+		"close": "Close",
+		"back": "Back",
+		"next": "Next",
+		"previous": "Previous",
+		"submit": "Submit",
+		"upload": "Upload",
+		"download": "Download"
+	},
+	"confirmation": {
+		"deleteSubject": {
+			"title": "Delete subject",
+			"message": "Are you sure you want to delete this subject? This action cannot be undone."
+		},
+		"deleteTopic": {
+			"title": "Delete topic",
+			"message": "Are you sure you want to delete this topic? This action cannot be undone."
+		},
+		"deleteProfessor": {
+			"title": "Delete professor",
+			"message": "Are you sure you want to remove this professor from the subject?"
+		},
+		"deleteSubtopic": {
+			"title": "Delete subtopic",
+			"message": "Are you sure you want to delete this subtopic? This action cannot be undone."
+		},
+		"deleteQuestionnaire": {
+			"title": "Delete questionnaire",
+			"message": "Are you sure you want to delete this questionnaire? This action cannot be undone."
+		}
 	}
 }

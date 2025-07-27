@@ -193,16 +193,277 @@ async function mapEndpointToRealApi(endpoint: string, method: string, data: any)
 		return await apiService.addVideoUrl(subjectId, topicId, subtopicId, data);
 	}
 	
-	// Endpoints de cuestionarios
+	// Endpoints de cuestionarios - GET
 	if (endpoint.match(/^\/api\/(manager\/)?subjects\/[\w-]+\/topics\/[\w-]+\/questionnaires$/) && method === 'GET') {
-		// Retornar array vacío directamente (sin wrapper de success)
-		return [];
+		console.log('[useApiRequest] Obteniendo cuestionarios:', endpoint);
+		
+		// Obtener token como lo hace realApiService
+		const token = localStorage.getItem('jwt_token') || localStorage.getItem('auth_token');
+		
+		const headers: any = {
+			'Content-Type': 'application/json'
+		};
+		
+		if (token) {
+			headers['Authorization'] = `Bearer ${token}`;
+		}
+		
+		const response = await fetch(endpoint, {
+			method: 'GET',
+			headers
+		});
+		
+		if (!response.ok) {
+			console.error('[useApiRequest] Error obteniendo cuestionarios:', response.status, response.statusText);
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+		
+		const result = await response.json();
+		console.log('[useApiRequest] Cuestionarios obtenidos:', result);
+		return result;
 	}
 	
-	// Endpoints de preguntas
+	// Endpoints de cuestionarios - POST para crear
+	if (endpoint.match(/^\/api\/(manager\/)?subjects\/[\w-]+\/topics\/[\w-]+\/questionnaires$/) && method === 'POST') {
+		console.log('[useApiRequest] Creando cuestionario:', endpoint);
+		
+		// Obtener token como lo hace realApiService
+		const token = localStorage.getItem('jwt_token') || localStorage.getItem('auth_token');
+		
+		const headers: any = {
+			'Content-Type': 'application/json'
+		};
+		
+		if (token) {
+			headers['Authorization'] = `Bearer ${token}`;
+		}
+		
+		const response = await fetch(endpoint, {
+			method: 'POST',
+			headers,
+			body: JSON.stringify(data)
+		});
+		
+		if (!response.ok) {
+			console.error('[useApiRequest] Error creando cuestionario:', response.status, response.statusText);
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+		
+		const result = await response.json();
+		console.log('[useApiRequest] Cuestionario creado:', result);
+		return result;
+	}
+	
+	// Endpoints de cuestionarios - DELETE para eliminar
+	if (endpoint.match(/^\/api\/(manager\/)?subjects\/[\w-]+\/topics\/[\w-]+\/questionnaires\/[\w-]+$/) && method === 'DELETE') {
+		console.log('[useApiRequest] Eliminando cuestionario:', endpoint);
+		
+		// Obtener token como lo hace realApiService
+		const token = localStorage.getItem('jwt_token') || localStorage.getItem('auth_token');
+		
+		const headers: any = {
+			'Content-Type': 'application/json'
+		};
+		
+		if (token) {
+			headers['Authorization'] = `Bearer ${token}`;
+		}
+		
+		const response = await fetch(endpoint, {
+			method: 'DELETE',
+			headers
+		});
+		
+		if (!response.ok) {
+			console.error('[useApiRequest] Error eliminando cuestionario:', response.status, response.statusText);
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+		
+		const result = await response.json();
+		console.log('[useApiRequest] Cuestionario eliminado:', result);
+		return result;
+	}
+	
+	// Endpoints de descarga de cuestionarios
+	if (endpoint.match(/^\/api\/(manager\/)?subjects\/[\w-]+\/topics\/[\w-]+\/questionnaires\/[\w-]+\/download(\?.*)?$/) && method === 'GET') {
+		console.log('[useApiRequest] Descargando cuestionario:', endpoint);
+		
+		// Obtener token como lo hace realApiService
+		const token = localStorage.getItem('jwt_token') || localStorage.getItem('auth_token');
+		
+		const headers: any = {};
+		
+		if (token) {
+			headers['Authorization'] = `Bearer ${token}`;
+		}
+		
+		const response = await fetch(endpoint, {
+			method: 'GET',
+			headers
+		});
+		
+		if (!response.ok) {
+			console.error('[useApiRequest] Error descargando cuestionario:', response.status, response.statusText);
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+		
+		// Para descargas, manejar como blob
+		const blob = await response.blob();
+		const contentDisposition = response.headers.get('Content-Disposition');
+		const filename = contentDisposition?.match(/filename="(.+)"/)?.[1] || 'download';
+		
+		// Crear enlace de descarga
+		const url = window.URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		window.URL.revokeObjectURL(url);
+		document.body.removeChild(a);
+		
+		console.log('[useApiRequest] Archivo descargado:', filename);
+		return { success: true, filename };
+	}
+	
+	// Endpoints de descarga de preguntas - POST
+	if (endpoint.match(/^\/api\/(manager\/)?subjects\/[\w-]+\/topics\/[\w-]+\/questions\/download(\?.*)?$/) && method === 'POST') {
+		console.log('[useApiRequest] Descargando preguntas:', endpoint);
+		
+		// Obtener token como lo hace realApiService
+		const token = localStorage.getItem('jwt_token') || localStorage.getItem('auth_token');
+		
+		const headers: any = {
+			'Content-Type': 'application/json'
+		};
+		
+		if (token) {
+			headers['Authorization'] = `Bearer ${token}`;
+		}
+		
+		const response = await fetch(endpoint, {
+			method: 'POST',
+			headers,
+			body: JSON.stringify(data)
+		});
+		
+		if (!response.ok) {
+			console.error('[useApiRequest] Error descargando preguntas:', response.status, response.statusText);
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+		
+		// Para descargas, manejar como blob
+		const blob = await response.blob();
+		const contentDisposition = response.headers.get('Content-Disposition');
+		const filename = contentDisposition?.match(/filename="(.+)"/)?.[1] || 'preguntas_download';
+		
+		// Crear enlace de descarga
+		const url = window.URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		window.URL.revokeObjectURL(url);
+		document.body.removeChild(a);
+		
+		console.log('[useApiRequest] Preguntas descargadas:', filename);
+		return { success: true, filename };
+	}
+	
+	// Endpoints de preguntas - hacer petición real al API
 	if (endpoint.match(/^\/api\/(manager\/)?subjects\/[\w-]+\/topics\/[\w-]+\/questions$/) && method === 'GET') {
-		// Retornar array vacío directamente (sin wrapper de success)
-		return [];
+		console.log('[useApiRequest] Haciendo petición real a:', endpoint);
+		
+		// Obtener token como lo hace realApiService
+		const token = localStorage.getItem('jwt_token') || localStorage.getItem('auth_token');
+		console.log('[useApiRequest] Token encontrado:', token ? 'Sí' : 'No');
+		
+		const headers: any = {
+			'Content-Type': 'application/json'
+		};
+		
+		if (token) {
+			headers['Authorization'] = `Bearer ${token}`;
+		}
+		
+		console.log('[useApiRequest] Headers enviados:', headers);
+		
+		const response = await fetch(endpoint, {
+			method: 'GET',
+			headers
+		});
+		
+		if (!response.ok) {
+			console.error('[useApiRequest] Error en petición:', response.status, response.statusText);
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+		
+		const result = await response.json();
+		console.log('[useApiRequest] Respuesta recibida:', result);
+		return result;
+	}
+	
+	// Endpoints de preguntas - PATCH para verificar/rechazar
+	if (endpoint.match(/^\/api\/(manager\/)?subjects\/[\w-]+\/topics\/[\w-]+\/questions$/) && method === 'PATCH') {
+		console.log('[useApiRequest] Actualizando estado de pregunta:', endpoint);
+		
+		// Obtener token como lo hace realApiService
+		const token = localStorage.getItem('jwt_token') || localStorage.getItem('auth_token');
+		
+		const headers: any = {
+			'Content-Type': 'application/json'
+		};
+		
+		if (token) {
+			headers['Authorization'] = `Bearer ${token}`;
+		}
+		
+		const response = await fetch(endpoint, {
+			method: 'PATCH',
+			headers,
+			body: JSON.stringify(data)
+		});
+		
+		if (!response.ok) {
+			console.error('[useApiRequest] Error en petición PATCH:', response.status, response.statusText);
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+		
+		const result = await response.json();
+		console.log('[useApiRequest] Pregunta actualizada:', result);
+		return result;
+	}
+	
+	// Endpoints de generar preguntas - POST
+	if (endpoint.match(/^\/api\/(manager\/)?subjects\/[\w-]+\/topics\/[\w-]+\/generate-questions$/) && method === 'POST') {
+		console.log('[useApiRequest] Generando nuevas preguntas:', endpoint);
+		
+		// Obtener token como lo hace realApiService
+		const token = localStorage.getItem('jwt_token') || localStorage.getItem('auth_token');
+		
+		const headers: any = {
+			'Content-Type': 'application/json'
+		};
+		
+		if (token) {
+			headers['Authorization'] = `Bearer ${token}`;
+		}
+		
+		const response = await fetch(endpoint, {
+			method: 'POST',
+			headers,
+			body: JSON.stringify(data)
+		});
+		
+		if (!response.ok) {
+			console.error('[useApiRequest] Error generando preguntas:', response.status, response.statusText);
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+		
+		const result = await response.json();
+		console.log('[useApiRequest] Preguntas generadas:', result);
+		return result;
 	}
 	
 	// Si no se encuentra el endpoint, lanzar error

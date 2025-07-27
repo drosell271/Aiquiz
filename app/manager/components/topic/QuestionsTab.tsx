@@ -6,6 +6,7 @@ import SearchBar from "../subject/SearchBar";
 import { ConfirmationModal } from "../common";
 import QuestionStatusFilter, { StatusFilter } from "./QuestionStatusFilter";
 import GenerateQuestionsModal from "./GenerateQuestionsModal";
+import { useTopic } from "../../contexts/TopicContext";
 
 interface Choice {
 	text: string;
@@ -13,14 +14,31 @@ interface Choice {
 }
 
 interface Question {
-	id: string;
+	_id: string;
+	id?: string; // Para compatibilidad
 	text: string;
 	type: string;
 	difficulty: string;
 	createdAt: string;
-	choices?: Choice[];
+	choices?: Choice[] | string[]; // Puede ser formato manager (Choice[]) o quiz (string[])
+	answer?: number; // Índice de respuesta correcta en formato quiz
 	verified?: boolean;
 	rejected?: boolean;
+	generated?: boolean;
+	explanation?: string;
+	tags?: string[];
+}
+
+interface QuestionsResponse {
+	success: boolean;
+	questions: Question[];
+	total: number;
+	stats: {
+		verified: number;
+		unverified: number;
+		generated: number;
+		manual: number;
+	};
 }
 
 interface QuestionsTabProps {
@@ -33,6 +51,7 @@ interface QuestionsTabProps {
  */
 const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 	const { t } = useManagerTranslation();
+	const { topic } = useTopic();
 
 	// Estados para los datos
 	const [questions, setQuestions] = useState<Question[]>([]);
@@ -60,6 +79,10 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 		useState<string>("");
 	const [showGenerateQuestionsModal, setShowGenerateQuestionsModal] =
 		useState<boolean>(false);
+	
+	// Estados para feedback
+	const [generationStatus, setGenerationStatus] = useState<string>("");
+	const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
 
 	// API para obtener preguntas
 	const {
@@ -68,18 +91,26 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 		error,
 		makeRequest: fetchQuestions,
 	} = useApiRequest(
-		`/api/subjects/${subjectId}/topics/${topicId}/questions`,
+		`/api/manager/subjects/${subjectId}/topics/${topicId}/questions`,
 		"GET",
 		null,
 		true
 	);
+
+	// Debug logs
+	console.log('[QuestionsTab] Estado de la petición:', {
+		loading,
+		error,
+		questionsData,
+		url: `/api/manager/subjects/${subjectId}/topics/${topicId}/questions`
+	});
 
 	// API para generar cuestionario desde preguntas seleccionadas
 	const {
 		makeRequest: generateQuestionnaire,
 		loading: generatingQuestionnaire,
 	} = useApiRequest(
-		`/api/subjects/${subjectId}/topics/${topicId}/generate-questionnaire`,
+		`/api/manager/subjects/${subjectId}/topics/${topicId}/questionnaires`,
 		"POST",
 		null,
 		false
@@ -88,7 +119,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 	// API para descargar preguntas seleccionadas
 	const { makeRequest: downloadQuestions, loading: downloadingQuestions } =
 		useApiRequest(
-			`/api/subjects/${subjectId}/topics/${topicId}/download-questions`,
+			`/api/manager/subjects/${subjectId}/topics/${topicId}/questions/download`,
 			"POST",
 			null,
 			false
@@ -99,17 +130,17 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 		makeRequest: generateNewQuestions,
 		loading: generatingNewQuestions,
 	} = useApiRequest(
-		`/api/subjects/${subjectId}/topics/${topicId}/generate-questions`,
+		`/api/manager/subjects/${subjectId}/topics/${topicId}/generate-questions`,
 		"POST",
 		null,
 		false
 	);
 
 	// API para verificar o rechazar preguntas
-	const { makeRequest: verifyQuestion, loading: verifyingQuestion } =
+	const { makeRequest: updateQuestionStatus, loading: updatingQuestion } =
 		useApiRequest(
-			`/api/subjects/${subjectId}/topics/${topicId}/questions/verify`,
-			"POST",
+			`/api/manager/subjects/${subjectId}/topics/${topicId}/questions`,
+			"PATCH",
 			null,
 			false
 		);
@@ -118,15 +149,22 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 	 * Inicializa las preguntas a partir de los datos obtenidos
 	 */
 	useEffect(() => {
-		if (questionsData) {
-			const questionsWithSelected = questionsData.map((q: Question) => ({
+		console.log('[QuestionsTab] useEffect - questionsData cambió:', questionsData);
+		
+		if (questionsData?.questions) {
+			console.log('[QuestionsTab] Procesando preguntas:', questionsData.questions.length);
+			const questionsWithSelected = questionsData.questions.map((q: Question) => ({
 				...q,
-				selected: selectedQuestions.includes(q.id),
+				id: q._id, // Mapear _id a id para compatibilidad
+				selected: selectedQuestions.includes(q._id),
 				verified: q.verified !== undefined ? q.verified : false,
 				rejected: q.rejected !== undefined ? q.rejected : false,
 			}));
 			setQuestions(questionsWithSelected);
 			applyFilters(questionsWithSelected, searchQuery, statusFilter);
+			console.log('[QuestionsTab] Preguntas procesadas y filtradas');
+		} else {
+			console.log('[QuestionsTab] No hay questionsData.questions:', questionsData);
 		}
 	}, [questionsData, selectedQuestions]);
 
@@ -208,7 +246,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 		setSelectAll(!selectAll);
 		if (!selectAll) {
 			// Seleccionar todas las preguntas filtradas
-			setSelectedQuestions(filteredQuestions.map((q) => q.id));
+			setSelectedQuestions(filteredQuestions.map((q) => q.id || q._id));
 		} else {
 			// Deseleccionar todas
 			setSelectedQuestions([]);
@@ -239,18 +277,23 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 	const handleVerifyQuestion = useCallback(
 		async (id: string, isValid: boolean) => {
 			try {
+				console.log('[QuestionsTab] Verificando pregunta:', { id, isValid });
+				
 				// Llamada a la API para verificar/rechazar pregunta
-				await verifyQuestion({
+				const result = await updateQuestionStatus({
 					questionId: id,
-					isValid,
+					action: isValid ? 'verify' : 'reject',
 				});
 
+				console.log('[QuestionsTab] Resultado de verificación:', result);
+
 				// Actualizar estado local
-				const updatedQuestions = questions.map((q) =>
-					q.id === id
+				const updatedQuestions = questions.map((q) => {
+					const questionId = q.id || q._id;
+					return questionId === id
 						? { ...q, verified: isValid, rejected: !isValid }
-						: q
-				);
+						: q;
+				});
 
 				setQuestions(updatedQuestions);
 				applyFilters(updatedQuestions, searchQuery, statusFilter);
@@ -258,7 +301,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 				console.error("Error al verificar pregunta:", error);
 			}
 		},
-		[questions, searchQuery, statusFilter, verifyQuestion, applyFilters]
+		[questions, searchQuery, statusFilter, updateQuestionStatus, applyFilters]
 	);
 
 	/**
@@ -299,20 +342,22 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 			if (selectedQuestions.length === 0) return;
 
 			try {
-				await downloadQuestions({
+				console.log(`Iniciando descarga de ${selectedQuestions.length} preguntas en formato ${format}`);
+				
+				const result = await downloadQuestions({
 					questionIds: selectedQuestions,
 					format,
 				});
 
-				// Simular descarga en desarrollo
-				console.log(
-					`Descargando ${selectedQuestions.length} preguntas en formato ${format}`
-				);
+				if (result?.success) {
+					console.log(`✅ Descarga completada: ${result.filename}`);
+				}
 
 				// Cerrar menú desplegable
 				setShowFormatOptions(false);
 			} catch (error) {
 				console.error("Error al descargar preguntas:", error);
+				// TODO: Mostrar mensaje de error al usuario
 			}
 		},
 		[selectedQuestions, downloadQuestions]
@@ -322,21 +367,39 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 	 * Genera nuevas preguntas
 	 */
 	const handleGenerateNewQuestions = useCallback(
-		async (difficulty: string, count: number) => {
+		async (difficulty: string, count: number, subtopicId?: string) => {
 			try {
+				setGenerationStatus(t("topicDetail.generatingQuestions", { count, difficulty }));
+				
 				const response = await generateNewQuestions({
 					difficulty: difficulty,
 					count: count,
-					type: "URL", // Asumimos que este es el tipo basado en la UI mostrada
+					type: "Opción múltiple",
+					subtopicId: subtopicId || undefined,
+					includeExplanations: true
 				});
 
 				if (response.success && response.questions) {
+					setGenerationStatus(t("topicDetail.questionsGeneratedSuccess", { count: response.questionsGenerated || count }));
+					
 					// Actualizar con las nuevas preguntas
 					await fetchQuestions();
 					setShowGenerateQuestionsModal(false);
+					
+					// Mostrar mensaje de éxito
+					setShowSuccessMessage(true);
+					setTimeout(() => {
+						setShowSuccessMessage(false);
+						setGenerationStatus("");
+					}, 4000);
+				} else {
+					setGenerationStatus(t("topicDetail.questionsGenerationError", { error: "No se pudieron generar las preguntas" }));
+					setTimeout(() => setGenerationStatus(""), 3000);
 				}
 			} catch (error) {
 				console.error("Error al generar nuevas preguntas:", error);
+				setGenerationStatus(t("topicDetail.questionsGenerationError", { error: error instanceof Error ? error.message : 'Error desconocido' }));
+				setTimeout(() => setGenerationStatus(""), 3000);
 			}
 		},
 		[generateNewQuestions, fetchQuestions]
@@ -570,14 +633,15 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 	 */
 	const renderQuestionRow = useCallback(
 		(question: Question) => {
-			const isSelected = selectedQuestions.includes(question.id);
+			const questionId = question.id || question._id;
+			const isSelected = selectedQuestions.includes(questionId);
 			const isExpanded =
-				expandAllQuestions || showQuestionDetails === question.id;
+				expandAllQuestions || showQuestionDetails === questionId;
 
 			return (
 				<>
 					<tr
-						key={question.id}
+						key={questionId}
 						className={`hover:bg-gray-50 ${
 							isSelected
 								? "bg-blue-50"
@@ -595,7 +659,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 									className="h-4 w-4 text-blue-600 border-gray-300 rounded"
 									checked={isSelected}
 									onChange={() =>
-										handleSelectQuestion(question.id)
+										handleSelectQuestion(questionId)
 									}
 									aria-label={`Seleccionar pregunta ${question.text.substring(
 										0,
@@ -607,7 +671,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 						<td className="px-6 py-4 text-sm font-medium text-gray-900 max-w-md">
 							<button
 								className="text-left hover:text-blue-600 focus:outline-none w-full overflow-ellipsis overflow-hidden"
-								onClick={() => handleToggleDetails(question.id)}
+								onClick={() => handleToggleDetails(questionId)}
 								aria-label={`Ver detalles de pregunta: ${question.text.substring(
 									0,
 									20
@@ -621,7 +685,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 										stroke="currentColor"
 										viewBox="0 0 24 24"
 									>
-										{showQuestionDetails === question.id ? (
+										{showQuestionDetails === questionId ? (
 											<path
 												strokeLinecap="round"
 												strokeLinejoin="round"
@@ -678,10 +742,10 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 							<div className="flex justify-center space-x-2">
 								<button
 									onClick={() =>
-										handleVerifyQuestion(question.id, true)
+										handleVerifyQuestion(questionId, true)
 									}
 									disabled={
-										question.verified || question.rejected
+										question.verified || question.rejected || updatingQuestion
 									}
 									className={`p-1 rounded-full ${
 										question.verified
@@ -709,10 +773,10 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 								</button>
 								<button
 									onClick={() =>
-										handleVerifyQuestion(question.id, false)
+										handleVerifyQuestion(questionId, false)
 									}
 									disabled={
-										question.verified || question.rejected
+										question.verified || question.rejected || updatingQuestion
 									}
 									className={`p-1 rounded-full ${
 										question.rejected
@@ -760,15 +824,46 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 	 * Renderiza los detalles de una pregunta
 	 */
 	const renderQuestionDetails = useCallback((question: Question) => {
+		console.log('[QuestionsTab] Renderizando detalles de pregunta:', {
+			text: question.text,
+			choices: question.choices,
+			choicesCount: question.choices?.length,
+			firstChoice: question.choices?.[0],
+			choicesType: typeof question.choices?.[0],
+			answer: (question as any).answer // Para detectar formato quiz
+		});
+		
+		// Detectar si choices está en formato quiz (array de strings) o manager (objetos)
+		let processedChoices: Choice[] = [];
+		
+		if (question.choices && Array.isArray(question.choices)) {
+			if (question.choices.length > 0) {
+				// Verificar si es formato quiz (strings) o manager (objetos)
+				if (typeof question.choices[0] === 'string') {
+					// Formato quiz: convertir a formato manager
+					const answerIndex = (question as any).answer || 0;
+					processedChoices = question.choices.map((choiceText: string, index: number) => ({
+						text: choiceText,
+						isCorrect: index === answerIndex
+					}));
+					console.log('[QuestionsTab] Convertido de formato quiz a manager:', processedChoices);
+				} else {
+					// Ya está en formato manager
+					processedChoices = question.choices as Choice[];
+					console.log('[QuestionsTab] Ya en formato manager:', processedChoices);
+				}
+			}
+		}
+		
 		return (
 			<tr className="bg-gray-50">
 				<td colSpan={6} className="px-6 py-4">
 					<div className="text-sm text-gray-800">
-						{question.choices ? (
+						{processedChoices && processedChoices.length > 0 ? (
 							<div className="space-y-2">
 								<h4 className="font-medium">Opciones:</h4>
 								<ul className="ml-4 space-y-1">
-									{question.choices.map((choice, index) => (
+									{processedChoices.map((choice, index) => (
 										<li
 											key={index}
 											className={`flex items-start ${
@@ -818,12 +913,27 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 										</li>
 									))}
 								</ul>
+								{question.explanation && (
+									<div className="mt-3 pt-3 border-t border-gray-200">
+										<h4 className="font-medium mb-2">Explicación:</h4>
+										<p className="text-gray-700">{question.explanation}</p>
+									</div>
+								)}
 							</div>
 						) : (
 							<div>
 								<h4 className="font-medium mb-2">
-									Pregunta de tipo test sin opciones definidas
+									Pregunta sin opciones de respuesta definidas
 								</h4>
+								<p className="text-gray-600">
+									Tipo: {question.type || 'No especificado'}
+								</p>
+								{question.explanation && (
+									<div className="mt-3">
+										<h4 className="font-medium mb-2">Explicación:</h4>
+										<p className="text-gray-700">{question.explanation}</p>
+									</div>
+								)}
 							</div>
 						)}
 					</div>
@@ -986,6 +1096,35 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 
 	return (
 		<div>
+			{/* Mensajes de estado y feedback */}
+			{generationStatus && (
+				<div className={`mb-4 p-3 rounded-md ${
+					generationStatus.includes('❌') 
+						? 'bg-red-100 text-red-700 border border-red-300' 
+						: generationStatus.includes('✅')
+						? 'bg-green-100 text-green-700 border border-green-300'
+						: 'bg-blue-100 text-blue-700 border border-blue-300'
+				}`}>
+					<div className="flex items-center">
+						{generationStatus.includes('❌') ? (
+							<svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+								<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+							</svg>
+						) : generationStatus.includes('✅') ? (
+							<svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+								<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+							</svg>
+						) : (
+							<svg className="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+								<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+								<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+							</svg>
+						)}
+						{generationStatus}
+					</div>
+				</div>
+			)}
+
 			<div className="flex items-center justify-between mb-4">
 				<div className="flex-1">
 					<SearchBar
@@ -1076,6 +1215,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 				onClose={() => setShowGenerateQuestionsModal(false)}
 				onGenerate={handleGenerateNewQuestions}
 				isLoading={generatingNewQuestions}
+				subtopics={topic?.subtopics || []}
 			/>
 		</div>
 	);

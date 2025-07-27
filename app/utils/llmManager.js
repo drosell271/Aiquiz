@@ -22,6 +22,10 @@ const models = JSON.parse(fs.readFileSync('models.json'));
 export async function getModelResponse(modelName, prompt) {
     llmLogger.debug(`Solicitando respuesta del modelo: ${modelName}`);
     
+    // Debug: verificar configuración disponible
+    console.log("[LLM Debug] Modelos disponibles:", models.models.map(m => m.name));
+    console.log("[LLM Debug] Buscando modelo:", modelName);
+    
     const config = models.models.find(m => m.name === modelName);
 
     if (!config) {
@@ -96,12 +100,15 @@ export async function getModelResponse(modelName, prompt) {
 
 
 async function OpenAI_API_Request(config, prompt, responseFormat) {
-    if (!config.api_key) {
-        throw new Error(`Falta la ${config.name} API Key`);
+    // Priorizar variables de entorno sobre archivo de configuración
+    const apiKey = process.env.OPENAI_API_KEY || config.api_key;
+    
+    if (!apiKey) {
+        throw new Error(`Falta la ${config.name} API Key. Configure OPENAI_API_KEY en .env o en models.json`);
     }
 
     const openaiConfig = {
-        apiKey: config.api_key,
+        apiKey: apiKey,
     };
     
     // Solo agregar organization si existe y no es null
@@ -134,7 +141,25 @@ async function OpenAI_API_Request(config, prompt, responseFormat) {
         return textResponse;
 
     } catch (error) {
-        llmLogger.error(`Error durante petición OpenAI`, error);
+        llmLogger.error(`Error durante petición OpenAI`, {
+            message: error.message,
+            status: error.status,
+            code: error.code,
+            type: error.type,
+            model: config.model,
+            promptLength: prompt.length
+        });
+        
+        // Log adicional para debugging
+        console.error("[OpenAI Error Details]:", {
+            error: error.message,
+            status: error.status,
+            code: error.code,
+            model: config.model,
+            hasApiKey: !!config.api_key,
+            apiKeyPrefix: config.api_key ? config.api_key.substring(0, 10) + "..." : "none"
+        });
+        
         throw error;
     }
 

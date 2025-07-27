@@ -25,16 +25,16 @@ export async function GET() {
         // Transformar los datos para que coincidan con el formato esperado por la aplicación principal
         const transformedSubjects = subjects.map(subject => ({
             _id: subject._id,
-            name: subject.name || '',
+            name: subject.title || '',
             acronym: subject.acronym || '',
             description: subject.description || '',
             topics: (subject.topics || []).map(topic => ({
                 _id: topic._id,
-                value: (topic.name || '').toLowerCase().replace(/\s+/g, '_'),
-                label: topic.name || '',
+                value: (topic.title || '').toLowerCase().replace(/\s+/g, '_'),
+                label: topic.title || '',
                 subtopics: (topic.subtopics || []).map(subtopic => ({
                     _id: subtopic._id,
-                    title: subtopic.name || '',
+                    title: subtopic.title || '',
                     comment: subtopic.description || '',
                     files: [] // Por ahora vacío, se puede llenar con archivos relacionados
                 }))

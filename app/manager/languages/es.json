@@ -225,11 +225,24 @@
 		"generateNewQuestions": "Generar nuevas",
 		"settings": "Ajustes",
 		"generateQuestionsTitle": "Generar preguntas",
-		"easy": "FÁCIL",
-		"intermediate": "INTERMEDIO",
-		"advanced": "AVANZADO",
+		"easy": "Fácil",
+		"intermediate": "Medio", 
+		"advanced": "Avanzado",
 		"numberOfQuestions": "Número de preguntas",
-		"generateQuestions": "Generar preguntas"
+		"generateQuestions": "Generar preguntas",
+		"subtopic": "Subtema (opcional)",
+		"allSubtopics": "Todos los subtemas",
+		"searchQuestionsPlaceholder": "Buscar preguntas...",
+		"noQuestionsFound": "No se encontraron preguntas",
+		"generatingQuestions": "Generando {{count}} preguntas de dificultad {{difficulty}}...",
+		"questionsGeneratedSuccess": "✅ {{count}} preguntas generadas correctamente",
+		"questionsGenerationError": "❌ Error al generar preguntas: {{error}}",
+		"downloadingFile": "Descargando archivo...",
+		"downloadSuccess": "✅ Archivo descargado correctamente",
+		"downloadError": "❌ Error al descargar: {{error}}",
+		"selectAtLeastOneQuestion": "Selecciona al menos una pregunta para descargar",
+		"pdf": "PDF",
+		"moodle": "Moodle XML"
 	},
 	"subtopicDetail": {
 		"documentsAndVideos": "Documentos y videos",
@@ -254,5 +267,47 @@
 		"allowedFiles": "Formatos admitidos: pdf, ppt, doc, docx...",
 		"noFiles": "No hay documentos ni videos asociados a este subtema.",
 		"deleteFile": "Eliminar archivo"
+	},
+	"common": {
+		"processing": "Procesando...",
+		"save": "Guardar",
+		"cancel": "Cancelar",
+		"delete": "Eliminar",
+		"edit": "Editar",
+		"saving": "Guardando...",
+		"loading": "Cargando...",
+		"success": "Éxito",
+		"error": "Error",
+		"yes": "Sí",
+		"no": "No",
+		"close": "Cerrar",
+		"back": "Atrás",
+		"next": "Siguiente",
+		"previous": "Anterior",
+		"submit": "Enviar",
+		"upload": "Subir",
+		"download": "Descargar"
+	},
+	"confirmation": {
+		"deleteSubject": {
+			"title": "Eliminar asignatura",
+			"message": "¿Estás seguro de que deseas eliminar esta asignatura? Esta acción no se puede deshacer."
+		},
+		"deleteTopic": {
+			"title": "Eliminar tema",
+			"message": "¿Estás seguro de que deseas eliminar este tema? Esta acción no se puede deshacer."
+		},
+		"deleteProfessor": {
+			"title": "Eliminar profesor",
+			"message": "¿Estás seguro de que deseas eliminar este profesor de la asignatura?"
+		},
+		"deleteSubtopic": {
+			"title": "Eliminar subtema",
+			"message": "¿Estás seguro de que deseas eliminar este subtema? Esta acción no se puede deshacer."
+		},
+		"deleteQuestionnaire": {
+			"title": "Eliminar cuestionario",
+			"message": "¿Estás seguro de que deseas eliminar este cuestionario? Esta acción no se puede deshacer."
+		}
 	}
 }

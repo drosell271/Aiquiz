@@ -7,6 +7,9 @@ import { getRAGContextForSubtopic, enhancePromptWithRAG } from "@utils/ragContex
 
 import dbConnect from "@utils/dbconnect.js";
 import Student from "@app/models/Student.js";
+import Question from "@app/models/Question.js";
+import Topic from "@app/manager/models/Topic.js";
+import Subtopic from "@app/manager/models/Subtopic.js";
 
 // Logger específico para questions
 const questionsLogger = logger.create('Questions');
@@ -102,6 +105,14 @@ export async function POST(request) {
 			subtopicId,
 		} = await request.json();
 
+		// DEBUG: Log para verificar el número de preguntas recibido
+		console.log("[DEBUG] Parámetros recibidos en /api/questions:");
+		console.log("  numQuestions:", numQuestions, "tipo:", typeof numQuestions);
+		console.log("  topic:", topic);
+		console.log("  difficulty:", difficulty);
+		console.log("  studentEmail:", studentEmail);
+		console.log("  subject:", subject);
+
 		// Cargamos variables y objetos de configuración
 
 		// Comprobamos si el ABCTesting está activo para la asignatura
@@ -169,10 +180,23 @@ export async function POST(request) {
 		});
 
 		// SOLICITUD A LA API del LLM seleccionado para el alumno
-		const responseLlmManager = await getModelResponse(
-			assignedModel,
-			finalPrompt
-		);
+		questionsLogger.debug(`Enviando prompt al modelo ${assignedModel}`);
+		let responseLlmManager;
+		try {
+			responseLlmManager = await getModelResponse(
+				assignedModel,
+				finalPrompt
+			);
+			questionsLogger.success(`Respuesta recibida del modelo ${assignedModel}`);
+		} catch (llmError) {
+			questionsLogger.error(`Error en getModelResponse para ${assignedModel}:`, {
+				message: llmError.message,
+				status: llmError.status,
+				code: llmError.code
+			});
+			console.error("[LLM Manager Error]:", llmError);
+			throw llmError;
+		}
 		// Formatear la respuesta de la API
 		const formattedResponse = responseLlmManager
 			.replace(/^\[|\]$/g, "")
@@ -180,10 +204,37 @@ export async function POST(request) {
 			.replace(/```/g, "")
 			.trim();
 
+		// Guardar preguntas generadas en el manager si tenemos subtopicId
+		if (subtopicId) {
+			try {
+				await saveQuestionsToManager(formattedResponse, assignedModel, finalPrompt, subtopicId, topic, difficulty);
+			} catch (saveError) {
+				questionsLogger.warn("Error guardando preguntas en manager:", saveError.message);
+				// No fallar la respuesta principal por un error de guardado
+			}
+		}
+
 		return new Response(formattedResponse);
 	} catch (error) {
-		console.error("Error during request:", error.message);
-		return new Response("Error during request", { status: 500 });
+		questionsLogger.error("Error general en POST /api/questions:", {
+			message: error.message,
+			stack: error.stack,
+			status: error.status,
+			code: error.code
+		});
+		console.error("[Questions API Error]:", {
+			error: error.message,
+			stack: error.stack,
+			params: { language, difficulty, topic, numQuestions, subject, studentEmail }
+		});
+		return new Response(JSON.stringify({
+			error: "Error generating questions",
+			message: error.message,
+			details: error.status ? `Status: ${error.status}` : "Unknown error"
+		}), { 
+			status: 500,
+			headers: { 'Content-Type': 'application/json' }
+		});
 	}
 }
 
@@ -267,3 +318,62 @@ const getAndEnsureStudentAndSubject = async (
 		console.error(error);
 	}
 };
+
+// Función para guardar preguntas generadas en el modelo unificado
+async function saveQuestionsToManager(formattedResponse, assignedModel, prompt, subtopicId, topicName, difficulty) {
+	try {
+		questionsLogger.info("Guardando preguntas generadas en modelo unificado");
+		
+		// Parsear la respuesta JSON
+		const questionsData = JSON.parse(formattedResponse);
+		if (!questionsData.questions || !Array.isArray(questionsData.questions)) {
+			throw new Error("Formato de respuesta inválido");
+		}
+
+		// Buscar el subtopic para obtener el topic
+		const subtopic = await Subtopic.findById(subtopicId).populate('topic');
+		if (!subtopic) {
+			throw new Error(`Subtopic no encontrado: ${subtopicId}`);
+		}
+
+		const topicId = subtopic.topic._id;
+
+		// Convertir y guardar cada pregunta usando el modelo unificado
+		const unifiedQuestions = questionsData.questions.map(q => {
+			return {
+				// Generar ID numérico para compatibilidad con quiz
+				id: Math.floor(Math.random() * 1000000000),
+				text: q.query,
+				type: "Opción múltiple",
+				difficulty: difficulty, // Se normalizará automáticamente en el middleware
+				choices: q.choices, // Array simple, se convertirá automáticamente
+				answer: q.answer,
+				explanation: q.explanation || '',
+				
+				// Referencias del manager
+				topicRef: topicId,
+				subtopic: subtopicId,
+				topic: topicName, // String para compatibilidad
+				
+				// Metadatos de generación
+				generated: true,
+				llmModel: assignedModel,
+				generationPrompt: prompt.substring(0, 500) + '...',
+				verified: false,
+				tags: [topicName, 'auto-generated'],
+				source: "generated"
+			};
+		});
+
+		// Guardar en la base de datos usando el modelo unificado
+		const savedQuestions = await Question.insertMany(unifiedQuestions);
+		
+		questionsLogger.success(`${savedQuestions.length} preguntas guardadas en modelo unificado para topic ${topicId}`);
+		
+		return savedQuestions;
+		
+	} catch (error) {
+		questionsLogger.error("Error en saveQuestionsToManager:", error.message);
+		throw error;
+	}
+}
