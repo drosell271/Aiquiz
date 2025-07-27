@@ -268,46 +268,24 @@
 		"noFiles": "No hay documentos ni videos asociados a este subtema.",
 		"deleteFile": "Eliminar archivo"
 	},
-	"common": {
-		"processing": "Procesando...",
-		"save": "Guardar",
-		"cancel": "Cancelar",
-		"delete": "Eliminar",
-		"edit": "Editar",
-		"saving": "Guardando...",
-		"loading": "Cargando...",
-		"success": "Éxito",
-		"error": "Error",
-		"yes": "Sí",
-		"no": "No",
-		"close": "Cerrar",
-		"back": "Atrás",
-		"next": "Siguiente",
-		"previous": "Anterior",
-		"submit": "Enviar",
-		"upload": "Subir",
-		"download": "Descargar"
+	"errors": {
+		"loadSubjects": "Error al cargar las asignaturas",
+		"validatingToken": "Error validando el token de invitación",
+		"sendingRecoveryEmail": "Error al enviar el email de recuperación",
+		"savingChanges": "Error al guardar los cambios",
+		"processingFile": "Error al procesar el archivo",
+		"invalidFile": "Archivo no válido",
+		"networkError": "Error de conexión",
+		"unauthorized": "No autorizado",
+		"notFound": "No encontrado",
+		"serverError": "Error del servidor"
 	},
-	"confirmation": {
-		"deleteSubject": {
-			"title": "Eliminar asignatura",
-			"message": "¿Estás seguro de que deseas eliminar esta asignatura? Esta acción no se puede deshacer."
-		},
-		"deleteTopic": {
-			"title": "Eliminar tema",
-			"message": "¿Estás seguro de que deseas eliminar este tema? Esta acción no se puede deshacer."
-		},
-		"deleteProfessor": {
-			"title": "Eliminar profesor",
-			"message": "¿Estás seguro de que deseas eliminar este profesor de la asignatura?"
-		},
-		"deleteSubtopic": {
-			"title": "Eliminar subtema",
-			"message": "¿Estás seguro de que deseas eliminar este subtema? Esta acción no se puede deshacer."
-		},
-		"deleteQuestionnaire": {
-			"title": "Eliminar cuestionario",
-			"message": "¿Estás seguro de que deseas eliminar este cuestionario? Esta acción no se puede deshacer."
-		}
+	"success": {
+		"accountActivated": "Tu cuenta ha sido activada correctamente. Ahora puedes iniciar sesión.",
+		"passwordReset": "Tu contraseña ha sido restablecida correctamente. Ahora puedes iniciar sesión.",
+		"changesSaved": "Cambios guardados correctamente",
+		"fileUploaded": "Archivo subido correctamente",
+		"emailSent": "Email enviado correctamente",
+		"copied": "Copiado al portapapeles"
 	}
 }

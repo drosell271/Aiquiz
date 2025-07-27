@@ -46,9 +46,9 @@ const LoginPage = () => {
 	useEffect(() => {
 		const message = searchParams.get('message');
 		if (message === 'invitation-accepted') {
-			setSuccessMessage('Tu cuenta ha sido activada correctamente. Ahora puedes iniciar sesión.');
+			setSuccessMessage(t("success.accountActivated"));
 		} else if (message === 'password-reset-success') {
-			setSuccessMessage('Tu contraseña ha sido restablecida correctamente. Ahora puedes iniciar sesión.');
+			setSuccessMessage(t("success.passwordReset"));
 		}
 	}, [searchParams]);
 

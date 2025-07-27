@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import SubjectTags from "./SubjectTags";
+import { AnimatedCard } from "../common/AnimatedComponents";
 
 export interface SubjectCardProps {
 	id: string;
@@ -36,7 +37,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
 	};
 
 	return (
-		<div className="bg-gray-100 rounded-md p-6">
+		<AnimatedCard className="bg-gray-100 rounded-md p-6 shadow-md">
 			<h2 className="text-xl font-bold mb-2">{title || "Sin título"}</h2>
 
 			<p className="text-gray-700 mb-2">
@@ -60,7 +61,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
 
 				<SubjectTags tags={topics} category={t("subjects.topics")} />
 			</div>
-		</div>
+		</AnimatedCard>
 	);
 };
 
