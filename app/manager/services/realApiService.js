@@ -1,5 +1,25 @@
+const logger = require("../utils/logger").create("MANAGER:SERVICE");
 // realApiService.js - Servicio real para la API del manager
 "use client";
+
+// Development-only logging utility
+const devLog = {
+	log: (...args) => {
+		if (process.env.NODE_ENV === 'development') {
+			logger.info('[RealApiService]', ...args);
+		}
+	},
+	error: (...args) => {
+		if (process.env.NODE_ENV === 'development') {
+			console.error('[RealApiService]', ...args);
+		}
+	},
+	warn: (...args) => {
+		if (process.env.NODE_ENV === 'development') {
+			console.warn('[RealApiService]', ...args);
+		}
+	}
+};
 
 /**
  * Clase RealApiService para gestionar llamadas reales a la API del manager
@@ -20,7 +40,7 @@ class RealApiService {
 				try {
 					this.user = JSON.parse(userData);
 				} catch (e) {
-					console.error('Error parsing user data:', e);
+					devLog.error('Error parsing user data:', e);
 				}
 			}
 		}
@@ -100,16 +120,16 @@ class RealApiService {
 		}
 
 		if (this.enableLogging) {
-			console.log(`🔄 API Request: ${config.method} ${url}`);
+			devLog.log(`🔄 API Request: ${config.method} ${url}`);
 			if (isFormData) {
-				console.log('📦 Sending FormData with entries:');
+				devLog.log('📦 Sending FormData with entries:');
 				for (let [key, value] of options.body.entries()) {
-					console.log(`   ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes)` : value);
+					devLog.log(`   ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes)` : value);
 				}
-				console.log('📋 Headers:', config.headers);
+				devLog.log('📋 Headers:', config.headers);
 			} else {
-				console.log('📤 Request body:', config.body);
-				console.log('📋 Headers:', config.headers);
+				devLog.log('📤 Request body:', config.body);
+				devLog.log('📋 Headers:', config.headers);
 			}
 		}
 
@@ -118,7 +138,7 @@ class RealApiService {
 			const data = await response.json();
 
 			if (this.enableLogging) {
-				console.log(`📥 API Response: ${response.status}`, data);
+				devLog.log(`📥 API Response: ${response.status}`, data);
 			}
 
 			if (!response.ok) {
@@ -128,7 +148,7 @@ class RealApiService {
 			return data;
 		} catch (error) {
 			if (this.enableLogging) {
-				console.error('❌ API Error:', error);
+				devLog.error('❌ API Error:', error);
 			}
 			throw error;
 		}

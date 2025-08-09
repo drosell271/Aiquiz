@@ -14,12 +14,9 @@ const HomePage = () => {
   const [inputEmail, setInputEmail] = useState("");
   const [showAlert, setShowAlert] = useState("");
 
-  // Debug i18n
+  // Debug i18n - moved to server-side logging
   useEffect(() => {
-    console.log('i18n ready:', i18n.isInitialized);
-    console.log('Current language:', i18n.language);
-    console.log('Available resources:', Object.keys(i18n.getResourceBundle(i18n.language, 'translation') || {}));
-    console.log('front.title translation:', t('front.title'));
+    // i18n initialization tracking removed from client-side
   }, [i18n, t]);
 
   useEffect(() => {

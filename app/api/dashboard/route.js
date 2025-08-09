@@ -5,6 +5,8 @@ import { language } from "../../constants/language";
 import { subjectNames } from "../../constants/language";
 import Question from "../../models/Question.js";
 
+const logger = require('../../utils/logger').create('API:DASHBOARD');
+
 /**
  * @swagger
  * /dashboard:
@@ -60,7 +62,7 @@ if (!process.env.OPENAI_API_KEY) {
 
 // Manejar las solicitudes HTTP POST
 export async function POST(request) {
-	console.log("POST request to /api/dashboard");
+	logger.info('Dashboard analytics request received');
 	try {
 		const { subject } = await request.json();
 		//get subject name
@@ -76,14 +78,14 @@ export async function POST(request) {
 		const numQuestionsTotal = await Question.countDocuments({
 			language: { $in: languagesArray },
 		});
-		console.log("numQuestionsTotal: ", numQuestionsTotal);
+		logger.debug('Total questions count', { numQuestionsTotal });
 
 		let questionsReported = await Question.find({
 			language: { $in: languagesArray },
 			studentReport: true,
 		});
 
-		console.log("numQuestionsReported: ", questionsReported.length);
+		logger.debug('Reported questions count', { numQuestionsReported: questionsReported.length });
 
 		//get 20 questions reported randomly chosen from the array
 		let samplequestionsReported = [];
@@ -104,7 +106,7 @@ export async function POST(request) {
 			studentReport: false,
 			$expr: { $eq: ["$answer", "$studentAnswer"] },
 		});
-		console.log("numQuestionsRight: ", questionsRight.length);
+		logger.debug('Correct questions count', { numQuestionsRight: questionsRight.length });
 
 		//get 20 questions right randomly chosen from the array
 		let samplequestionsRight = [];
@@ -125,7 +127,7 @@ export async function POST(request) {
 			studentReport: false,
 			$expr: { $ne: ["$answer", "$studentAnswer"] },
 		});
-		console.log("numQuestionsWrong: ", questionsWrong.length);
+		logger.debug('Wrong questions count', { numQuestionsWrong: questionsWrong.length });
 
 		//get 5 questions wrong randomly chosen from the array
 		let samplequestionsWrong = [];
@@ -163,7 +165,7 @@ export async function POST(request) {
 		newPrompt += ` Haz un pequeño reporte en inglés con titulos en h1 con el contenido "Evaluation Insights Report", subtitulos en h2, parrafos en <p className="pb-2"> por cada frase . Con el párrafo y el h2 dentro de un div con la clase de "conocimientos" indicando los "Knowledge of students" y otro div con la clase de "lagunas" con el h2 y p, de las "Knowledge gaps", es decir los temas donde más fallan. Ambos divs de "conocimientos" y "lagunas" envueltos en un div con la clase "reporte". Sin comillas ni html, importante.`;
 		newPrompt += ` Añade el siguiente contenido a esta estructura de div: <div className="recomendaciones"> <h2>Recommendations for the teacher </h2> <p className="pb-2 max-w-[66ch]">(Aqui tienes que poner el contenido de los parrados)... </p> </div> . El contenido de los parrafos son consejos e ideas para ayudar a los estudiantes a mejorar sus conocimientos. `;
 
-		console.log("newPrompt: ", newPrompt);
+		logger.debug('Generated AI prompt', { promptLength: newPrompt.length, promptPreview: newPrompt.substring(0, 200) + '...' });
 		// Configurar parámetros de la solicitud a la API de OpenAI.
 		const payload = {
 			model: "gpt-4o-mini",
@@ -175,12 +177,12 @@ export async function POST(request) {
 			n: 1,
 		};
 		// Log del payload que estamos por enviar
-		console.log("Payload (dashboard) to send to OpenAI: ", payload);
+		logger.trace('OpenAI payload prepared', { model: payload.model, temperature: payload.temperature, maxTokens: payload.max_tokens });
 
 		//const response1 = await OpenAIResponse(payload);
 
 		// Log de la respuesta final
-		console.log("Response (dashboard) from OpenAI: ", response1);
+		logger.debug('OpenAI response received', { responseLength: response1?.length || 0 });
 
 		// const response1 = await OpenAIResponse(payload, apiKey);
 		/*
@@ -194,7 +196,7 @@ export async function POST(request) {
                 newPrompt2 += ` Pregunta ${i+1}: "${samplequestionsReported[i].query}". `;
             }
             newPrompt2 += `Identifica los problemas principales en las preguntas reportadas. En formato markdown. `;
-            console.log("newPrompt2: ", newPrompt2);
+            logger.debug('Generated AI prompt for reported questions', { promptLength: newPrompt2.length, promptPreview: newPrompt2.substring(0, 200) + '...' });
             // Configurar parámetros de la solicitud a la API de OpenAI.
             const payload2 = {
                 model: 'gpt-4o-mini',
@@ -206,12 +208,12 @@ export async function POST(request) {
                 n: 1,
             };
             // Log del payload que estamos por enviar
-            console.log("Payload (dashboard) to send to OpenAI: ", payload2);
+            logger.trace('OpenAI payload for reported questions prepared', { model: payload2.model, temperature: payload2.temperature, maxTokens: payload2.max_tokens });
 
             response2 = await OpenAIResponse(payload2);
 
             // Log de la respuesta final
-            console.log("Response (dashboard) from OpenAI: ", response2);
+            logger.debug('OpenAI response for reported questions received', { responseLength: response2?.length || 0 });
         }
         */
 
@@ -224,7 +226,7 @@ export async function POST(request) {
 			response1,
 		});
 	} catch (error) {
-		console.error("Error during request:", error.message);
+		logger.error('Dashboard request failed', { error: error.message, stack: error.stack });
 		return new Response("Error during request", { status: 500 });
 	}
 }

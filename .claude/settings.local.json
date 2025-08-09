@@ -50,7 +50,11 @@
       "Bash(cd:*)",
       "Bash(cd:*)",
       "Bash(cd:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(sed:*)",
+      "Bash(for file in /mnt/c/Users/drmor/Documents/04 Otros/02 TFM/temp/app/lib/rag/src/core/*.js)",
+      "Bash(do sed -i 's/console\\.log(/logger.info(/g' \"$file\")",
+      "Bash(done)"
     ],
     "deny": []
   }

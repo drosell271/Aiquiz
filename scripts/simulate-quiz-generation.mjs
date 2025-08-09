@@ -4,19 +4,27 @@ import mongoose from 'mongoose';
 // Configurar mongoose para ES modules
 mongoose.set('strictQuery', false);
 
+// Structured logging for scripts
+const scriptLog = {
+    info: (message, data = {}) => console.log(`[SCRIPT:QUIZ-SIMULATION] INFO: ${message}`, data),
+    error: (message, data = {}) => console.error(`[SCRIPT:QUIZ-SIMULATION] ERROR: ${message}`, data),
+    warn: (message, data = {}) => console.warn(`[SCRIPT:QUIZ-SIMULATION] WARN: ${message}`, data),
+    success: (message, data = {}) => console.log(`[SCRIPT:QUIZ-SIMULATION] SUCCESS: ${message}`, data)
+};
+
 // Función para conectar a la base de datos
 async function dbConnect() {
     if (mongoose.connections[0].readyState) {
-        console.log('Ya conectado a MongoDB');
+        scriptLog.info('Ya conectado a MongoDB');
         return;
     }
 
     try {
         const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/aiquiz';
         await mongoose.connect(mongoUri);
-        console.log('Conectado a MongoDB');
+        scriptLog.success('Conectado a MongoDB');
     } catch (error) {
-        console.error('Error conectando a MongoDB:', error);
+        scriptLog.error('Error conectando a MongoDB', { error: error.message });
         throw error;
     }
 }
@@ -64,7 +72,7 @@ const Subtopic = mongoose.models.Subtopic || mongoose.model('Subtopic', subtopic
 // Simular la función saveQuestionsToManager del API de questions
 async function saveQuestionsToManager(formattedResponse, assignedModel, prompt, subtopicId, topicName, difficulty) {
     try {
-        console.log("🔄 Guardando preguntas generadas en modelo unificado");
+        scriptLog.info("Guardando preguntas generadas en modelo unificado");
         
         // Parsear la respuesta JSON
         const questionsData = JSON.parse(formattedResponse);
@@ -110,18 +118,18 @@ async function saveQuestionsToManager(formattedResponse, assignedModel, prompt, 
         // Guardar en la base de datos usando el modelo unificado
         const savedQuestions = await Question.insertMany(unifiedQuestions);
         
-        console.log(`✅ ${savedQuestions.length} preguntas guardadas en modelo unificado para topic ${topicId}`);
+        scriptLog.success('Preguntas guardadas en modelo unificado', { count: savedQuestions.length, topicId });
         
         return savedQuestions;
         
     } catch (error) {
-        console.error("❌ Error en saveQuestionsToManager:", error.message);
+        scriptLog.error("Error en saveQuestionsToManager", { error: error.message });
         throw error;
     }
 }
 
 async function simulateQuizGeneration() {
-    console.log('🎯 Simulando generación de quiz...\n');
+    scriptLog.info('Simulando generación de quiz...');
     
     try {
         await dbConnect();
@@ -131,7 +139,7 @@ async function simulateQuizGeneration() {
         const subtopic = await Subtopic.findOne().lean();
         
         if (!topic || !subtopic) {
-            console.log('❌ No se encontraron topic/subtopic en la BD');
+            scriptLog.warn('No se encontraron topic/subtopic en la BD');
             return;
         }
         

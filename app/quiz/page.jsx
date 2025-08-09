@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion, useSpring } from 'framer-motion'
 import LoadingScreen from '../components/LoadingScreen'
@@ -56,7 +57,7 @@ function QuizPageFun() {
         let responseText = '';
 
         try {
-            console.log("[Quiz] Enviando petición para generar", numQuestions, "preguntas");
+            // Client-side logging removed;
             
             const response = await fetch('api/questions', {
                 method: 'POST',
@@ -86,13 +87,12 @@ function QuizPageFun() {
                 throw new Error(`Failed to fetch data: ${errorDetails}`);
             }
 
-            console.log("--------------------------------------------------");
-            console.log('SERVER ANSWER', response);
+            // Client-side logging removed;
+            // Client-side logging removed;
 
             const data = response.body
-            // console.log('data', data)
             if (!data) {
-                console.log('WARNING, no data');
+                // Client-side logging removed - no data received
                 return
             }
 
@@ -102,11 +102,9 @@ function QuizPageFun() {
             let done = false
 
             while (!done) {
-                // console.log('not done')
 
                 const { value, done: doneReading } = await reader.read()
 
-                // console.log('doneReading', doneReading)
 
                 done = doneReading
                 const chunkValue = decoder.decode(value)
@@ -120,11 +118,11 @@ function QuizPageFun() {
             let jsonResponse = JSON.parse(responseText.replace(/^\[|\]$/g, '').trim());
             const allQuestions = jsonResponse.questions;
             
-            console.log("[Quiz] Respuesta del servidor procesada:");
-            console.log("  Total de preguntas recibidas:", allQuestions?.length || 0);
-            console.log("  Preguntas solicitadas:", numQuestions);
-            console.log("  Primeras 2 preguntas:", allQuestions?.slice(0, 2));
-            console.log("--------------------------------------------------");
+            // Client-side logging removed;
+            // Client-side logging removed;
+            // Client-side logging removed;
+            // Client-side logging removed;
+            // Client-side logging removed;
 
             if (!allQuestions || allQuestions.length === 0) {
                 throw new Error("No se recibieron preguntas del servidor");
@@ -133,8 +131,8 @@ function QuizPageFun() {
             // Usar todas las preguntas recibidas, no limitar por numQuestions
             setQuiz(allQuestions);                
         } catch (err) {
-            console.log('[Quiz Page] Error generating questions:', err.message);
-            console.log('[Quiz Page] Full error:', err);
+            // Client-side error logging removed;
+            // Client-side error logging removed;
             
             // Establecer el error en el estado
             setError(err.message);
@@ -159,23 +157,22 @@ function QuizPageFun() {
             });
         } finally {
             setIsLoading(false)
-            // console.log('done loading')
         }
     }
 
     useEffect(() => {
-        console.log("--------------------------------------------------");
-        console.log('useEffect called. Getting student email and generating questions...');
-        console.log('loading...');
+        // Client-side logging removed;
+        // Client-side logging removed;
+        // Client-side logging removed;
         setIsLoading(true);
 
         let studentEmail = window.localStorage.getItem('student_email');
         if (studentEmail == null || studentEmail == "" || studentEmail == "undefined" || studentEmail == "null") {
-            console.log("NO EMAIL IN LOCALSTORAGE, WE ADD ANONYMOUS@EXAMPLE.COM");
+            // Client-side logging removed;
             studentEmail = "anonymous@example.com";
         }
-        console.log('studentEmail: ', studentEmail);
-        console.log("--------------------------------------------------");
+        // Client-side logging removed;
+        // Client-side logging removed;
 
         generateQuestions(studentEmail);
     }, [])
@@ -192,7 +189,7 @@ function QuizPageFun() {
             if (numSubmitted > 0) {
                 score = numCorrect / numSubmitted;
             }
-            console.log('call END SCREEN in 6 seconds with score', score);
+            // Client-side logging removed;
             //do that in 6 seconds to give time for the last question to be reviewed in case the student failed it
             const timer = setTimeout(() => {
                 router.push(`/end-screen?score=${score}&subject=${subject}`);

@@ -54,7 +54,7 @@ async function handleGetSimilar(req, { params }) {
             }, { status: 400 });
         }
 
-        console.log(`[API] Buscando documentos similares a: ${documentId}`);
+        logger.info(`[API] Buscando documentos similares a: ${documentId}`);
 
         // Obtener parámetros de consulta
         const { searchParams } = new URL(req.url);
@@ -174,7 +174,7 @@ async function handleGetSimilar(req, { params }) {
 
         const searchTime = Date.now() - startTime;
 
-        console.log(`[API] Búsqueda de similares completada: ${enrichedResults.length} documentos en ${searchTime}ms`);
+        logger.info(`[API] Búsqueda de similares completada: ${enrichedResults.length} documentos en ${searchTime}ms`);
         
         return NextResponse.json({
             success: true,

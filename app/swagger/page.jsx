@@ -125,11 +125,11 @@ export default function SwaggerPage() {
 							}}
 							responseInterceptor={(res) => {
 								// Log de respuestas para debugging
-								console.log('Swagger API Response:', res);
+								// Client-side logging removed;
 								return res;
 							}}
 							onComplete={() => {
-								console.log('Swagger UI loaded successfully for AIQuiz Manager API');
+								// Client-side logging removed;
 							}}
 						/>
 					)}

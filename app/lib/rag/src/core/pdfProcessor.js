@@ -18,6 +18,8 @@ const fs = require('fs');
 const path = require('path');
 const pdfParse = require('pdf-parse');
 
+const logger = require('../../../../utils/logger').create('RAG:PDF-PROCESSOR');
+
 class PDFProcessor {
     constructor() {
         this.supportedMimeTypes = [
@@ -26,7 +28,7 @@ class PDFProcessor {
         
         this.supportedExtensions = ['.pdf'];
         
-        console.log('[RAG-PDF] PDFProcessor inicializado');
+        logger.info('PDFProcessor initialized');
     }
 
     /**
@@ -41,7 +43,7 @@ class PDFProcessor {
      */
     async processDocument(file) {
         try {
-            console.log(`[RAG-PDF] Procesando PDF: ${file.originalname}`);
+            logger.info('Processing PDF', { fileName: file.originalname });
             
             // 1. Validar que es un archivo PDF
             const validation = this.validatePDF(file);
@@ -104,11 +106,18 @@ class PDFProcessor {
                 }
             };
 
-            console.log(`[RAG-PDF] PDF procesado exitosamente: ${result.metadata.totalPages} páginas, ${result.metadata.charCount} caracteres`);
+            logger.success('PDF processed successfully', { 
+                totalPages: result.metadata.totalPages, 
+                charCount: result.metadata.charCount 
+            });
             return result;
 
         } catch (error) {
-            console.error(`[RAG-PDF] Error procesando PDF ${file.originalname}:`, error.message);
+            logger.error('Error processing PDF', { 
+                fileName: file.originalname, 
+                error: error.message, 
+                stack: error.stack 
+            });
             throw new Error(`Error procesando PDF: ${error.message}`);
         }
     }

@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 const User = require('../manager/models/User.js');
+const logger = require('./logger').create('SEED_ADMIN');
 
 /**
  * Script para crear el super administrador
@@ -10,15 +11,15 @@ const User = require('../manager/models/User.js');
 
 async function createSuperAdmin() {
     try {
-        console.log('Connecting to MongoDB...');
+        logger.info('Connecting to MongoDB...');
         await mongoose.connect(process.env.MONGODB_URI);
-        console.log('Connected to MongoDB successfully');
+        logger.success('Connected to MongoDB successfully');
 
         // Verificar si ya existe el super admin
         const existingAdmin = await User.findOne({ email: process.env.SUPER_ADMIN_EMAIL });
         
         if (existingAdmin) {
-            console.log('Super admin already exists:', existingAdmin.email);
+            logger.info('Super admin already exists', { email: existingAdmin.email });
             return;
         }
 
@@ -35,17 +36,18 @@ async function createSuperAdmin() {
 
         const savedUser = await superAdmin.save();
         
-        console.log('Super admin created successfully:');
-        console.log('  Name:', savedUser.name);
-        console.log('  Email:', savedUser.email);
-        console.log('  Role:', savedUser.role);
-        console.log('');
-        console.log('Login credentials:');
-        console.log('  Email:', savedUser.email);
-        console.log('  Password:', process.env.SUPER_ADMIN_PASSWORD);
+        logger.success('Super admin created successfully', {
+            name: savedUser.name,
+            email: savedUser.email,
+            role: savedUser.role,
+            loginCredentials: {
+                email: savedUser.email,
+                passwordEnvVar: 'SUPER_ADMIN_PASSWORD'
+            }
+        });
 
     } catch (error) {
-        console.error('Error creating super admin:', error.message);
+        logger.error('Error creating super admin', { error: error.message, stack: error.stack });
         process.exit(1);
     } finally {
         await mongoose.disconnect();
@@ -65,9 +67,9 @@ const requiredVars = [
 
 const missing = requiredVars.filter(v => !process.env[v]);
 if (missing.length > 0) {
-    console.error('Missing environment variables:', missing.join(', '));
+    logger.error('Missing environment variables', { missing });
     process.exit(1);
 }
 
-console.log('Creating super admin user...');
+logger.info('Creating super admin user...');
 createSuperAdmin();

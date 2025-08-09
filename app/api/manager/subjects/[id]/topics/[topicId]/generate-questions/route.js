@@ -113,8 +113,7 @@ const questionsLogger = logger.create('ManagerQuestions');
  */
 
 async function generateQuestions(request, context) {
-    console.log('[Generate Questions API] Generando nuevas preguntas');
-    console.log('[Generate Questions API] Context recibido:', {
+    questionsLogger.info('Iniciando generación de preguntas', {
         params: context.params,
         user: context.user ? 'Usuario presente' : 'Usuario ausente'
     });
@@ -133,7 +132,7 @@ async function generateQuestions(request, context) {
             includeExplanations = true
         } = data;
 
-        console.log('[Generate Questions API] Parámetros:', {
+        questionsLogger.info('Parámetros recibidos', {
             subjectId: id,
             topicId,
             difficulty,
@@ -199,12 +198,12 @@ async function generateQuestions(request, context) {
             includeExplanations
         };
 
-        console.log('[Generate Questions API] Context info para prompt:', context_info);
+        questionsLogger.debug('Context info para prompt', context_info);
 
         // Generar prompt específico para creación de preguntas
         const prompt = promptManager.buildPrompt('GENERATE_MANAGER_QUESTIONS', context_info);
         
-        console.log('[Generate Questions API] Prompt generado completo:', prompt);
+        questionsLogger.debug('Prompt generado', { promptLength: prompt.length });
 
         // Obtener modelo AI para el manager (usar el primer modelo disponible)
         let assignedModel;
@@ -219,9 +218,9 @@ async function generateQuestions(request, context) {
             
             // Usar el primer modelo disponible para el manager
             assignedModel = modelsConfig.models[0].name;
-            console.log('[Generate Questions API] Modelo asignado:', assignedModel);
+            questionsLogger.info('Modelo asignado', { model: assignedModel });
         } catch (modelError) {
-            console.error('[Generate Questions API] Error leyendo configuración de modelos:', modelError);
+            questionsLogger.error('Error leyendo configuración de modelos', { error: modelError.message });
             throw new Error("No se pudo obtener configuración de modelos LLM");
         }
         
@@ -231,37 +230,42 @@ async function generateQuestions(request, context) {
 
         questionsLogger.info(`Generando ${count} preguntas con modelo ${assignedModel} para tema ${topic.title}`);
 
-        console.log('[Generate Questions API] Llamando a getModelResponse...');
+        questionsLogger.info('Calling getModelResponse...');
         const llmResponse = await getModelResponse(assignedModel, prompt);
-        console.log('[Generate Questions API] Respuesta recibida del LLM, longitud:', llmResponse?.length || 0);
+        questionsLogger.info('Received LLM response', { responseLength: llmResponse?.length || 0 });
         
         if (!llmResponse) {
             throw new Error("No se pudo generar respuesta del modelo LLM");
         }
 
         if (typeof llmResponse !== 'string') {
-            console.error('[Generate Questions API] Respuesta LLM no es string:', typeof llmResponse, llmResponse);
+            questionsLogger.error('LLM response is not string:', {
+                type: typeof llmResponse,
+                response: llmResponse
+            });
             throw new Error("Respuesta del modelo LLM tiene formato incorrecto");
         }
 
         // Parsear respuesta
         let questionsData;
         try {
-            console.log('[Generate Questions API] Respuesta LLM cruda:', llmResponse.substring(0, 500) + '...');
+            questionsLogger.debug('Parseando respuesta LLM', { responseLength: llmResponse.length });
             questionsData = JSON.parse(llmResponse);
-            console.log('[Generate Questions API] Respuesta LLM parseada:', {
+            questionsLogger.info('Respuesta LLM parseada', {
                 hasQuestions: !!questionsData.questions,
                 questionsCount: questionsData.questions?.length,
                 questionsType: Array.isArray(questionsData.questions) ? 'array' : typeof questionsData.questions
             });
         } catch (parseError) {
-            console.error('[Generate Questions API] Error parseando respuesta LLM:', parseError);
-            console.error('[Generate Questions API] Respuesta problemática:', llmResponse);
+            questionsLogger.error('Error parsing LLM response:', {
+                error: parseError.message,
+                response: llmResponse
+            });
             throw new Error("Respuesta del modelo LLM no válida: " + parseError.message);
         }
 
         if (!questionsData.questions || !Array.isArray(questionsData.questions)) {
-            console.error('[Generate Questions API] Formato inválido:', questionsData);
+            questionsLogger.error('Invalid format:', { questionsData });
             throw new Error("Formato de respuesta del modelo LLM no válido - se esperaba un array de preguntas");
         }
 
@@ -271,7 +275,7 @@ async function generateQuestions(request, context) {
 
         // Convertir preguntas al formato del modelo unificado
         const managedQuestions = questionsData.questions.map((q, index) => {
-            console.log(`[Generate Questions API] Procesando pregunta ${index + 1}:`, {
+            questionsLogger.debug(`Procesando pregunta ${index + 1}`, {
                 hasText: !!(q.query || q.text),
                 hasChoices: !!q.choices,
                 choicesCount: q.choices?.length,
@@ -335,13 +339,13 @@ async function generateQuestions(request, context) {
         });
 
         // Guardar preguntas en la base de datos
-        console.log(`[Generate Questions API] Intentando guardar ${managedQuestions.length} preguntas`);
+        questionsLogger.info(`Intentando guardar ${managedQuestions.length} preguntas`);
         let savedQuestions;
         try {
             savedQuestions = await Question.insertMany(managedQuestions);
-            console.log(`[Generate Questions API] ${savedQuestions.length} preguntas guardadas exitosamente`);
+            questionsLogger.success(`${savedQuestions.length} preguntas guardadas exitosamente`);
         } catch (dbError) {
-            console.error('[Generate Questions API] Error guardando en BD:', dbError);
+            questionsLogger.error('Error guardando en BD', { error: dbError.message });
             throw new Error("Error guardando preguntas en la base de datos: " + dbError.message);
         }
 
@@ -365,10 +369,12 @@ async function generateQuestions(request, context) {
         }, { status: 201 });
 
     } catch (error) {
-        console.error('[Generate Questions API] Error generando preguntas:', error);
-        if (questionsLogger && questionsLogger.error) {
-            questionsLogger.error('Error generando preguntas:', error);
-        }
+        questionsLogger.error('Error generating questions:', {
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+            topicId,
+            count
+        });
         return handleError(error, "Error generando preguntas");
     }
 }

@@ -4,6 +4,7 @@ import dbConnect from "../../../utils/dbconnect";
 import Subject from "../../../manager/models/Subject";
 import Topic from "../../../manager/models/Topic";
 import { withAuth, handleError } from "../../../utils/authMiddleware";
+const logger = require('../../../utils/logger').create('API:MANAGER:SUBJECTS');
 
 /**
  * @swagger
@@ -113,7 +114,10 @@ async function getSubjects(request, context) {
 		return NextResponse.json(transformedSubjects, { status: 200 });
 
 	} catch (error) {
-		console.error("Error in getSubjects:", error);
+		logger.error('Failed to retrieve subjects', {
+			error: error.message,
+			stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+		});
 		
 		// Check if it's a database connection error
 		if (error.message.includes("Database connection failed")) {

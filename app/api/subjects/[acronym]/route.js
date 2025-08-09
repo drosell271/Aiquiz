@@ -4,11 +4,14 @@ import Subject from "../../../manager/models/Subject";
 import Topic from "../../../manager/models/Topic";
 import Subtopic from "../../../manager/models/Subtopic";
 
+const logger = require('../../../utils/logger').create('API:SUBJECTS');
+
 export async function GET(request, { params }) {
     try {
         await dbConnect();
         
         const { acronym } = params;
+        logger.info('Fetching subject by acronym', { acronym });
         
         const subject = await Subject.findOne({ acronym: acronym.toUpperCase() })
             .populate({
@@ -20,6 +23,7 @@ export async function GET(request, { params }) {
             .lean();
 
         if (!subject) {
+            logger.warn('Subject not found', { acronym });
             return NextResponse.json({
                 success: false,
                 error: "Subject not found"
@@ -65,6 +69,12 @@ export async function GET(request, { params }) {
             topicsData[topicKey] = (topic.subtopics || []).map(subtopic => subtopic.title || '');
         });
 
+        logger.debug('Subject fetched successfully', { 
+            acronym, 
+            subjectId: transformedSubject._id, 
+            topicsCount: transformedSubject.topics.length 
+        });
+
         return NextResponse.json({
             success: true,
             subject: transformedSubject,
@@ -74,7 +84,7 @@ export async function GET(request, { params }) {
         });
 
     } catch (error) {
-        console.error("Error fetching subject:", error);
+        logger.error('Error fetching subject', { error: error.message, stack: error.stack, acronym: params?.acronym });
         return NextResponse.json({
             success: false,
             error: "Error fetching subject"

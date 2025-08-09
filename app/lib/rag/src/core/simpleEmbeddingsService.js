@@ -21,7 +21,7 @@ class SimpleEmbeddingsService {
         this.totalDocuments = 0;
         
         if (this.enableLogging) {
-            console.log('[Simple Embeddings] Inicializado con TF-IDF fallback');
+            logger.info('[Simple Embeddings] Inicializado con TF-IDF fallback');
         }
     }
 
@@ -35,7 +35,7 @@ class SimpleEmbeddingsService {
 
         try {
             if (this.enableLogging) {
-                console.log('[Simple Embeddings] Inicializando servicio TF-IDF...');
+                logger.info('[Simple Embeddings] Inicializando servicio TF-IDF...');
             }
 
             // Cargar vocabulario base común
@@ -44,7 +44,7 @@ class SimpleEmbeddingsService {
             this.isInitialized = true;
             
             if (this.enableLogging) {
-                console.log(`[Simple Embeddings] Servicio inicializado. Dimensión: ${this.vectorDimension}`);
+                logger.info(`[Simple Embeddings] Servicio inicializado. Dimensión: ${this.vectorDimension}`);
             }
         } catch (error) {
             console.error('[Simple Embeddings] Error inicializando servicio:', error);
@@ -107,7 +107,7 @@ class SimpleEmbeddingsService {
             const embedding = this.generateVector(tf);
 
             if (this.enableLogging && Math.random() < 0.1) {
-                console.log(`[Simple Embeddings] Generado embedding para texto de ${text.length} caracteres`);
+                logger.info(`[Simple Embeddings] Generado embedding para texto de ${text.length} caracteres`);
             }
 
             return embedding;
@@ -229,7 +229,7 @@ class SimpleEmbeddingsService {
         const total = chunks.length;
 
         if (this.enableLogging) {
-            console.log(`[Simple Embeddings] Procesando ${total} chunks...`);
+            logger.info(`[Simple Embeddings] Procesando ${total} chunks...`);
         }
 
         for (let i = 0; i < chunks.length; i++) {
@@ -245,7 +245,7 @@ class SimpleEmbeddingsService {
 
                 // Log progreso cada 10 chunks o al final
                 if (this.enableLogging && (i % 10 === 0 || i === total - 1)) {
-                    console.log(`[Simple Embeddings] Progreso: ${i + 1}/${total} chunks`);
+                    logger.info(`[Simple Embeddings] Progreso: ${i + 1}/${total} chunks`);
                 }
             } catch (error) {
                 console.error(`[Simple Embeddings] Error procesando chunk ${i}:`, error);
@@ -254,7 +254,7 @@ class SimpleEmbeddingsService {
         }
 
         if (this.enableLogging) {
-            console.log(`[Simple Embeddings] Completado. ${chunksWithEmbeddings.length} chunks procesados`);
+            logger.info(`[Simple Embeddings] Completado. ${chunksWithEmbeddings.length} chunks procesados`);
         }
 
         return chunksWithEmbeddings;
@@ -306,7 +306,7 @@ class SimpleEmbeddingsService {
      */
     async close() {
         if (this.enableLogging) {
-            console.log('[Simple Embeddings] Cerrando servicio...');
+            logger.info('[Simple Embeddings] Cerrando servicio...');
         }
         
         this.isInitialized = false;

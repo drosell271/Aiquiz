@@ -17,6 +17,8 @@
 
 const { ChromaClient } = require('chromadb');
 
+const logger = require('../../../../utils/logger').create('RAG:CHROMA');
+
 class ChromaStorage {
     constructor(options = {}) {
         // Configuración de conexión a Chroma DB
@@ -39,7 +41,7 @@ class ChromaStorage {
             dimensions: options.dimensions || 384
         };
 
-        console.log(`[RAG-Chroma] ChromaStorage configurado para ${this.config.host}:${this.config.port}`);
+        logger.info('ChromaStorage configured', { host: this.config.host, port: this.config.port });
     }
 
     /**
@@ -53,7 +55,7 @@ class ChromaStorage {
         }
 
         try {
-            console.log('[RAG-Chroma] Inicializando conexión con Chroma DB...');
+            logger.info('Initializing connection with Chroma DB');
 
             // Crear cliente de Chroma
             this.client = new ChromaClient({
@@ -68,10 +70,10 @@ class ChromaStorage {
             await this.ensureCollection('aiquiz_documents');
 
             this.isInitialized = true;
-            console.log('[RAG-Chroma] Conexión establecida exitosamente');
+            logger.success('Connection established successfully');
 
         } catch (error) {
-            console.error('[RAG-Chroma] Error inicializando Chroma DB:', error.message);
+            logger.error('Error initializing Chroma DB', { error: error.message });
             throw new Error(`Error conectando a Chroma DB: ${error.message}`);
         }
     }
@@ -95,7 +97,7 @@ class ChromaStorage {
                     name: collectionName,
                     embeddingFunction: this.collectionConfig.embeddingFunction
                 });
-                console.log(`[RAG-Chroma] Colección existente encontrada: ${collectionName}`);
+                logger.debug('Existing collection found', { collectionName });
             } catch (error) {
                 // Si no existe, crearla
                 collection = await this.client.createCollection({
@@ -103,7 +105,7 @@ class ChromaStorage {
                     metadata: this.collectionConfig.metadata,
                     embeddingFunction: this.collectionConfig.embeddingFunction
                 });
-                console.log(`[RAG-Chroma] Nueva colección creada: ${collectionName}`);
+                logger.info('New collection created', { collectionName });
             }
 
             // Guardar en cache
@@ -111,7 +113,7 @@ class ChromaStorage {
             return collection;
 
         } catch (error) {
-            console.error(`[RAG-Chroma] Error gestionando colección ${collectionName}:`, error.message);
+            logger.error('Error managing collection', { collectionName, error: error.message });
             throw error;
         }
     }
@@ -127,7 +129,7 @@ class ChromaStorage {
         await this.ensureInitialized();
 
         try {
-            console.log(`[RAG-Chroma] Almacenando documento: ${document.id} con ${chunks.length} chunks`);
+            logger.info('Storing document', { documentId: document.id, chunksCount: chunks.length });
 
             // Determinar colección basada en contexto educativo
             const collectionName = this.getCollectionName(document);
@@ -147,11 +149,11 @@ class ChromaStorage {
                 metadatas: metadatas
             });
 
-            console.log(`[RAG-Chroma] Documento almacenado exitosamente: ${document.id}`);
+            logger.success('Document stored successfully', { documentId: document.id });
             return document.id;
 
         } catch (error) {
-            console.error('[RAG-Chroma] Error almacenando documento:', error.message);
+            logger.error('Error storing document', { error: error.message });
             throw new Error(`Error almacenando en Chroma DB: ${error.message}`);
         }
     }
@@ -168,7 +170,7 @@ class ChromaStorage {
         await this.ensureInitialized();
 
         try {
-            console.log(`[RAG-Chroma] Buscando chunks similares (limit: ${limit})`);
+            logger.debug('Searching similar chunks', { limit });
 
             // Determinar colección(es) a buscar
             const collections = await this.getSearchCollections(filters);
@@ -197,7 +199,7 @@ class ChromaStorage {
                     }
 
                 } catch (collectionError) {
-                    console.warn(`[RAG-Chroma] Error buscando en colección ${collectionName}:`, collectionError.message);
+                    logger.warn('Error searching in collection', { collectionName, error: collectionError.message });
                     // Continuar con otras colecciones
                 }
             }
@@ -213,11 +215,11 @@ class ChromaStorage {
                     similarity: 1 - result.distance // Convertir distancia a similitud
                 }));
 
-            console.log(`[RAG-Chroma] Búsqueda completada: ${finalResults.length} resultados`);
+            logger.info('Search completed', { resultsCount: finalResults.length });
             return finalResults;
 
         } catch (error) {
-            console.error('[RAG-Chroma] Error en búsqueda vectorial:', error.message);
+            logger.error('Error in vector search', { error: error.message });
             throw new Error(`Error en búsqueda vectorial: ${error.message}`);
         }
     }
@@ -253,7 +255,7 @@ class ChromaStorage {
                     }
 
                 } catch (error) {
-                    console.warn(`[RAG-Chroma] Error obteniendo chunks de colección ${collectionInfo.name}:`, error.message);
+                    logger.warn('Error getting chunks from collection', { collectionName: collectionInfo.name, error: error.message });
                 }
             }
 
@@ -263,7 +265,7 @@ class ChromaStorage {
             return allChunks;
 
         } catch (error) {
-            console.error('[RAG-Chroma] Error obteniendo chunks por documento:', error.message);
+            logger.error('Error getting chunks by document', { error: error.message });
             throw error;
         }
     }
@@ -278,7 +280,7 @@ class ChromaStorage {
         await this.ensureInitialized();
 
         try {
-            console.log(`[RAG-Chroma] Eliminando documento: ${documentId}`);
+            logger.info('Deleting document', { documentId });
 
             let deletedCount = 0;
             const allCollections = await this.client.listCollections();
@@ -306,15 +308,15 @@ class ChromaStorage {
                     }
 
                 } catch (error) {
-                    console.warn(`[RAG-Chroma] Error eliminando de colección ${collectionInfo.name}:`, error.message);
+                    logger.warn('Error deleting from collection', { collectionName: collectionInfo.name, error: error.message });
                 }
             }
 
-            console.log(`[RAG-Chroma] Documento eliminado: ${deletedCount} chunks eliminados`);
+            logger.success('Document deleted', { deletedCount });
             return deletedCount > 0;
 
         } catch (error) {
-            console.error('[RAG-Chroma] Error eliminando documento:', error.message);
+            logger.error('Error deleting document', { error: error.message });
             throw error;
         }
     }
@@ -367,14 +369,14 @@ class ChromaStorage {
                     }
 
                 } catch (error) {
-                    console.warn(`[RAG-Chroma] Error listando en colección ${collectionName}:`, error.message);
+                    logger.warn('Error listing in collection', { collectionName, error: error.message });
                 }
             }
 
             return Array.from(documentsMap.values());
 
         } catch (error) {
-            console.error('[RAG-Chroma] Error listando documentos:', error.message);
+            logger.error('Error listing documents', { error: error.message });
             throw error;
         }
     }
@@ -426,7 +428,7 @@ class ChromaStorage {
                     });
 
                 } catch (error) {
-                    console.warn(`[RAG-Chroma] Error obteniendo stats de ${collectionInfo.name}:`, error.message);
+                    logger.warn('Error getting collection stats', { collectionName: collectionInfo.name, error: error.message });
                 }
             }
 
@@ -443,7 +445,7 @@ class ChromaStorage {
             };
 
         } catch (error) {
-            console.error('[RAG-Chroma] Error obteniendo estadísticas:', error.message);
+            logger.error('Error getting statistics', { error: error.message });
             throw error;
         }
     }
@@ -597,7 +599,7 @@ class ChromaStorage {
         if (this.client) {
             this.collections.clear();
             this.isInitialized = false;
-            console.log('[RAG-Chroma] Conexión cerrada');
+            logger.debug('Connection closed');
         }
     }
 

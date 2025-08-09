@@ -5,16 +5,18 @@ import dbConnect from "@utils/dbconnect";
 import File from "@models/File";
 import { withAuth, handleError } from "@utils/authMiddleware";
 
+const logger = require('../../../../../../../../../utils/logger').create('API:FILES:MANAGER');
+
 // Función para cargar RAG Manager dinámicamente (coherente con files/route.js)
 async function loadRAGManager() {
 	// Intentar primero con RAG real si Qdrant está disponible
-	console.log('[Delete File API] Verificando disponibilidad de Qdrant...');
+	logger.debug('Checking Qdrant availability');
 	
 	// Verificar si Qdrant está corriendo
 	try {
 		const qdrantResponse = await fetch('http://localhost:6333/').catch(() => null);
 		if (qdrantResponse && qdrantResponse.ok) {
-			console.log('[Delete File API] Qdrant disponible, intentando RAG Manager V2...');
+			logger.debug('Qdrant available, trying RAG Manager V2');
 			
 			try {
 				const RAGManagerV2 = require("../../../../../../../../../../lib/rag/src/core/ragManagerV2");
@@ -26,7 +28,7 @@ async function loadRAGManager() {
 				});
 				return { ragManager, isMock: false };
 			} catch (realError) {
-				console.warn('[Delete File API] Error cargando RAG Manager V2:', realError.message);
+				logger.warn('Error loading RAG Manager V2', { error: realError.message });
 				
 				// Fallback al RAG Manager original
 				try {
@@ -34,24 +36,24 @@ async function loadRAGManager() {
 					const ragManager = new RAGManager();
 					return { ragManager, isMock: false };
 				} catch (fallbackError) {
-					console.warn('[Delete File API] Error cargando RAG Manager original:', fallbackError.message);
+					logger.warn('Error loading original RAG Manager', { error: fallbackError.message });
 				}
 			}
 		} else {
-			console.log('[Delete File API] Qdrant no disponible, usando Mock');
+			logger.info('Qdrant not available, using Mock');
 		}
 	} catch (healthError) {
-		console.log('[Delete File API] Error verificando Qdrant:', healthError.message);
+		logger.warn('Error checking Qdrant', { error: healthError.message });
 	}
 	
 	// Fallback a Mock si Qdrant no está disponible o hay errores
-	console.log('[Delete File API] Usando Mock RAG Manager como fallback');
+	logger.info('Using Mock RAG Manager as fallback');
 	try {
 		const MockRAGManager = require("../../../../../../../../../../lib/rag/src/core/mockRAGManager");
 		const ragManager = new MockRAGManager();
 		return { ragManager, isMock: true };
 	} catch (mockError) {
-		console.error('[Delete File API] Error cargando Mock RAG Manager:', mockError.message);
+		logger.error('Error loading Mock RAG Manager', { error: mockError.message });
 		throw new Error(`Mock RAG Manager no disponible: ${mockError.message}`);
 	}
 }
@@ -187,15 +189,15 @@ async function loadRAGManager() {
  */
 
 async function generateDownloadToken(request, context) {
-	console.log('[Download Token API] Generando token de descarga');
+	logger.info('Generating download token');
 	
 	try {
 		await dbConnect();
-		console.log('[Download Token API] Conexión a BD establecida');
+		logger.debug('Database connection established');
 
 		const { id, topicId, subtopicId, fileId } = context.params;
 		
-		console.log('[Download Token API] Parámetros:', {
+		logger.debug('Request parameters', {
 			subjectId: id,
 			topicId,
 			subtopicId,
@@ -214,7 +216,7 @@ async function generateDownloadToken(request, context) {
 			);
 		}
 
-		console.log(`[Download Token API] Archivo encontrado: ${file.originalName}`);
+		logger.info('File found', { fileName: file.originalName });
 
 		// 2. Determinar información de descarga según el tipo de archivo
 		let downloadFileName, downloadFileSize, downloadMimeType;
@@ -246,7 +248,7 @@ async function generateDownloadToken(request, context) {
 		// 4. Construir URL de descarga
 		const downloadUrl = `/api/manager/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}/files/${fileId}/download?token=${downloadToken}`;
 
-		console.log(`[Download Token API] Token generado para: ${downloadFileName}`);
+		logger.info('Download token generated', { fileName: downloadFileName });
 
 		return NextResponse.json(
 			{
@@ -264,7 +266,7 @@ async function generateDownloadToken(request, context) {
 		);
 
 	} catch (error) {
-		console.error('[Download Token API] Error generando token:', error);
+		logger.error('Error generating download token', { error: error.message, stack: error.stack });
 		return NextResponse.json(
 			{
 				success: false,
@@ -277,15 +279,15 @@ async function generateDownloadToken(request, context) {
 }
 
 async function deleteFile(request, context) {
-	console.log('[Delete File API] Eliminando archivo específico');
+	logger.info('Deleting specific file');
 	
 	try {
 		await dbConnect();
-		console.log('[Delete File API] Conexión a BD establecida');
+		logger.debug('Database connection established');
 
 		const { id, topicId, subtopicId, fileId } = context.params;
 		
-		console.log('[Delete File API] Parámetros:', {
+		logger.debug('Request parameters', {
 			subjectId: id,
 			topicId,
 			subtopicId,
@@ -304,30 +306,30 @@ async function deleteFile(request, context) {
 			);
 		}
 
-		console.log(`[Delete File API] Archivo encontrado: ${file.originalName}`);
+		logger.info('File found for deletion', { fileName: file.originalName });
 
 		// 2. El archivo está almacenado en MongoDB, no hay archivo físico que eliminar
-		console.log('[Delete File API] Archivo almacenado en MongoDB - no requiere eliminación física');
+		logger.debug('File stored in MongoDB - no physical file deletion required');
 
 		// 3. Eliminar del sistema RAG si fue procesado
 		if (file.ragProcessed && file.ragDocumentId) {
 			try {
-				console.log(`[Delete File API] Eliminando del sistema RAG... Document ID: ${file.ragDocumentId}`);
+				logger.info('Deleting from RAG system', { documentId: file.ragDocumentId });
 				const { ragManager, isMock } = await loadRAGManager();
 				await ragManager.initialize();
 				
 				const deleteResult = await ragManager.deleteDocument(file.ragDocumentId);
-				console.log(`[Delete File API] Documento eliminado del RAG ${isMock ? '(Mock)' : ''}:`, deleteResult);
+				logger.success('Document deleted from RAG', { isMock, result: deleteResult });
 			} catch (ragError) {
-				console.warn('[Delete File API] Error eliminando del RAG (continuando):', ragError.message);
+				logger.warn('Error deleting from RAG (continuing)', { error: ragError.message });
 			}
 		} else {
-			console.log(`[Delete File API] Archivo no procesado con RAG o sin document ID. RAG processed: ${file.ragProcessed}, Document ID: ${file.ragDocumentId}`);
+			logger.debug('File not processed with RAG or missing document ID', { ragProcessed: file.ragProcessed, documentId: file.ragDocumentId });
 		}
 
 		// 4. Eliminar registro de la base de datos
 		await File.findByIdAndDelete(fileId);
-		console.log('[Delete File API] Registro eliminado de la BD');
+		logger.success('File record deleted from database');
 
 		return NextResponse.json(
 			{
@@ -342,7 +344,7 @@ async function deleteFile(request, context) {
 		);
 
 	} catch (error) {
-		console.error('[Delete File API] Error eliminando archivo:', error);
+		logger.error('Error deleting file', { error: error.message, stack: error.stack });
 		return handleError(error, "Error eliminando archivo");
 	}
 }

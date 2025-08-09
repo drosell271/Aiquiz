@@ -1,3 +1,4 @@
+const logger = require("../utils/logger").create("MANAGER:CONFIG");
 // config/apiConfig.js - Configuración de la API
 export const API_CONFIG = {
 	// Determinar si usar API real o simulada
@@ -44,7 +45,7 @@ export function getEnvironmentInfo() {
 // Función para logging condicional
 export function apiLog(message, ...args) {
 	if (API_CONFIG.ENABLE_LOGGING) {
-		console.log(`[API Service] ${message}`, ...args);
+		logger.info(`[API Service] ${message}`, ...args);
 	}
 }
 

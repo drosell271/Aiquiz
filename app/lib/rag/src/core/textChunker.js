@@ -8,6 +8,8 @@
 const nlp = require('compromise');
 const { split } = require('sentence-splitter');
 
+const logger = require('../../../../utils/logger').create('RAG:TEXT-CHUNKER');
+
 class TextChunker {
     constructor(options = {}) {
         // Configuración optimizada para PDFs educativos
@@ -21,7 +23,7 @@ class TextChunker {
             pdfOptimized: true // Optimizaciones específicas para PDF
         };
 
-        console.log('[RAG-Manager] TextChunker inicializado para PDFs');
+        logger.info('TextChunker initialized for PDFs');
     }
 
     /**
@@ -29,7 +31,7 @@ class TextChunker {
      */
     async chunkDocument(document, contextInfo = {}) {
         try {
-            console.log(`[RAG-Manager] Iniciando chunking de PDF (${document.text.length} caracteres)`);
+            logger.info('Starting PDF chunking', { textLength: document.text.length });
 
             const cleanText = this.preprocessText(document.text);
             const sentences = this.extractSentences(cleanText);
@@ -37,11 +39,11 @@ class TextChunker {
             const chunks = this.createSemanticChunks(sentences, structure);
             const enrichedChunks = this.enrichChunksWithMetadata(chunks, document.metadata, contextInfo, structure);
 
-            console.log(`[RAG-Manager] Chunking completado: ${enrichedChunks.length} chunks generados`);
+            logger.success('Chunking completed', { chunksCount: enrichedChunks.length });
             return enrichedChunks;
 
         } catch (error) {
-            console.error('[RAG-Manager] Error en chunking:', error.message);
+            logger.error('Error in chunking', { error: error.message, stack: error.stack });
             throw new Error(`Error dividiendo documento: ${error.message}`);
         }
     }

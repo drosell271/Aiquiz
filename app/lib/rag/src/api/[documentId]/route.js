@@ -55,7 +55,7 @@ async function handleGet(req, { params }) {
             }, { status: 400 });
         }
 
-        console.log(`[API] Obteniendo información del documento: ${documentId}`);
+        logger.info(`[API] Obteniendo información del documento: ${documentId}`);
 
         // Inicializar RAG Manager
         const rag = await ensureRAGManager();
@@ -150,7 +150,7 @@ async function handleGet(req, { params }) {
             }
         };
 
-        console.log(`[API] Información del documento obtenida: ${documentId}`);
+        logger.info(`[API] Información del documento obtenida: ${documentId}`);
         
         return NextResponse.json({
             success: true,
@@ -182,7 +182,7 @@ async function handleDelete(req, { params }) {
             }, { status: 400 });
         }
 
-        console.log(`[API] Eliminando documento: ${documentId}`);
+        logger.info(`[API] Eliminando documento: ${documentId}`);
 
         // Inicializar RAG Manager
         const rag = await ensureRAGManager();
@@ -218,7 +218,7 @@ async function handleDelete(req, { params }) {
             }, { status: 500 });
         }
 
-        console.log(`[API] Documento eliminado exitosamente: ${documentId}`);
+        logger.info(`[API] Documento eliminado exitosamente: ${documentId}`);
         
         return NextResponse.json({
             success: true,

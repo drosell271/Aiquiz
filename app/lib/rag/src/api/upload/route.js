@@ -96,7 +96,7 @@ async function ensureRAGManager() {
  */
 async function handlePDFUpload(req, res) {
     try {
-        console.log('[API-PDF] Iniciando upload de PDF');
+        logger.info('[API-PDF] Iniciando upload de PDF');
         
         // 1. Procesar PDF con multer
         await uploadMiddleware(req, res);
@@ -108,7 +108,7 @@ async function handlePDFUpload(req, res) {
             }, { status: 400 });
         }
 
-        console.log(`[API-PDF] PDF recibido: ${req.file.originalname} (${Math.round(req.file.size / 1024)}KB)`);
+        logger.info(`[API-PDF] PDF recibido: ${req.file.originalname} (${Math.round(req.file.size / 1024)}KB)`);
 
         // 2. Obtener parámetros del contexto educativo
         const { subjectId, topicId, subtopicId } = req.body;
@@ -141,7 +141,7 @@ async function handlePDFUpload(req, res) {
         const rag = await ensureRAGManager();
 
         // 6. Procesar PDF con pipeline especializado
-        console.log(`[API-PDF] Procesando PDF: ${req.file.originalname}`);
+        logger.info(`[API-PDF] Procesando PDF: ${req.file.originalname}`);
         
         const result = await rag.processPDF(
             req.file,
@@ -157,7 +157,7 @@ async function handlePDFUpload(req, res) {
         }
 
         // 8. Responder con éxito incluyendo métricas específicas de PDF
-        console.log(`[API-PDF] PDF procesado exitosamente: ${result.documentId}`);
+        logger.info(`[API-PDF] PDF procesado exitosamente: ${result.documentId}`);
         
         return NextResponse.json({
             success: true,

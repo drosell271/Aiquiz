@@ -1,10 +1,10 @@
-import chalk from "chalk";
-
 import dbConnect from "../../utils/dbconnect.js";
 import Student from "../../models/Student.js";
 import Question from "../../models/Question.js";
 
 import aiquizConfig from "../../../aiquiz.config.js";
+
+const logger = require('../../utils/logger').create('API:SURVEY');
 
 await dbConnect();
 
@@ -54,6 +54,7 @@ await dbConnect();
 export async function POST(request) {
 	try {
 		const { studentEmail, subject } = await request.json();
+		logger.info('Survey status request', { studentEmail, subject });
 
 		let student = await Student.findOne({ studentEmail });
 		let subjectIndex = await student?.subjects?.findIndex(
@@ -73,12 +74,13 @@ export async function POST(request) {
 				studentEmail,
 				subject,
 			}).countDocuments();
-			console.log("questionsAnswered", questionsAnswered);
+			logger.debug('Questions answered by student', { studentEmail, subject, questionsAnswered, requiredForSurvey: aiquizConfig.numQuestionsForSurvey });
 			// Si ha contestado a 20 o más preguntas, se le habilita la encuesta
 			if (questionsAnswered >= aiquizConfig.numQuestionsForSurvey) {
 				survey = true;
 				student.subjects[subjectIndex].survey = true;
 				await student.save();
+				logger.info('Survey enabled for student', { studentEmail, subject, questionsAnswered });
 			}
 		} else {
 			// En caso de ser true la encuesta significa que ya la ha contestado por tanto la cambiamos a false
@@ -86,14 +88,13 @@ export async function POST(request) {
 			survey = false;
 		}
 
+		logger.debug('Survey response', { studentEmail, survey, urlSurvey: urlSurvey.substring(0, 50) + '...' });
 		return new Response(
 			JSON.stringify({ studentEmail, survey, urlSurvey }),
 			{ status: 200 }
 		);
 	} catch (error) {
-		console.error(
-			chalk.red("Error in api/survey during request:", error.message)
-		);
+		logger.error('Error in survey request', { error: error.message, stack: error.stack, studentEmail, subject });
 		return new Response(error.message, { status: 500 });
 	}
 }

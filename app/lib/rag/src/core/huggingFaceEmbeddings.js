@@ -18,7 +18,7 @@ class HuggingFaceEmbeddingsService {
         this.isInitialized = false;
         
         if (this.enableLogging) {
-            console.log('[HuggingFace Embeddings] Inicializado con modelo:', this.modelName);
+            logger.info('[HuggingFace Embeddings] Inicializado con modelo:', this.modelName);
         }
     }
 
@@ -33,7 +33,7 @@ class HuggingFaceEmbeddingsService {
                 this.pipelineModule = pipeline;
                 
                 if (this.enableLogging) {
-                    console.log('[HuggingFace Embeddings] Módulo @xenova/transformers importado');
+                    logger.info('[HuggingFace Embeddings] Módulo @xenova/transformers importado');
                 }
             } catch (error) {
                 console.error('[HuggingFace Embeddings] Error al importar @xenova/transformers:', error);
@@ -54,7 +54,7 @@ class HuggingFaceEmbeddingsService {
 
         try {
             if (this.enableLogging) {
-                console.log('[HuggingFace Embeddings] Inicializando modelo:', this.modelName);
+                logger.info('[HuggingFace Embeddings] Inicializando modelo:', this.modelName);
             }
 
             // Asegurar que el módulo pipeline está disponible
@@ -71,7 +71,7 @@ class HuggingFaceEmbeddingsService {
             this.isInitialized = true;
             
             if (this.enableLogging) {
-                console.log(`[HuggingFace Embeddings] Modelo cargado. Dimensión: ${this.vectorDimension}`);
+                logger.info(`[HuggingFace Embeddings] Modelo cargado. Dimensión: ${this.vectorDimension}`);
             }
         } catch (error) {
             console.error('[HuggingFace Embeddings] Error inicializando modelo:', error);
@@ -105,7 +105,7 @@ class HuggingFaceEmbeddingsService {
             const embedding = Array.from(result.data);
             
             if (this.enableLogging && Math.random() < 0.1) { // Log 10% de las veces
-                console.log(`[HuggingFace Embeddings] Generado embedding para texto de ${text.length} caracteres`);
+                logger.info(`[HuggingFace Embeddings] Generado embedding para texto de ${text.length} caracteres`);
             }
 
             return embedding;
@@ -129,7 +129,7 @@ class HuggingFaceEmbeddingsService {
         const total = chunks.length;
 
         if (this.enableLogging) {
-            console.log(`[HuggingFace Embeddings] Procesando ${total} chunks...`);
+            logger.info(`[HuggingFace Embeddings] Procesando ${total} chunks...`);
         }
 
         for (let i = 0; i < chunks.length; i++) {
@@ -145,7 +145,7 @@ class HuggingFaceEmbeddingsService {
 
                 // Log progreso cada 10 chunks o al final
                 if (this.enableLogging && (i % 10 === 0 || i === total - 1)) {
-                    console.log(`[HuggingFace Embeddings] Progreso: ${i + 1}/${total} chunks`);
+                    logger.info(`[HuggingFace Embeddings] Progreso: ${i + 1}/${total} chunks`);
                 }
             } catch (error) {
                 console.error(`[HuggingFace Embeddings] Error procesando chunk ${i}:`, error);
@@ -154,7 +154,7 @@ class HuggingFaceEmbeddingsService {
         }
 
         if (this.enableLogging) {
-            console.log(`[HuggingFace Embeddings] Completado. ${chunksWithEmbeddings.length} chunks procesados`);
+            logger.info(`[HuggingFace Embeddings] Completado. ${chunksWithEmbeddings.length} chunks procesados`);
         }
 
         return chunksWithEmbeddings;
@@ -242,7 +242,7 @@ class HuggingFaceEmbeddingsService {
      */
     async close() {
         if (this.enableLogging) {
-            console.log('[HuggingFace Embeddings] Cerrando servicio...');
+            logger.info('[HuggingFace Embeddings] Cerrando servicio...');
         }
         
         this.embeddingModel = null;

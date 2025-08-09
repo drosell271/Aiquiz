@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "../../../../utils/dbconnect";
 import User from "../../../../manager/models/User";
 import { sendPasswordRecovery } from "../../../../utils/emailService";
+const logger = require('../../../../utils/logger').create('API:AUTH:RECOVERY');
 
 /**
  * @swagger
@@ -73,12 +74,15 @@ import { sendPasswordRecovery } from "../../../../utils/emailService";
  */
 export async function POST(request) {
 	try {
+		logger.info('Password recovery attempt initiated');
 		await dbConnect();
 
 		const { email } = await request.json();
+		logger.debug('Recovery request received', { email: email?.toLowerCase() });
 
 		// Validar email
 		if (!email) {
+			logger.warn('Recovery attempt without email');
 			return NextResponse.json(
 				{
 					success: false,
@@ -91,6 +95,7 @@ export async function POST(request) {
 		// Validar formato del email
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		if (!emailRegex.test(email)) {
+			logger.warn('Recovery attempt with invalid email format', { email });
 			return NextResponse.json(
 				{
 					success: false,
@@ -113,6 +118,11 @@ export async function POST(request) {
 			resetToken = user.createPasswordResetToken();
 			await user.save({ validateBeforeSave: false });
 
+			logger.info('Password reset token generated', { 
+				userId: user._id,
+				email: user.email 
+			});
+
 			// Enviar email de recuperación
 			try {
 				emailResult = await sendPasswordRecovery({
@@ -120,12 +130,20 @@ export async function POST(request) {
 					userName: user.name,
 					resetToken: resetToken
 				});
+				logger.success('Recovery email sent successfully', {
+					email: user.email,
+					userId: user._id
+				});
 			} catch (emailError) {
-				console.error('Error enviando email de recuperación:', emailError);
+				logger.error('Failed to send recovery email', {
+					error: emailError.message,
+					email: user.email,
+					userId: user._id
+				});
 			}
 		} else {
 			// Usuario no existe - simular el tiempo de procesamiento pero no hacer nada
-			console.log(`Intento de recuperación para email no registrado: ${email}`);
+			logger.warn('Recovery attempt for non-existent user', { email: email.toLowerCase() });
 		}
 
 		// Siempre devolver el mismo mensaje de éxito
@@ -144,7 +162,10 @@ export async function POST(request) {
 		return NextResponse.json(response, { status: 200 });
 
 	} catch (error) {
-		console.error("Error en recuperación de contraseña:", error);
+		logger.error('Password recovery process failed', {
+			error: error.message,
+			stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+		});
 		return NextResponse.json(
 			{
 				success: false,

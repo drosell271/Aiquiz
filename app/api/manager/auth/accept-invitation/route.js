@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "../../../../utils/dbconnect";
 import User from "../../../../manager/models/User";
 import crypto from "crypto";
+const logger = require('../../../../utils/logger').create('API:AUTH:ACCEPT_INVITATION');
 
 /**
  * @swagger
@@ -104,12 +105,15 @@ import crypto from "crypto";
  */
 export async function POST(request) {
 	try {
+		logger.info('Accept invitation attempt initiated');
 		await dbConnect();
 
 		const { token, password } = await request.json();
+		logger.debug('Accept invitation request received', { hasToken: !!token, hasPassword: !!password });
 
 		// Validar datos obligatorios
 		if (!token || !password) {
+			logger.warn('Accept invitation attempt with missing data', { hasToken: !!token, hasPassword: !!password });
 			return NextResponse.json(
 				{
 					success: false,
@@ -121,6 +125,7 @@ export async function POST(request) {
 
 		// Validar contraseña
 		if (password.length < 8) {
+			logger.warn('Accept invitation attempt with weak password', { passwordLength: password.length });
 			return NextResponse.json(
 				{
 					success: false,
@@ -143,6 +148,7 @@ export async function POST(request) {
 		});
 
 		if (!user) {
+			logger.warn('Accept invitation attempt with invalid or expired token');
 			return NextResponse.json(
 				{
 					success: false,
@@ -160,6 +166,12 @@ export async function POST(request) {
 		
 		await user.save();
 
+		logger.success('User invitation accepted successfully', {
+			userId: user._id,
+			email: user.email,
+			role: user.role
+		});
+
 		return NextResponse.json(
 			{
 				success: true,
@@ -176,7 +188,10 @@ export async function POST(request) {
 		);
 
 	} catch (error) {
-		console.error("Error aceptando invitación:", error);
+		logger.error('Accept invitation process failed', {
+			error: error.message,
+			stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+		});
 		return NextResponse.json(
 			{
 				success: false,

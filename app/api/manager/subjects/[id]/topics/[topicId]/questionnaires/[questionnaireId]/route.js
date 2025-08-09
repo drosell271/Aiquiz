@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import dbConnect from "@utils/dbconnect";
 import { withAuth, handleError } from "@utils/authMiddleware";
 
+const logger = require('../../../../../../../utils/logger').create('API:QUESTIONNAIRES:ID');
+
 // Import dinámico para el modelo Questionnaire (CommonJS)
 async function getQuestionnaireModel() {
     const Questionnaire = await import("@app/manager/models/Questionnaire");
@@ -60,14 +62,14 @@ async function getQuestionnaireModel() {
  */
 
 async function deleteQuestionnaire(request, context) {
-    console.log('[Delete Questionnaire API] Eliminando cuestionario');
+    logger.info('Deleting questionnaire');
     
     try {
         await dbConnect();
         
         const { id, topicId, questionnaireId } = context.params;
         
-        console.log('[Delete Questionnaire API] Parámetros:', {
+        logger.debug('Request parameters', {
             subjectId: id,
             topicId,
             questionnaireId
@@ -104,7 +106,7 @@ async function deleteQuestionnaire(request, context) {
         // Eliminar el cuestionario
         await Questionnaire.findByIdAndDelete(questionnaireId);
         
-        console.log(`[Delete Questionnaire API] Cuestionario eliminado: ${questionnaireId}`);
+        logger.success('Questionnaire deleted', { questionnaireId });
 
         return NextResponse.json({
             success: true,
@@ -112,7 +114,7 @@ async function deleteQuestionnaire(request, context) {
         });
 
     } catch (error) {
-        console.error('[Delete Questionnaire API] Error eliminando cuestionario:', error);
+        logger.error('Error deleting questionnaire', { error: error.message, stack: error.stack });
         return handleError(error, "Error eliminando cuestionario");
     }
 }
@@ -182,14 +184,14 @@ async function deleteQuestionnaire(request, context) {
  */
 
 async function getQuestionnaire(request, context) {
-    console.log('[Get Questionnaire API] Obteniendo cuestionario específico');
+    logger.info('Getting specific questionnaire');
     
     try {
         await dbConnect();
         
         const { id, topicId, questionnaireId } = context.params;
         
-        console.log('[Get Questionnaire API] Parámetros:', {
+        logger.debug('Request parameters', {
             subjectId: id,
             topicId,
             questionnaireId
@@ -219,7 +221,7 @@ async function getQuestionnaire(request, context) {
             }, { status: 400 });
         }
 
-        console.log(`[Get Questionnaire API] Cuestionario encontrado: ${questionnaire.title}`);
+        logger.info('Questionnaire found', { title: questionnaire.title });
 
         return NextResponse.json({
             success: true,
@@ -237,7 +239,7 @@ async function getQuestionnaire(request, context) {
         });
 
     } catch (error) {
-        console.error('[Get Questionnaire API] Error obteniendo cuestionario:', error);
+        logger.error('Error getting questionnaire', { error: error.message, stack: error.stack });
         return handleError(error, "Error obteniendo cuestionario");
     }
 }

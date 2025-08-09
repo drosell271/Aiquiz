@@ -7,6 +7,8 @@ import { withAuth, handleError } from "../../../../../utils/authMiddleware";
 import { sendProfessorInvitation } from "../../../../../utils/emailService";
 import crypto from "crypto";
 
+const logger = require('../../../../../utils/logger').create('API:MANAGER:PROFESSORS');
+
 /**
  * @swagger
  * /api/manager/subjects/{id}/professors:
@@ -128,6 +130,7 @@ async function addProfessor(request, context) {
 
 		const { id } = context.params;
 		const { email, name } = await request.json();
+		logger.info('Adding professor to subject', { subjectId: id, email, name });
 
 		// Validar datos obligatorios
 		if (!email) {
@@ -247,7 +250,7 @@ async function addProfessor(request, context) {
 					inviterName: inviterName
 				});
 			} catch (emailError) {
-				console.error('Error enviando email de invitación:', emailError);
+				logger.error('Error sending invitation email', { error: emailError.message, email: user.email, subjectId: id });
 				// No fallar la invitación por un error de email
 			}
 		}

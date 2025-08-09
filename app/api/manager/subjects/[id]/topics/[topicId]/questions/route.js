@@ -5,6 +5,8 @@ import Question from "@app/models/Question";
 import Subtopic from "@app/manager/models/Subtopic";
 import { withAuth, handleError } from "@utils/authMiddleware";
 
+const logger = require('../../../../../../utils/logger').create('API:QUESTIONS:TOPIC');
+
 /**
  * @swagger
  * /api/manager/subjects/{id}/topics/{topicId}/questions:
@@ -112,14 +114,12 @@ import { withAuth, handleError } from "@utils/authMiddleware";
  */
 
 async function getTopicQuestions(request, context) {
-    console.log('🎯 [Topic Questions API] =================');
-    console.log('[Topic Questions API] Obteniendo preguntas del tema');
-    console.log('[Topic Questions API] Context:', context);
-    console.log('[Topic Questions API] Request URL:', request.url);
+    logger.info('Getting topic questions');
+    logger.debug('Request context', { context, url: request.url });
     
     try {
         await dbConnect();
-        console.log('[Topic Questions API] Conexión a BD establecida');
+        logger.debug('Database connection established');
 
         const { id, topicId } = context.params;
         const { searchParams } = new URL(request.url);
@@ -128,7 +128,7 @@ async function getTopicQuestions(request, context) {
         const difficulty = searchParams.get('difficulty');
         const generated = searchParams.get('generated');
         
-        console.log('[Topic Questions API] Parámetros:', {
+        logger.debug('Request parameters', {
             subjectId: id,
             topicId,
             verified,
@@ -140,8 +140,7 @@ async function getTopicQuestions(request, context) {
         const subtopics = await Subtopic.find({ topic: topicId }).lean();
         const subtopicIds = subtopics.map(st => st._id);
         
-        console.log(`[Topic Questions API] Encontrados ${subtopics.length} subtopics para topic ${topicId}`);
-        console.log(`[Topic Questions API] Subtopic IDs: ${subtopicIds.join(', ')}`);
+        logger.debug('Subtopics found for topic', { subtopicsCount: subtopics.length, topicId, subtopicIds });
         
         // Construir filtros para el modelo unificado - incluir preguntas de subtemas
         const filters = { 
@@ -176,8 +175,8 @@ async function getTopicQuestions(request, context) {
             .sort({ createdAt: -1 })
             .lean();
 
-        console.log(`[Topic Questions API] Encontradas ${questions.length} preguntas`);
-        console.log('[Topic Questions API] Primeras 2 preguntas:', questions.slice(0, 2));
+        logger.info('Questions found', { count: questions.length });
+        logger.debug('Sample questions', { sample: questions.slice(0, 2) });
 
         // Calcular estadísticas para el modelo unificado - incluir preguntas de subtemas
         const allQuestions = await Question.find({ 
@@ -226,7 +225,7 @@ async function getTopicQuestions(request, context) {
             stats
         };
         
-        console.log('[Topic Questions API] Respuesta enviada:', {
+        logger.success('Response sent', {
             success: response.success,
             questionsCount: response.questions.length,
             stats: response.stats
@@ -235,7 +234,7 @@ async function getTopicQuestions(request, context) {
         return NextResponse.json(response);
 
     } catch (error) {
-        console.error('[Topic Questions API] Error obteniendo preguntas:', error);
+        logger.error('Error getting topic questions', { error: error.message, stack: error.stack });
         return handleError(error, "Error obteniendo preguntas del tema");
     }
 }
@@ -317,7 +316,7 @@ async function getTopicQuestions(request, context) {
  */
 
 async function createQuestion(request, context) {
-    console.log('[Topic Questions API] Creando nueva pregunta');
+    logger.info('Creating new question');
     
     try {
         await dbConnect();
@@ -335,8 +334,8 @@ async function createQuestion(request, context) {
             tags
         } = data;
 
-        console.log('[Topic Questions API] Datos de la pregunta:', {
-            text: text?.substring(0, 50) + '...',
+        logger.debug('Question data', {
+            textPreview: text?.substring(0, 50) + '...',
             type,
             difficulty,
             choicesCount: choices?.length
@@ -377,7 +376,7 @@ async function createQuestion(request, context) {
 
         await question.save();
         
-        console.log(`[Topic Questions API] Pregunta creada: ${question._id}`);
+        logger.success('Question created', { questionId: question._id });
 
         return NextResponse.json({
             success: true,
@@ -396,7 +395,7 @@ async function createQuestion(request, context) {
         }, { status: 201 });
 
     } catch (error) {
-        console.error('[Topic Questions API] Error creando pregunta:', error);
+        logger.error('Error creating question', { error: error.message, stack: error.stack });
         return handleError(error, "Error creando pregunta");
     }
 }
@@ -406,7 +405,7 @@ async function createQuestion(request, context) {
  * Actualizar estado de verificación de preguntas
  */
 async function updateQuestionStatus(request, context) {
-    console.log('[Topic Questions API] Actualizando estado de pregunta');
+    logger.info('Updating question status');
     
     try {
         await dbConnect();
@@ -414,7 +413,7 @@ async function updateQuestionStatus(request, context) {
         const data = await request.json();
         const { questionId, action } = data; // action: 'verify', 'reject', 'reset'
         
-        console.log('[Topic Questions API] Datos recibidos:', { questionId, action });
+        logger.debug('Received data', { questionId, action });
         
         if (!questionId || !action) {
             return NextResponse.json({
@@ -454,7 +453,7 @@ async function updateQuestionStatus(request, context) {
         
         await question.save();
         
-        console.log(`[Topic Questions API] Pregunta ${questionId} actualizada: ${action}`);
+        logger.success('Question status updated', { questionId, action });
         
         return NextResponse.json({
             success: true,
@@ -467,7 +466,7 @@ async function updateQuestionStatus(request, context) {
         });
         
     } catch (error) {
-        console.error('[Topic Questions API] Error actualizando pregunta:', error);
+        logger.error('Error updating question status', { error: error.message, stack: error.stack });
         return handleError(error, "Error actualizando estado de pregunta");
     }
 }

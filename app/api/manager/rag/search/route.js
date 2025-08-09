@@ -2,36 +2,38 @@
 import { NextResponse } from "next/server";
 import { withAuth, handleError } from "../../../../utils/authMiddleware";
 
+const logger = require('../../../../utils/logger').create('API:MANAGER:RAG');
+
 // Función para cargar RAG Manager dinámicamente
 async function loadRAGManager() {
 	const isDevelopment = process.env.NODE_ENV !== 'production';
 	
 	if (isDevelopment) {
-		console.log('[RAG Search API] Usando Mock RAG Manager');
+		logger.info('Using Mock RAG Manager for development');
 		try {
 			const MockRAGManager = require("../../../../lib/rag/src/core/mockRAGManager");
 			const ragManager = new MockRAGManager();
 			return { ragManager, isMock: true };
 		} catch (mockError) {
-			console.error('[RAG Search API] Error cargando Mock RAG Manager:', mockError.message);
+			logger.error('Error loading Mock RAG Manager', { error: mockError.message });
 			throw new Error(`Mock RAG Manager no disponible: ${mockError.message}`);
 		}
 	}
 	
 	try {
-		console.log('[RAG Search API] Intentando cargar RAG Manager real...');
+		logger.info('Attempting to load real RAG Manager');
 		const RAGManager = require("../../../../lib/rag/src/core/ragManager");
 		const ragManager = new RAGManager();
 		return { ragManager, isMock: false };
 	} catch (error) {
-		console.warn('[RAG Search API] RAG Manager real no disponible, usando Mock:', error.message);
+		logger.warn('Real RAG Manager not available, using Mock', { error: error.message });
 		
 		try {
 			const MockRAGManager = require("../../../../lib/rag/src/core/mockRAGManager");
 			const ragManager = new MockRAGManager();
 			return { ragManager, isMock: true };
 		} catch (mockError) {
-			console.error('[RAG Search API] Error cargando Mock RAG Manager:', mockError.message);
+			logger.error('Error loading Mock RAG Manager fallback', { error: mockError.message });
 			throw new Error(`Sistema RAG completamente no disponible: ${mockError.message}`);
 		}
 	}
@@ -98,7 +100,7 @@ async function loadRAGManager() {
  */
 
 async function searchRAG(request, context) {
-	console.log('🔍 [RAG Search API] Iniciando búsqueda semántica');
+	logger.info('Starting semantic search');
 	
 	try {
 		const body = await request.json();
@@ -114,7 +116,7 @@ async function searchRAG(request, context) {
 			);
 		}
 
-		console.log('📋 [RAG Search API] Parámetros de búsqueda:', {
+		logger.debug('Search parameters', {
 			query: query.substring(0, 50) + (query.length > 50 ? '...' : ''),
 			filters,
 			limit
@@ -124,7 +126,7 @@ async function searchRAG(request, context) {
 		const { ragManager, isMock } = await loadRAGManager();
 		
 		if (isMock) {
-			console.log('[RAG Search API] ⚠️ Usando RAG Manager en modo desarrollo (Mock)');
+			logger.warn('Using RAG Manager in development mode (Mock)');
 		}
 
 		await ragManager.initialize();
@@ -145,7 +147,11 @@ async function searchRAG(request, context) {
 			);
 		}
 
-		console.log(`✅ [RAG Search API] Búsqueda completada: ${searchResult.results.length} resultados en ${processingTime}ms`);
+		logger.info('Search completed', { 
+			resultsCount: searchResult.results.length, 
+			processingTimeMs: processingTime,
+			mode: isMock ? 'mock' : 'production'
+		});
 
 		return NextResponse.json(
 			{
@@ -161,7 +167,7 @@ async function searchRAG(request, context) {
 		);
 
 	} catch (error) {
-		console.error('[RAG Search API] Error en búsqueda:', error);
+		logger.error('Error in semantic search', { error: error.message, stack: error.stack });
 		return handleError(error, "Error en búsqueda semántica");
 	}
 }
@@ -170,7 +176,7 @@ async function searchRAG(request, context) {
  * Obtiene estadísticas del sistema RAG
  */
 async function getRAGStats(request, context) {
-	console.log('📊 [RAG Search API] Obteniendo estadísticas del sistema');
+	logger.info('Getting RAG system statistics');
 	
 	try {
 		const { ragManager, isMock } = await loadRAGManager();
@@ -191,7 +197,7 @@ async function getRAGStats(request, context) {
 		);
 
 	} catch (error) {
-		console.error('[RAG Search API] Error obteniendo estadísticas:', error);
+		logger.error('Error getting RAG statistics', { error: error.message, stack: error.stack });
 		return handleError(error, "Error obteniendo estadísticas");
 	}
 }

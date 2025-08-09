@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import dbConnect from "@utils/dbconnect";
 import File from "@models/File";
 
+const logger = require('../../../../../../../../../utils/logger').create('API:FILES:DOWNLOAD');
+
 /**
  * @swagger
  * /api/manager/subjects/{id}/topics/{topicId}/subtopics/{subtopicId}/files/{fileId}/download:
@@ -64,7 +66,7 @@ import File from "@models/File";
  */
 
 export async function GET(request) {
-	console.log('[Download File Public API] Descargando archivo con token temporal');
+	logger.info('Starting file download with temporary token');
 	
 	try {
 		const url = new URL(request.url);
@@ -77,7 +79,7 @@ export async function GET(request) {
 		const fileId = pathSegments[10]; // files/{fileId}
 		const token = url.searchParams.get('token');
 
-		console.log('[Download File Public API] Parámetros:', {
+		logger.debug('Request parameters', {
 			subjectId: id,
 			topicId,
 			subtopicId,
@@ -100,7 +102,7 @@ export async function GET(request) {
 		try {
 			tokenPayload = jwt.verify(token, process.env.JWT_SECRET);
 		} catch (error) {
-			console.log('[Download File Public API] Token inválido:', error.message);
+			logger.warn('Invalid download token', { error: error.message });
 			return NextResponse.json(
 				{
 					success: false,
@@ -122,7 +124,7 @@ export async function GET(request) {
 		}
 
 		await dbConnect();
-		console.log('[Download File Public API] Conexión a BD establecida');
+		logger.debug('Database connection established');
 
 		// Buscar el archivo
 		const file = await File.findOne({ _id: fileId, subtopic: subtopicId });
@@ -136,14 +138,14 @@ export async function GET(request) {
 			);
 		}
 
-		console.log(`[Download File Public API] Archivo encontrado: ${file.originalName}`);
+		logger.info('File found', { fileName: file.originalName, fileId });
 
 		// Verificar si es un video con transcripción o un archivo con contenido
 		let fileContent, fileName, mimeType, fileSize;
 
 		if (file.fileType === 'video' && file.transcription && file.transcription.content) {
 			// Es un video con transcripción - generar archivo TXT
-			console.log(`[Download File Public API] Generando transcripción TXT para: ${file.originalName}`);
+			logger.info('Generating transcription TXT', { fileName: file.originalName });
 			
 			const transcriptionText = `# Transcripción de: ${file.originalName}\n\n` +
 				`Título: ${file.transcription.metadata?.title || 'Sin título'}\n` +
@@ -163,7 +165,7 @@ export async function GET(request) {
 			fileSize = fileContent.length;
 		} else if (file.fileContent) {
 			// Es un archivo regular (PDF, etc.)
-			console.log(`[Download File Public API] Descargando archivo regular: ${file.originalName} (${file.size} bytes)`);
+			logger.info('Downloading regular file', { fileName: file.originalName, size: file.size });
 			fileContent = file.fileContent;
 			fileName = file.originalName;
 			mimeType = file.mimeType || 'application/octet-stream';
@@ -178,7 +180,7 @@ export async function GET(request) {
 			);
 		}
 
-		console.log(`[Download File Public API] Preparando descarga: ${fileName} (${fileSize} bytes)`);
+		logger.info('Preparing download', { fileName, fileSize });
 
 		// Configurar headers para descarga
 		const headers = new Headers();
@@ -193,7 +195,7 @@ export async function GET(request) {
 		});
 
 	} catch (error) {
-		console.error('[Download File Public API] Error descargando archivo:', error);
+		logger.error('Error downloading file', { error: error.message, stack: error.stack });
 		return NextResponse.json(
 			{
 				success: false,

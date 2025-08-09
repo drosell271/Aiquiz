@@ -5,6 +5,8 @@
  * Optimizado para el procesamiento de documentos PDF educativos.
  */
 
+const logger = require('../../../utils/logger').create('RAG:EMBEDDINGS');
+
 // Usar dynamic import para @xenova/transformers (ES Module)
 let pipeline, env;
 
@@ -37,7 +39,7 @@ class EmbeddingService {
         this.isInitialized = false;
         this.cache = new Map();
         
-        console.log(`[RAG-Manager] EmbeddingService configurado con modelo: ${this.modelName}`);
+        logger.info('EmbeddingService configurado', { model: this.modelName });
     }
 
     /**
@@ -49,8 +51,8 @@ class EmbeddingService {
         }
 
         try {
-            console.log(`[RAG-Manager] Inicializando modelo de embeddings: ${this.modelName}`);
-            console.log('[RAG-Manager] Nota: La primera ejecución puede tardar varios minutos...');
+            logger.info('Inicializando modelo de embeddings', { model: this.modelName });
+            logger.info('Nota: La primera ejecución puede tardar varios minutos...');
             
             // Cargar transformers dinámicamente
             await loadTransformers();
@@ -61,12 +63,12 @@ class EmbeddingService {
             });
             
             this.isInitialized = true;
-            console.log(`[RAG-Manager] Modelo inicializado exitosamente. Dimensiones: ${this.dimensions}`);
+            logger.success('Modelo inicializado exitosamente', { dimensions: this.dimensions });
             
             await this.testModel();
             
         } catch (error) {
-            console.error('[RAG-Manager] Error inicializando modelo de embeddings:', error.message);
+            logger.error('Error inicializando modelo de embeddings', { error: error.message });
             throw new Error(`Error inicializando embeddings: ${error.message}`);
         }
     }
@@ -83,7 +85,7 @@ class EmbeddingService {
 
         const cacheKey = this.getCacheKey(text);
         if (this.useCache && this.cache.has(cacheKey)) {
-            console.log('[RAG-Manager] Embedding encontrado en cache');
+            logger.debug('Embedding encontrado en cache');
             return this.cache.get(cacheKey);
         }
 
@@ -93,7 +95,7 @@ class EmbeddingService {
             const embedding = Array.from(output.data);
             
             if (embedding.length !== this.dimensions) {
-                console.warn(`[RAG-Manager] Dimensiones inesperadas: ${embedding.length} (esperado: ${this.dimensions})`);
+                logger.warn('Dimensiones inesperadas', { actual: embedding.length, expected: this.dimensions });
             }
 
             if (this.useCache) {
@@ -103,7 +105,7 @@ class EmbeddingService {
             return embedding;
 
         } catch (error) {
-            console.error('[RAG-Manager] Error generando embedding:', error.message);
+            logger.error('Error generando embedding', { error: error.message });
             throw new Error(`Error generando embedding: ${error.message}`);
         }
     }
@@ -118,25 +120,25 @@ class EmbeddingService {
             throw new Error('Array de textos vacío o inválido');
         }
 
-        console.log(`[RAG-Manager] Generando embeddings para ${texts.length} textos...`);
+        logger.info('Generando embeddings para textos', { count: texts.length });
 
         const embeddings = [];
         const batches = this.createBatches(texts, this.batchSize);
 
         for (let i = 0; i < batches.length; i++) {
             const batch = batches[i];
-            console.log(`[RAG-Manager] Procesando batch ${i + 1}/${batches.length} (${batch.length} textos)`);
+            logger.debug('Procesando batch', { current: i + 1, total: batches.length, batchSize: batch.length });
 
             try {
                 const batchEmbeddings = await this.processBatch(batch);
                 embeddings.push(...batchEmbeddings);
             } catch (error) {
-                console.error(`[RAG-Manager] Error procesando batch ${i + 1}:`, error.message);
+                logger.error('Error procesando batch', { batch: i + 1, error: error.message });
                 throw error;
             }
         }
 
-        console.log(`[RAG-Manager] Embeddings generados exitosamente: ${embeddings.length} vectores`);
+        logger.success('Embeddings generados exitosamente', { vectors: embeddings.length });
         return embeddings;
     }
 
@@ -159,7 +161,7 @@ class EmbeddingService {
                 }
             };
         } catch (error) {
-            console.error(`[RAG-Manager] Error procesando chunk ${chunk.id}:`, error.message);
+            logger.error('Error procesando chunk', { chunkId: chunk.id, error: error.message });
             throw error;
         }
     }
@@ -168,7 +170,7 @@ class EmbeddingService {
      * Procesa múltiples chunks y genera sus embeddings
      */
     async processChunks(chunks) {
-        console.log(`[RAG-Manager] Procesando embeddings para ${chunks.length} chunks de PDF...`);
+        logger.info('Procesando embeddings para chunks de PDF', { chunks: chunks.length });
 
         const texts = chunks.map(chunk => chunk.text);
         const embeddings = await this.generateEmbeddings(texts);
@@ -186,7 +188,7 @@ class EmbeddingService {
             }
         }));
 
-        console.log(`[RAG-Manager] Chunks de PDF procesados exitosamente con embeddings`);
+        logger.success('Chunks de PDF procesados exitosamente con embeddings');
         return processedChunks;
     }
 
@@ -288,9 +290,9 @@ class EmbeddingService {
         try {
             const testText = "Este es un texto de prueba para verificar el modelo RAG en Manager.";
             const embedding = await this.generateEmbedding(testText);
-            console.log(`[RAG-Manager] Test del modelo exitoso. Dimensiones: ${embedding.length}`);
+            logger.info('Test del modelo exitoso', { dimensions: embedding.length });
         } catch (error) {
-            console.error('[RAG-Manager] Error en test del modelo:', error.message);
+            logger.error('Error en test del modelo', { error: error.message });
             throw error;
         }
     }
@@ -315,7 +317,7 @@ class EmbeddingService {
      */
     clearCache() {
         this.cache.clear();
-        console.log('[RAG-Manager] Cache de embeddings limpiado');
+        logger.info('Cache de embeddings limpiado');
     }
 
     /**

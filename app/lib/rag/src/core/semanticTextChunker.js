@@ -1,3 +1,5 @@
+const logger = require('../../../../utils/logger').create('RAG:SEMANTIC-CHUNKER');
+
 /**
  * SEMANTIC TEXT CHUNKER - BASADO EN SISTEMA RAG DE REFERENCIA
  * 
@@ -16,7 +18,7 @@ class SemanticTextChunker {
         this.enableLogging = options.enableLogging !== false;
         
         if (this.enableLogging) {
-            console.log('[Semantic Chunker] Inicializado con:', {
+            logger.info('Initialized', {
                 chunkSize: this.chunkSize,
                 overlap: this.overlap,
                 preserveStructure: this.preserveStructure
@@ -33,7 +35,7 @@ class SemanticTextChunker {
     async chunkDocument(text, metadata = {}) {
         try {
             if (this.enableLogging) {
-                console.log('[Semantic Chunker] Procesando texto de', text.length, 'caracteres');
+                logger.info('Processing text', { textLength: text.length });
             }
 
             // Limpiar y normalizar el texto
@@ -60,12 +62,12 @@ class SemanticTextChunker {
             }));
 
             if (this.enableLogging) {
-                console.log(`[Semantic Chunker] Generados ${enrichedChunks.length} chunks`);
+                logger.success('Chunks generated', { count: enrichedChunks.length });
             }
 
             return enrichedChunks;
         } catch (error) {
-            console.error('[Semantic Chunker] Error procesando documento:', error);
+            logger.error('Error processing document', { error: error.message, stack: error.stack });
             throw error;
         }
     }

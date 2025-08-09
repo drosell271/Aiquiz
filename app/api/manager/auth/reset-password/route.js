@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import dbConnect from "../../../../utils/dbconnect";
 import User from "../../../../manager/models/User";
+const logger = require('../../../../utils/logger').create('API:AUTH:RESET_PASSWORD');
 
 /**
  * @swagger
@@ -151,7 +152,10 @@ export async function POST(request) {
 		);
 
 	} catch (error) {
-		console.error("Error restableciendo contraseña:", error);
+		logger.error('Password reset process failed', {
+			error: error.message,
+			stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+		});
 		return NextResponse.json(
 			{
 				success: false,

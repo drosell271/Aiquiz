@@ -1,9 +1,11 @@
 // app/utils/emailService.js
 /**
  * Servicio de email para desarrollo y producción
- * En modo desarrollo, los emails se muestran por consola
+ * En modo desarrollo, los emails se muestran por logger
  * En producción, se enviarían por un servicio real (SendGrid, SES, etc.)
  */
+
+const logger = require('./logger').create('EMAIL');
 
 /**
  * Determina si estamos en modo desarrollo
@@ -11,21 +13,17 @@
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 /**
- * Simula el envío de email en desarrollo mostrándolo por consola
+ * Simula el envío de email en desarrollo mostrándolo por logger
  * @param {Object} emailData - Datos del email
  */
 function logEmailToDev(emailData) {
-    console.log('\n' + '='.repeat(80));
-    console.log('📧 EMAIL ENVIADO (MODO DESARROLLO)');
-    console.log('='.repeat(80));
-    console.log(`📩 Para: ${emailData.to}`);
-    console.log(`📝 Asunto: ${emailData.subject}`);
-    console.log('📄 Contenido:');
-    console.log('-'.repeat(40));
-    console.log(emailData.html || emailData.text);
-    console.log('-'.repeat(40));
-    console.log(`⏰ Enviado: ${new Date().toLocaleString()}`);
-    console.log('='.repeat(80) + '\n');
+    logger.separator('EMAIL ENVIADO (MODO DESARROLLO)');
+    logger.info('Email simulado', {
+        to: emailData.to,
+        subject: emailData.subject,
+        content: emailData.html || emailData.text,
+        timestamp: new Date().toISOString()
+    });
 }
 
 /**
@@ -138,7 +136,7 @@ Si tienes problemas, contacta con el administrador del sistema.
     } else {
         // En producción: enviar email real
         // TODO: Implementar servicio de email real (SendGrid, SES, etc.)
-        console.log('⚠️ Producción: Implementar servicio de email real');
+        logger.warn('Production: Real email service not implemented', { emailTo: email, subject: emailData.subject });
         return { success: false, message: 'Servicio de email no configurado en producción' };
     }
 }
@@ -220,7 +218,7 @@ IMPORTANTE:
     } else {
         // En producción: enviar email real
         // TODO: Implementar servicio de email real
-        console.log('⚠️ Producción: Implementar servicio de email real');
+        logger.warn('Production: Real email service not implemented', { emailTo: email, subject: emailData.subject });
         return { success: false, message: 'Servicio de email no configurado en producción' };
     }
 }

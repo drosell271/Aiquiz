@@ -31,13 +31,19 @@ export default function DocsPage() {
             setSpec(parsedSpec);
           } catch (parseError) {
             setError('Failed to parse OpenAPI specification');
-            console.error('YAML parsing error:', parseError);
+            // Log to console in development for debugging
+            if (process.env.NODE_ENV === 'development') {
+              console.error('YAML parsing error:', parseError);
+            }
           }
         });
       })
       .catch(fetchError => {
         setError('Failed to load OpenAPI specification');
-        console.error('Fetch error:', fetchError);
+        // Log to console in development for debugging
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Fetch error:', fetchError);
+        }
       });
   }, []);
 

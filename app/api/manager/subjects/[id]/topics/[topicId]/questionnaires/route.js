@@ -5,6 +5,8 @@ import Question from "@app/models/Question";
 import Topic from "@app/manager/models/Topic";
 import { withAuth, handleError } from "@utils/authMiddleware";
 
+const logger = require('../../../../../../utils/logger').create('API:QUESTIONNAIRES');
+
 // Import dinámico para el modelo Questionnaire (CommonJS)
 async function getQuestionnaireModel() {
     const Questionnaire = await import("@app/manager/models/Questionnaire");
@@ -76,14 +78,14 @@ async function getQuestionnaireModel() {
  */
 
 async function getTopicQuestionnaires(request, context) {
-    console.log('[Topic Questionnaires API] Obteniendo cuestionarios del tema');
+    logger.info('Getting topic questionnaires');
     
     try {
         await dbConnect();
         
         const { id, topicId } = context.params;
         
-        console.log('[Topic Questionnaires API] Parámetros:', {
+        logger.debug('Request parameters', {
             subjectId: id,
             topicId
         });
@@ -106,7 +108,7 @@ async function getTopicQuestionnaires(request, context) {
             .sort({ createdAt: -1 })
             .lean();
 
-        console.log(`[Topic Questionnaires API] Encontrados ${questionnaires.length} cuestionarios`);
+        logger.info('Questionnaires found', { count: questionnaires.length });
 
         // Formatear cuestionarios para respuesta
         const formattedQuestionnaires = questionnaires.map(questionnaire => ({
@@ -127,7 +129,7 @@ async function getTopicQuestionnaires(request, context) {
             total: questionnaires.length
         };
         
-        console.log('[Topic Questionnaires API] Respuesta enviada:', {
+        logger.success('Response sent', {
             success: response.success,
             questionnairesCount: response.questionnaires.length
         });
@@ -135,7 +137,7 @@ async function getTopicQuestionnaires(request, context) {
         return NextResponse.json(response);
 
     } catch (error) {
-        console.error('[Topic Questionnaires API] Error obteniendo cuestionarios:', error);
+        logger.error('Error getting topic questionnaires', { error: error.message, stack: error.stack });
         return handleError(error, "Error obteniendo cuestionarios del tema");
     }
 }
@@ -224,7 +226,7 @@ async function getTopicQuestionnaires(request, context) {
  */
 
 async function createQuestionnaire(request, context) {
-    console.log('[Topic Questionnaires API] Creando nuevo cuestionario');
+    logger.info('Creating new questionnaire');
     
     try {
         await dbConnect();
@@ -239,9 +241,9 @@ async function createQuestionnaire(request, context) {
             isPublic = false
         } = data;
 
-        console.log('[Topic Questionnaires API] Datos del cuestionario:', {
-            title: title?.substring(0, 50) + '...',
-            description: description?.substring(0, 50) + '...',
+        logger.debug('Questionnaire data', {
+            titlePreview: title?.substring(0, 50) + '...',
+            descriptionPreview: description?.substring(0, 50) + '...',
             questionsCount: questionIds?.length,
             isPublic
         });
@@ -291,7 +293,7 @@ async function createQuestionnaire(request, context) {
 
         await questionnaire.save();
         
-        console.log(`[Topic Questionnaires API] Cuestionario creado: ${questionnaire._id}`);
+        logger.success('Questionnaire created', { questionnaireId: questionnaire._id });
 
         return NextResponse.json({
             success: true,
@@ -309,7 +311,7 @@ async function createQuestionnaire(request, context) {
         }, { status: 201 });
 
     } catch (error) {
-        console.error('[Topic Questionnaires API] Error creando cuestionario:', error);
+        logger.error('Error creating questionnaire', { error: error.message, stack: error.stack });
         return handleError(error, "Error creando cuestionario");
     }
 }

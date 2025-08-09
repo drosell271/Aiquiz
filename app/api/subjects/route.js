@@ -4,6 +4,8 @@ import Subject from "../../manager/models/Subject";
 import Topic from "../../manager/models/Topic";
 import Subtopic from "../../manager/models/Subtopic";
 
+const logger = require('../../utils/logger').create('API:SUBJECTS');
+
 export async function GET() {
     try {
         await dbConnect();
@@ -17,9 +19,13 @@ export async function GET() {
             })
             .lean();
 
-        console.log('Found subjects:', subjects.length);
+        logger.info('Retrieved subjects successfully', { 
+            subjectCount: subjects.length 
+        });
         if (subjects.length > 0) {
-            console.log('First subject structure:', JSON.stringify(subjects[0], null, 2));
+            logger.debug('Subject structure sample', { 
+                firstSubject: subjects[0] 
+            });
         }
 
         // Transformar los datos para que coincidan con el formato esperado por la aplicación principal
@@ -47,7 +53,10 @@ export async function GET() {
         });
 
     } catch (error) {
-        console.error("Error fetching subjects:", error);
+        logger.error("Error fetching subjects", { 
+            error: error.message, 
+            stack: error.stack 
+        });
         return NextResponse.json({
             success: false,
             error: "Error fetching subjects"

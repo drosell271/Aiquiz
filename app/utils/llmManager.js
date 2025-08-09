@@ -23,8 +23,8 @@ export async function getModelResponse(modelName, prompt) {
     llmLogger.debug(`Solicitando respuesta del modelo: ${modelName}`);
     
     // Debug: verificar configuración disponible
-    console.log("[LLM Debug] Modelos disponibles:", models.models.map(m => m.name));
-    console.log("[LLM Debug] Buscando modelo:", modelName);
+    llmLogger.debug("Modelos disponibles", { models: models.models.map(m => m.name) });
+    llmLogger.debug("Buscando modelo", { modelName });
     
     const config = models.models.find(m => m.name === modelName);
 
@@ -119,8 +119,7 @@ async function OpenAI_API_Request(config, prompt, responseFormat) {
     const openai = new OpenAI(openaiConfig);
 
     try {
-        // console.log("--------------------------------------------------");
-        // console.log("prompt being sent to OpenAI: ", JSON.stringify(prompt, null, 2));
+        llmLogger.trace("Enviando prompt a OpenAI", { prompt });
 
         const response = await openai.chat.completions.create({
             model: config.model,
@@ -135,8 +134,7 @@ async function OpenAI_API_Request(config, prompt, responseFormat) {
 
         const textResponse = response.choices[0].message.content;
 
-        // console.log("text response to prompt: ", textResponse);
-        // console.log("--------------------------------------------------");
+        llmLogger.trace("Respuesta de OpenAI recibida", { response: textResponse });
 
         return textResponse;
 
@@ -151,7 +149,7 @@ async function OpenAI_API_Request(config, prompt, responseFormat) {
         });
         
         // Log adicional para debugging
-        console.error("[OpenAI Error Details]:", {
+        llmLogger.error("Error en OpenAI", {
             error: error.message,
             status: error.status,
             code: error.code,
@@ -176,8 +174,7 @@ async function Anthropic_API_Request(config, prompt) {
     });
 
     try {
-        // console.log("--------------------------------------------------");
-        // console.log("prompt being sent to Anthropic: ", JSON.stringify(prompt, null, 2));
+        llmLogger.trace("Enviando prompt a Anthropic", { prompt });
 
         const response = await anthropic.messages.create({
             model: config.model,
@@ -188,8 +185,7 @@ async function Anthropic_API_Request(config, prompt) {
 
         const textResponse = response.content[0].text;
 
-        // console.log("text response to prompt: ", textResponse);
-        // console.log("--------------------------------------------------");
+        llmLogger.trace("Respuesta de Anthropic recibida", { response: textResponse });
 
         return textResponse;
 
@@ -265,13 +261,11 @@ async function Google_API_Request(config, prompt) {
     });
 
     try {
-        // console.log("--------------------------------------------------");
-        // console.log("prompt being sent to Google: ", JSON.stringify(prompt, null, 2));
+        llmLogger.trace("Enviando prompt a Google", { prompt });
 
         const result = await model.generateContent(`${prompt}`,);
 
-        // console.log("text response to prompt: ", result.response.text());
-        // console.log("--------------------------------------------------");
+        llmLogger.trace("Respuesta de Google recibida", { response: result.response.text() });
 
         return result.response.text();
 
@@ -289,8 +283,7 @@ async function Groq_API_Request(config, prompt) {
     const groq = new Groq({ apiKey: config.api_key });
 
     try {
-        // console.log("--------------------------------------------------");
-        // console.log(`prompt being sent to ${config.name}:`, JSON.stringify(prompt, null, 2));
+        llmLogger.trace(`Enviando prompt a ${config.name}`, { prompt });
 
         // Llama a la API y procesa la respuesta
         const response = await groq.chat.completions.create({
@@ -306,8 +299,7 @@ async function Groq_API_Request(config, prompt) {
         // Procesa el contenido de la respuesta
         const textResponse = response.choices[0]?.message?.content;
 
-        // console.log("text response to prompt: ", textResponse);
-        // console.log("--------------------------------------------------");
+        llmLogger.trace(`Respuesta de ${config.name} recibida`, { response: textResponse });
 
         return textResponse;
 

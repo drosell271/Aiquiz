@@ -86,11 +86,9 @@ const questionsLogger = logger.create('Questions');
  *         description: Server error
  */
 
-// console.log("--------------------------------------------------");
-// console.log('[questions/route.js] Connecting to database...');
+questionsLogger.info('Connecting to database...');
 await dbConnect();
-// console.log('[questions/route.js] Database connected successfully');
-// console.log("--------------------------------------------------");
+questionsLogger.success('Database connected successfully');
 
 // Manejar las solicitudes HTTP POST
 export async function POST(request) {
@@ -106,12 +104,15 @@ export async function POST(request) {
 		} = await request.json();
 
 		// DEBUG: Log para verificar el número de preguntas recibido
-		console.log("[DEBUG] Parámetros recibidos en /api/questions:");
-		console.log("  numQuestions:", numQuestions, "tipo:", typeof numQuestions);
-		console.log("  topic:", topic);
-		console.log("  difficulty:", difficulty);
-		console.log("  studentEmail:", studentEmail);
-		console.log("  subject:", subject);
+		questionsLogger.debug("Parameters received in /api/questions", {
+			numQuestions,
+			numQuestionsType: typeof numQuestions,
+			topic,
+			difficulty,
+			studentEmail,
+			subject,
+			subtopicId
+		});
 
 		// Cargamos variables y objetos de configuración
 
@@ -194,7 +195,7 @@ export async function POST(request) {
 				status: llmError.status,
 				code: llmError.code
 			});
-			console.error("[LLM Manager Error]:", llmError);
+			// Error already logged above with questionsLogger
 			throw llmError;
 		}
 		// Formatear la respuesta de la API
@@ -222,11 +223,7 @@ export async function POST(request) {
 			status: error.status,
 			code: error.code
 		});
-		console.error("[Questions API Error]:", {
-			error: error.message,
-			stack: error.stack,
-			params: { language, difficulty, topic, numQuestions, subject, studentEmail }
-		});
+		// Detailed error already logged above with questionsLogger
 		return new Response(JSON.stringify({
 			error: "Error generating questions",
 			message: error.message,
@@ -245,11 +242,10 @@ const isABCTestingActive = (config) => {
 	const toDate = new Date(config.to_date);
 	const isactive = currentDate >= fromDate && currentDate <= toDate;
 	if (!isactive) {
-		console.log("--------------------------------------------------------");
-		console.log(
-			`ABCTesting fuera de fecha. Modificar o eliminar del archivo de configuración abctesting.js`
-		);
-		console.log("--------------------------------------------------------");
+		questionsLogger.warn("ABCTesting is out of date", {
+			message: "Modify or remove from abctesting.js configuration file",
+			config: config
+		});
 	}
 	return isactive;
 };
@@ -279,15 +275,11 @@ const getAndEnsureStudentAndSubject = async (
 				],
 			});
 			await student.save();
-			console.log(
-				"--------------------------------------------------------"
-			);
-			console.log(
-				`Nuevo estudiante creado: ${studentEmail} con la asignatura ${subject}`
-			);
-			console.log(
-				"--------------------------------------------------------"
-			);
+			questionsLogger.success("New student created", {
+				studentEmail,
+				subject,
+				abcTesting: has_abctesting
+			});
 			return student;
 		}
 
@@ -306,16 +298,18 @@ const getAndEnsureStudentAndSubject = async (
 			prompt: null,
 		});
 		await student.save();
-		console.log("--------------------------------------------------------");
-		console.log(`Asignatura ${subject} añadida a ${studentEmail}`);
-		console.log("--------------------------------------------------------");
+		questionsLogger.success("Subject added to existing student", {
+			subject,
+			studentEmail
+		});
 		return student;
 	} catch (error) {
-		console.error(
-			"Error asegurando la existencia del estudiante y su asignatura:",
-			error.message
-		);
-		console.error(error);
+		questionsLogger.error("Error ensuring student and subject existence", {
+			error: error.message,
+			stack: error.stack,
+			studentEmail,
+			subject
+		});
 	}
 };
 

@@ -4,6 +4,8 @@ import dbConnect from "@utils/dbconnect";
 import Question from "@app/models/Question";
 import { withAuth, handleError } from "@utils/authMiddleware";
 
+const logger = require('../../../../../../utils/logger').create('API:QUESTIONS:DOWNLOAD');
+
 /**
  * @swagger
  * /api/manager/subjects/{id}/topics/{topicId}/questions/download:
@@ -67,7 +69,7 @@ import { withAuth, handleError } from "@utils/authMiddleware";
  */
 
 async function downloadQuestions(request, context) {
-    console.log('[Download Questions API] Descargando preguntas seleccionadas');
+    logger.info('Downloading selected questions');
     
     try {
         await dbConnect();
@@ -77,7 +79,7 @@ async function downloadQuestions(request, context) {
         
         const { questionIds, format } = data;
         
-        console.log('[Download Questions API] Parámetros:', {
+        logger.debug('Request parameters', {
             subjectId: id,
             topicId,
             questionIds: questionIds?.length,
@@ -111,7 +113,7 @@ async function downloadQuestions(request, context) {
             }, { status: 404 });
         }
 
-        console.log(`[Download Questions API] Encontradas ${questions.length} preguntas para descargar`);
+        logger.info('Questions found for download', { count: questions.length });
 
         if (format === 'pdf') {
             return generateQuestionsPDF(questions, topicId);
@@ -120,7 +122,7 @@ async function downloadQuestions(request, context) {
         }
 
     } catch (error) {
-        console.error('[Download Questions API] Error descargando preguntas:', error);
+        logger.error('Error downloading questions', { error: error.message, stack: error.stack });
         return handleError(error, "Error descargando preguntas");
     }
 }
@@ -129,7 +131,7 @@ async function downloadQuestions(request, context) {
  * Genera un archivo PDF real de las preguntas
  */
 function generateQuestionsPDF(questions, topicId) {
-    console.log('[Download Questions API] Generando PDF de preguntas');
+    logger.info('Generating questions PDF');
     
     try {
         // Importar jsPDF dinámicamente para evitar problemas de SSR
@@ -262,7 +264,7 @@ function generateQuestionsPDF(questions, topicId) {
         });
         
     } catch (error) {
-        console.error('[Download Questions API] Error generando PDF:', error);
+        logger.error('Error generating PDF', { error: error.message, stack: error.stack });
         // Fallback a formato de texto si falla la generación de PDF
         return generateQuestionsFallbackPDF(questions, topicId);
     }
@@ -272,7 +274,7 @@ function generateQuestionsPDF(questions, topicId) {
  * Genera un archivo de texto como fallback si falla la generación de PDF
  */
 function generateQuestionsFallbackPDF(questions, topicId) {
-    console.log('[Download Questions API] Generando PDF fallback (texto)');
+    logger.warn('Generating fallback PDF as text file');
     
     let pdfContent = `PREGUNTAS SELECCIONADAS\n\n`;
     pdfContent += `Tema ID: ${topicId}\n`;
@@ -326,7 +328,7 @@ function generateQuestionsFallbackPDF(questions, topicId) {
  * Genera un archivo XML de Moodle de las preguntas
  */
 function generateQuestionsMoodleXML(questions, topicId) {
-    console.log('[Download Questions API] Generando XML de Moodle de preguntas');
+    logger.info('Generating Moodle XML for questions');
     
     let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
 <quiz>

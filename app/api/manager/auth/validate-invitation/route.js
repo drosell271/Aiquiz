@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "../../../../utils/dbconnect";
 import User from "../../../../manager/models/User";
 import crypto from "crypto";
+const logger = require('../../../../utils/logger').create('API:AUTH:VALIDATE_INVITATION');
 
 /**
  * @swagger
@@ -140,7 +141,10 @@ export async function POST(request) {
 		);
 
 	} catch (error) {
-		console.error("Error validando token de invitación:", error);
+		logger.error('Invitation token validation failed', {
+			error: error.message,
+			stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+		});
 		return NextResponse.json(
 			{
 				success: false,

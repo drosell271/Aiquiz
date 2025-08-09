@@ -5,17 +5,18 @@ import Subtopic from "@models/Subtopic";
 import File from "@models/File";
 import User from "@models/User";
 import { withAuth, handleError } from "@utils/authMiddleware";
+const logger = require('../../../../../../utils/logger').create('API:MANAGER:FILES');
 
 // Función para cargar RAG Manager dinámicamente (con fallback a Mock)
 async function loadRAGManager() {
 	// Intentar primero con RAG real si Qdrant está disponible
-	console.log('[Files API] Verificando disponibilidad de Qdrant...');
+	logger.info('Checking Qdrant availability');
 	
 	// Verificar si Qdrant está corriendo
 	try {
 		const qdrantResponse = await fetch('http://localhost:6333/').catch(() => null);
 		if (qdrantResponse && qdrantResponse.ok) {
-			console.log('[Files API] Qdrant available, loading RAG Manager V2');
+			logger.info('Qdrant available, loading RAG Manager V2');
 			
 			try {
 				const RAGManagerV2 = require("@rag/core/ragManagerV2");
@@ -27,7 +28,7 @@ async function loadRAGManager() {
 				});
 				return { ragManager, isMock: false };
 			} catch (realError) {
-				console.warn('[Files API] Error cargando RAG Manager V2:', realError.message);
+				logger.warn('Error loading RAG Manager V2', { error: realError.message });
 				
 				// Fallback al RAG Manager original
 				try {
@@ -35,24 +36,24 @@ async function loadRAGManager() {
 					const ragManager = new RAGManager();
 					return { ragManager, isMock: false };
 				} catch (fallbackError) {
-					console.warn('[Files API] Error cargando RAG Manager original:', fallbackError.message);
+					logger.warn('Error loading original RAG Manager', { error: fallbackError.message });
 				}
 			}
 		} else {
-			console.log('[Files API] Qdrant no disponible, usando Mock');
+			logger.info('Qdrant not available, using Mock');
 		}
 	} catch (healthError) {
-		console.log('[Files API] Error verificando Qdrant:', healthError.message);
+		logger.warn('Error checking Qdrant', { error: healthError.message });
 	}
 	
 	// Fallback a Mock si Qdrant no está disponible o hay errores
-	console.log('[Files API] Usando Mock RAG Manager como fallback');
+	logger.info('Using Mock RAG Manager as fallback');
 	try {
 		const MockRAGManager = require("@rag/core/mockRAGManager");
 		const ragManager = new MockRAGManager();
 		return { ragManager, isMock: true };
 	} catch (mockError) {
-		console.error('[Files API] Error cargando Mock RAG Manager:', mockError.message);
+		logger.error('Error loading Mock RAG Manager', { error: mockError.message });
 		throw new Error(`Mock RAG Manager no disponible: ${mockError.message}`);
 	}
 }
@@ -193,15 +194,15 @@ async function loadRAGManager() {
  */
 
 async function uploadFile(request, context) {
-	console.log('[Files API] Starting file upload processing');
-	console.log('[Files API] Parameters:', context.params);
-	console.log('[Files API] Headers:', Object.fromEntries(request.headers.entries()));
-	console.log('[Files API] Method:', request.method);
-	console.log('[Files API] Content-Type:', request.headers.get('content-type'));
+	logger.info('Starting file upload processing', {
+		params: context.params,
+		method: request.method,
+		contentType: request.headers.get('content-type')
+	});
 	
 	try {
 		await dbConnect();
-		console.log('[Files API] Database connection established');
+		logger.info('Database connection established');
 
 		const { id, topicId, subtopicId } = context.params;
 		
@@ -218,14 +219,14 @@ async function uploadFile(request, context) {
 		}
 
 		// 2. Procesar el archivo multipart
-		console.log('📦 [Files API] Procesando FormData...');
+		logger.info('Procesando FormData...');
 		const formData = await request.formData();
-		console.log('📦 [Files API] FormData procesado, buscando archivo...');
+		logger.debug('FormData procesado, buscando archivo...');
 		
 		const file = formData.get('file');
 		const description = formData.get('description') || '';
 		
-		console.log('[Files API] Data received:', {
+		logger.info('Data received', {
 			hasFile: !!file,
 			fileName: file?.name,
 			fileSize: file?.size,
@@ -282,7 +283,7 @@ async function uploadFile(request, context) {
 			mimetype: file.type,
 		};
 
-		console.log(`[Files API] Procesando PDF: ${file.name} (${Math.round(file.size / 1024)}KB)`);
+		logger.info(`Procesando PDF: ${file.name}`, { sizeKB: Math.round(file.size / 1024) });
 
 		// 7. Cargar y procesar con sistema RAG
 		let ragResult;
@@ -293,20 +294,20 @@ async function uploadFile(request, context) {
 			isMock = isManagerMock;
 			
 			if (isMock) {
-				console.log('[Files API] ⚠️ Usando RAG Manager en modo desarrollo (Mock)');
+				logger.warn('Usando RAG Manager en modo desarrollo (Mock)');
 			}
 			
 			await ragManager.initialize();
 			ragResult = await ragManager.processPDF(fileForRAG, context_rag, context.user.id);
 			
-			console.log(`[Files API] RAG procesamiento ${isMock ? '(Mock)' : ''} completado:`, {
+			logger.info(`RAG procesamiento ${isMock ? '(Mock)' : ''} completado`, {
 				success: ragResult.success,
 				documentId: ragResult.documentId,
 				stats: ragResult.stats
 			});
 			
 		} catch (ragError) {
-			console.error('[Files API] Error en procesamiento RAG, usando fallback Mock:', ragError.message);
+			logger.error('Error en procesamiento RAG, usando fallback Mock', { error: ragError.message });
 			
 			// Fallback final a Mock si todo falla
 			try {
@@ -316,9 +317,9 @@ async function uploadFile(request, context) {
 				ragResult = await mockRagManager.processPDF(fileForRAG, context_rag, context.user.id);
 				isMock = true;
 				
-				console.log('[Files API] Mock RAG fallback successful');
+				logger.info('Mock RAG fallback successful');
 			} catch (mockError) {
-				console.error('[Files API] Error crítico - ni RAG real ni Mock funcionan:', mockError.message);
+				logger.error('Error crítico - ni RAG real ni Mock funcionan', { error: mockError.message });
 				throw new Error(`Sistema RAG completamente no disponible: ${mockError.message}`);
 			}
 		}
@@ -366,7 +367,10 @@ async function uploadFile(request, context) {
 
 		await fileDocument.save();
 
-		console.log(`[Files API] PDF procesado exitosamente: ${ragResult.stats.chunks} chunks, ${ragResult.stats.pages} páginas`);
+		logger.success('PDF procesado exitosamente', {
+			chunks: ragResult.stats.chunks,
+			pages: ragResult.stats.pages
+		});
 
 		// 11. Retornar respuesta completa
 		return NextResponse.json(
@@ -413,7 +417,11 @@ async function uploadFile(request, context) {
 		);
 
 	} catch (error) {
-		console.error('[Files API] Error procesando archivo:', error);
+		logger.error('File processing failed', {
+			error: error.message,
+			stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+			params: context.params
+		});
 		
 		// Errores específicos del sistema RAG
 		if (error.message.includes('RAG')) {
@@ -434,11 +442,11 @@ async function uploadFile(request, context) {
 
 // Función para obtener archivos del subtema
 async function getFiles(request, context) {
-	console.log('[Files API] Getting subtopic files');
+	logger.info('Getting subtopic files', { subtopicId: context.params.subtopicId });
 	
 	try {
 		await dbConnect();
-		console.log('[Files API] Database connection established');
+		logger.info('Database connection established');
 
 		const { id, topicId, subtopicId } = context.params;
 		
@@ -454,14 +462,14 @@ async function getFiles(request, context) {
 			);
 		}
 
-		console.log('[Files API] Searching files for subtopic:', subtopicId);
+		logger.debug('Searching files for subtopic', { subtopicId });
 
 		// 2. Obtener archivos del subtema
 		const files = await File.find({ subtopic: subtopicId })
 			.populate('uploadedBy', 'name email')
 			.sort({ createdAt: -1 });
 
-		console.log(`[Files API] Found ${files.length} files`);
+		logger.info('Files found', { count: files.length });
 
 		// 3. Formatear respuesta
 		const formattedFiles = files.map(file => ({
@@ -496,7 +504,11 @@ async function getFiles(request, context) {
 		);
 
 	} catch (error) {
-		console.error('[Files API] Error obteniendo archivos:', error);
+		logger.error('Failed to retrieve files', {
+			error: error.message,
+			stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+			subtopicId: context.params.subtopicId
+		});
 		return handleError(error, "Error obteniendo archivos");
 	}
 }

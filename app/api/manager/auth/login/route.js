@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import dbConnect from "../../../../utils/dbconnect";
 import User from "../../../../manager/models/User";
+const logger = require('../../../../utils/logger').create('API:AUTH:LOGIN');
 
 /**
  * @swagger
@@ -106,14 +107,19 @@ import User from "../../../../manager/models/User";
  */
 export async function POST(request) {
 	try {
+		logger.info('Login attempt initiated');
+		
 		// Conectar a la base de datos
 		await dbConnect();
 
 		// Obtener datos del cuerpo de la petición
 		const { email, password } = await request.json();
+		
+		logger.debug('Login request received', { email: email?.toLowerCase() });
 
 		// Validar datos de entrada
 		if (!email || !password) {
+			logger.warn('Login attempt with missing credentials', { email: !!email, password: !!password });
 			return NextResponse.json(
 				{
 					success: false,
@@ -126,6 +132,7 @@ export async function POST(request) {
 		// Validar formato del email
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		if (!emailRegex.test(email)) {
+			logger.warn('Login attempt with invalid email format', { email });
 			return NextResponse.json(
 				{
 					success: false,
@@ -139,6 +146,7 @@ export async function POST(request) {
 		const user = await User.findOne({ email: email.toLowerCase() });
 
 		if (!user) {
+			logger.warn('Login attempt with non-existent user', { email: email.toLowerCase() });
 			return NextResponse.json(
 				{
 					success: false,
@@ -152,6 +160,10 @@ export async function POST(request) {
 		const isValidPassword = await user.comparePassword(password);
 
 		if (!isValidPassword) {
+			logger.warn('Login attempt with invalid password', { 
+				email: email.toLowerCase(),
+				userId: user._id 
+			});
 			return NextResponse.json(
 				{
 					success: false,
@@ -178,6 +190,13 @@ export async function POST(request) {
 			}
 		);
 
+		logger.success('User logged in successfully', { 
+			userId: user._id,
+			email: user.email,
+			role: user.role,
+			faculty: user.faculty 
+		});
+
 		// Respuesta exitosa
 		return NextResponse.json(
 			{
@@ -197,7 +216,10 @@ export async function POST(request) {
 		);
 
 	} catch (error) {
-		console.error("Error en login:", error);
+		logger.error('Login process failed', {
+			error: error.message,
+			stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+		});
 		return NextResponse.json(
 			{
 				success: false,

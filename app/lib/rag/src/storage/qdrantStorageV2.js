@@ -8,6 +8,8 @@
 const { QdrantClient } = require('@qdrant/js-client-rest');
 const { v4: uuidv4 } = require('uuid');
 
+const logger = require('../../../../utils/logger').create('RAG:QDRANT:V2');
+
 class QdrantStorageV2 {
     constructor(options = {}) {
         this.baseUrl = options.url || 'http://localhost:6333';
@@ -23,7 +25,7 @@ class QdrantStorageV2 {
         this.isInitialized = false;
         
         if (this.enableLogging) {
-            console.log('[Qdrant V2] Inicializado con:', {
+            logger.info('Initialized', {
                 url: this.baseUrl,
                 collection: this.defaultCollection,
                 vectorSize: this.vectorSize
@@ -40,7 +42,7 @@ class QdrantStorageV2 {
             return true;
         } catch (error) {
             if (this.enableLogging) {
-                console.error('[Qdrant V2] Health check failed:', error.message);
+                logger.error('Health check failed', { error: error.message });
             }
             return false;
         }
@@ -56,7 +58,7 @@ class QdrantStorageV2 {
 
         try {
             if (this.enableLogging) {
-                console.log('[Qdrant V2] Inicializando storage...');
+                logger.info('Initializing storage');
             }
 
             // Verificar conexión
@@ -71,10 +73,10 @@ class QdrantStorageV2 {
             this.isInitialized = true;
             
             if (this.enableLogging) {
-                console.log('[Qdrant V2] Storage inicializado exitosamente');
+                logger.success('Storage initialized successfully');
             }
         } catch (error) {
-            console.error('[Qdrant V2] Error inicializando storage:', error);
+            logger.error('Error initializing storage', { error: error.message, stack: error.stack });
             throw error;
         }
     }
@@ -90,13 +92,13 @@ class QdrantStorageV2 {
             
             if (exists) {
                 if (this.enableLogging) {
-                    console.log(`[Qdrant V2] Colección ${collectionName} ya existe`);
+                    logger.debug('Collection already exists', { collectionName });
                 }
                 return { success: true, existed: true };
             }
 
             if (this.enableLogging) {
-                console.log(`[Qdrant V2] Creando colección: ${collectionName}`);
+                logger.info('Creating collection', { collectionName });
             }
 
             // Crear colección
@@ -125,12 +127,12 @@ class QdrantStorageV2 {
             });
 
             if (this.enableLogging) {
-                console.log(`[Qdrant V2] Colección ${collectionName} creada con índices`);
+                logger.success('Collection created with indexes', { collectionName });
             }
 
             return { success: true, existed: false };
         } catch (error) {
-            console.error(`[Qdrant V2] Error creando colección:`, error);
+            logger.error('Error creating collection', { error: error.message, stack: error.stack });
             throw error;
         }
     }
@@ -145,7 +147,7 @@ class QdrantStorageV2 {
             }
 
             if (this.enableLogging) {
-                console.log(`[Qdrant V2] Almacenando documento: ${documentMetadata.fileName}`);
+                logger.info('Storing document', { fileName: documentMetadata.fileName });
             }
 
             const collectionName = this.defaultCollection;
@@ -195,7 +197,7 @@ class QdrantStorageV2 {
             });
 
             if (this.enableLogging) {
-                console.log(`[Qdrant V2] Documento almacenado: ${points.length} chunks`);
+                logger.success('Document stored', { chunksCount: points.length });
             }
 
             return {
@@ -204,7 +206,7 @@ class QdrantStorageV2 {
                 chunksStored: points.length
             };
         } catch (error) {
-            console.error(`[Qdrant V2] Error almacenando documento:`, error);
+            logger.error('Error storing document', { error: error.message, stack: error.stack });
             throw error;
         }
     }
@@ -224,7 +226,7 @@ class QdrantStorageV2 {
             const qdrantFilter = this.buildQdrantFilter(filters);
 
             if (this.enableLogging) {
-                console.log(`[Qdrant V2] Buscando chunks similares (limit: ${limit})`);
+                logger.debug('Searching similar chunks', { limit });
             }
 
             // Realizar búsqueda usando el cliente oficial
@@ -256,12 +258,12 @@ class QdrantStorageV2 {
             }));
 
             if (this.enableLogging) {
-                console.log(`[Qdrant V2] Encontrados ${transformedResults.length} chunks similares`);
+                logger.info('Similar chunks found', { count: transformedResults.length });
             }
 
             return transformedResults;
         } catch (error) {
-            console.error(`[Qdrant V2] Error en búsqueda similar:`, error);
+            logger.error('Error in similar search', { error: error.message, stack: error.stack });
             throw error;
         }
     }
@@ -308,7 +310,7 @@ class QdrantStorageV2 {
 
             return chunks;
         } catch (error) {
-            console.error(`[Qdrant V2] Error obteniendo chunks del documento:`, error);
+            logger.error('Error getting document chunks', { error: error.message, stack: error.stack });
             throw error;
         }
     }
@@ -323,7 +325,7 @@ class QdrantStorageV2 {
             }
 
             if (this.enableLogging) {
-                console.log(`[Qdrant V2] Eliminando documento: ${documentId}`);
+                logger.info('Deleting document', { documentId });
             }
 
             const collectionName = this.defaultCollection;
@@ -340,12 +342,12 @@ class QdrantStorageV2 {
             });
 
             if (this.enableLogging) {
-                console.log(`[Qdrant V2] Documento ${documentId} eliminado`);
+                logger.success('Document deleted', { documentId });
             }
 
             return true;
         } catch (error) {
-            console.error(`[Qdrant V2] Error eliminando documento:`, error);
+            logger.error('Error deleting document', { error: error.message, stack: error.stack });
             throw error;
         }
     }
@@ -377,7 +379,7 @@ class QdrantStorageV2 {
                         distance: info.config?.params?.vectors?.distance || 'unknown'
                     });
                 } catch (error) {
-                    console.warn(`[Qdrant V2] Error obteniendo stats de ${collection.name}:`, error.message);
+                    logger.warn('Error getting collection stats', { collectionName: collection.name, error: error.message });
                 }
             }
 
@@ -389,7 +391,7 @@ class QdrantStorageV2 {
                 vectorSize: this.vectorSize
             };
         } catch (error) {
-            console.error('[Qdrant V2] Error obteniendo estadísticas:', error);
+            logger.error('Error getting statistics', { error: error.message, stack: error.stack });
             throw error;
         }
     }
@@ -453,7 +455,7 @@ class QdrantStorageV2 {
      */
     async close() {
         if (this.enableLogging) {
-            console.log('[Qdrant V2] Cerrando conexión...');
+            logger.debug('Closing connection');
         }
         
         this.isInitialized = false;

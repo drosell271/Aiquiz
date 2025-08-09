@@ -45,7 +45,7 @@ async function ensureRAGManager() {
  */
 async function handleList(req) {
     try {
-        console.log('[API] Listando documentos RAG');
+        logger.info('Listando documentos RAG');
 
         const { searchParams } = new URL(req.url);
         
@@ -206,7 +206,10 @@ async function handleList(req) {
             endIndex: Math.min(endIndex, filteredDocuments.length)
         };
 
-        console.log(`[API] Documentos listados: ${formattedDocuments.length}/${filteredDocuments.length} total`);
+        logger.info('Documentos listados', { 
+            returned: formattedDocuments.length, 
+            total: filteredDocuments.length 
+        });
         
         return NextResponse.json({
             success: true,

@@ -15,6 +15,8 @@ const SimpleEmbeddingsService = require('./simpleEmbeddingsService');
 const QdrantStorageV2 = require('../storage/qdrantStorageV2');
 const { v4: uuidv4 } = require('uuid');
 
+const logger = require('../../../utils/logger').create('RAG:MANAGER_V2');
+
 class RAGManagerV2 {
     constructor(options = {}) {
         // Configuración
@@ -66,7 +68,7 @@ class RAGManagerV2 {
         };
 
         if (this.config.enableLogging) {
-            console.log('[RAG Manager V2] Inicializado con configuración:', this.config);
+            logger.info('RAG Manager V2 initialized', { config: this.config });
         }
     }
 
@@ -80,7 +82,7 @@ class RAGManagerV2 {
 
         try {
             if (this.config.enableLogging) {
-                console.log('[RAG Manager V2] Inicializando sistema RAG...');
+                logger.info('Initializing RAG system...');
             }
 
             // Inicializar servicio de embeddings con fallback
@@ -98,10 +100,10 @@ class RAGManagerV2 {
             this.state.isInitialized = true;
             
             if (this.config.enableLogging) {
-                console.log('[RAG Manager V2] Sistema RAG inicializado exitosamente');
+                logger.success('RAG system initialized successfully');
             }
         } catch (error) {
-            console.error('[RAG Manager V2] Error inicializando sistema RAG:', error);
+            logger.error('Error initializing RAG system', { error: error.message, stack: error.stack });
             throw error;
         }
     }
@@ -118,13 +120,13 @@ class RAGManagerV2 {
             if (isHuggingFaceAvailable) {
                 this.embeddingService = huggingFaceService;
                 if (this.config.enableLogging) {
-                    console.log('[RAG Manager V2] Usando HuggingFace Embeddings');
+                    logger.info('Using HuggingFace Embeddings');
                 }
                 return;
             }
         } catch (error) {
             if (this.config.enableLogging) {
-                console.warn('[RAG Manager V2] HuggingFace no disponible, usando fallback:', error.message);
+                logger.warn('HuggingFace not available, using fallback', { error: error.message });
             }
         }
 
@@ -135,7 +137,7 @@ class RAGManagerV2 {
         });
         
         if (this.config.enableLogging) {
-            console.log('[RAG Manager V2] Usando Simple Embeddings (TF-IDF fallback)');
+            logger.info('Using Simple Embeddings (TF-IDF fallback)');
         }
     }
 
@@ -150,7 +152,7 @@ class RAGManagerV2 {
 
         try {
             if (this.config.enableLogging) {
-                console.log(`[RAG Manager V2] Procesando PDF: ${file.originalname}`);
+                logger.info('Processing PDF file', { filename: file.originalname });
             }
 
             this.state.isProcessing = true;
@@ -163,13 +165,13 @@ class RAGManagerV2 {
 
             // 2. Procesar PDF
             if (this.config.enableLogging) {
-                console.log('[RAG Manager V2] Paso 1/5: Procesando PDF...');
+                logger.progress('Step 1/5: Processing PDF...');
             }
             const processedPDF = await this.pdfProcessor.processDocument(file);
 
             // 3. Chunking semántico
             if (this.config.enableLogging) {
-                console.log('[RAG Manager V2] Paso 2/5: Chunking semántico...');
+                logger.progress('Step 2/5: Semantic chunking...');
             }
             const chunks = await this.textChunker.chunkDocument(processedPDF.text, {
                 ...context,
@@ -180,16 +182,16 @@ class RAGManagerV2 {
 
             // 4. Generar embeddings
             if (this.config.enableLogging) {
-                console.log('[RAG Manager V2] Paso 3/5: Generando embeddings...');
+                logger.info('Paso 3/5: Generando embeddings...');
                 const estimation = this.embeddingService.estimateProcessingTime(chunks.length);
-                console.log(`[RAG Manager V2] Tiempo estimado: ${estimation.estimatedMinutes} minutos`);
+                logger.info('Tiempo estimado', { minutes: estimation.estimatedMinutes });
             }
             
             const chunksWithEmbeddings = await this.embeddingService.processChunks(chunks);
 
             // 5. Almacenar en Qdrant
             if (this.config.enableLogging) {
-                console.log('[RAG Manager V2] Paso 4/5: Almacenando en Qdrant...');
+                logger.info('Paso 4/5: Almacenando en Qdrant...');
             }
 
             const documentMetadata = {
@@ -224,7 +226,7 @@ class RAGManagerV2 {
             const totalTime = Date.now() - startTime;
             
             if (this.config.enableLogging) {
-                console.log(`[RAG Manager V2] PDF procesado exitosamente en ${Math.round(totalTime / 1000)}s`);
+                logger.success('PDF procesado exitosamente', { timeSeconds: Math.round(totalTime / 1000) });
             }
 
             return {
@@ -246,7 +248,7 @@ class RAGManagerV2 {
                 }
             };
         } catch (error) {
-            console.error(`[RAG Manager V2] Error procesando PDF:`, error);
+            logger.error('Error procesando PDF', { error: error.message, stack: error.stack });
             throw error;
         } finally {
             this.state.isProcessing = false;
@@ -261,7 +263,7 @@ class RAGManagerV2 {
 
         try {
             if (this.config.enableLogging) {
-                console.log(`[RAG Manager V2] Búsqueda semántica: "${query}"`);
+                logger.info(`[RAG Manager V2] Búsqueda semántica: "${query}"`);
             }
 
             const startTime = Date.now();
@@ -309,7 +311,7 @@ class RAGManagerV2 {
             const searchTime = Date.now() - startTime;
             
             if (this.config.enableLogging) {
-                console.log(`[RAG Manager V2] Búsqueda completada en ${searchTime}ms`);
+                logger.info(`[RAG Manager V2] Búsqueda completada en ${searchTime}ms`);
             }
 
             return {
@@ -339,13 +341,13 @@ class RAGManagerV2 {
 
         try {
             if (this.config.enableLogging) {
-                console.log(`[RAG Manager V2] Eliminando documento: ${documentId}`);
+                logger.info(`[RAG Manager V2] Eliminando documento: ${documentId}`);
             }
 
             await this.qdrantStorage.deleteDocument(documentId);
             
             if (this.config.enableLogging) {
-                console.log(`[RAG Manager V2] Documento ${documentId} eliminado exitosamente`);
+                logger.info(`[RAG Manager V2] Documento ${documentId} eliminado exitosamente`);
             }
 
             return {
@@ -463,7 +465,7 @@ class RAGManagerV2 {
 
     async shutdown() {
         if (this.config.enableLogging) {
-            console.log('[RAG Manager V2] Cerrando sistema...');
+            logger.info('[RAG Manager V2] Cerrando sistema...');
         }
         
         await this.qdrantStorage.close();
@@ -472,7 +474,7 @@ class RAGManagerV2 {
         this.state.isInitialized = false;
         
         if (this.config.enableLogging) {
-            console.log('[RAG Manager V2] Sistema cerrado');
+            logger.info('[RAG Manager V2] Sistema cerrado');
         }
     }
 }

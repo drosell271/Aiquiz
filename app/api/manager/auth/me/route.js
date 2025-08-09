@@ -2,6 +2,7 @@
 import dbConnect from "../../../../utils/dbconnect";
 import User from "../../../../manager/models/User";
 import jwt from "jsonwebtoken";
+const logger = require('../../../../utils/logger').create('API:AUTH:ME');
 
 /**
  * @swagger
@@ -243,7 +244,10 @@ export async function GET(request) {
 		);
 
 	} catch (error) {
-		console.error("❌ Error en GET /api/manager/auth/me:", error);
+		logger.error('User profile retrieval failed', {
+			error: error.message,
+			stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+		});
 		return new Response(
 			JSON.stringify({
 				success: false,
@@ -391,7 +395,10 @@ export async function PUT(request) {
 		);
 
 	} catch (error) {
-		console.error("❌ Error en PUT /api/manager/auth/me:", error);
+		logger.error('User profile update failed', {
+			error: error.message,
+			stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+		});
 		return new Response(
 			JSON.stringify({
 				success: false,

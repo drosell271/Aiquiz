@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import swaggerJSDoc from "swagger-jsdoc";
 import { Glob } from "glob";
 
+const logger = require('../../../utils/logger').create('API:MANAGER:SWAGGER');
+
 const swaggerOptions = {
 	definition: {
 		openapi: "3.0.0",
@@ -452,7 +454,9 @@ Para soporte técnico o reportar bugs, contacta al equipo de desarrollo.
 
 export async function GET() {
 	try {
+		logger.info('Generating Swagger documentation');
 		const specs = swaggerJSDoc(swaggerOptions);
+		logger.debug('Swagger specs generated successfully', { pathsCount: Object.keys(specs.paths || {}).length });
 		
 		return NextResponse.json(specs, {
 			status: 200,
@@ -461,7 +465,7 @@ export async function GET() {
 			},
 		});
 	} catch (error) {
-		console.error("Error generando documentación Swagger:", error);
+		logger.error('Error generating Swagger documentation', { error: error.message, stack: error.stack });
 		return NextResponse.json(
 			{
 				error: "Error generando documentación",

@@ -7,6 +7,8 @@
 
 const fetch = require('node-fetch');
 
+const logger = require('../../../../utils/logger').create('RAG:QDRANT');
+
 class QdrantStorage {
     constructor(host = 'localhost', port = 6333) {
         this.baseUrl = `http://${host}:${port}`;
@@ -22,7 +24,7 @@ class QdrantStorage {
             const response = await fetch(`${this.baseUrl}/`);
             return response.ok;
         } catch (error) {
-            console.error('🔍 [Qdrant] Health check failed:', error.message);
+            logger.error('Health check failed', { error: error.message });
             return false;
         }
     }
@@ -32,12 +34,12 @@ class QdrantStorage {
      */
     async createCollection(collectionName = this.defaultCollection, vectorSize = this.vectorSize) {
         try {
-            console.log(`📦 [Qdrant] Creando colección: ${collectionName}`);
+            logger.info('Creating collection', { collectionName });
             
             // Verificar si la colección ya existe
             const exists = await this.collectionExists(collectionName);
             if (exists) {
-                console.log(`✅ [Qdrant] Colección ${collectionName} ya existe`);
+                logger.debug('Collection already exists', { collectionName });
                 return { success: true, existed: true };
             }
 
@@ -61,11 +63,11 @@ class QdrantStorage {
                 throw new Error(`Error creando colección: ${error.status?.error || 'Unknown error'}`);
             }
 
-            console.log(`✅ [Qdrant] Colección ${collectionName} creada exitosamente`);
+            logger.success('Collection created successfully', { collectionName });
             return { success: true, existed: false };
 
         } catch (error) {
-            console.error(`❌ [Qdrant] Error creando colección ${collectionName}:`, error.message);
+            logger.error('Error creating collection', { collectionName, error: error.message });
             throw error;
         }
     }
@@ -95,7 +97,7 @@ class QdrantStorage {
             const data = await response.json();
             return data.result?.collections || [];
         } catch (error) {
-            console.error('❌ [Qdrant] Error listando colecciones:', error.message);
+            logger.error('Error listing collections', { error: error.message });
             throw error;
         }
     }
@@ -105,7 +107,7 @@ class QdrantStorage {
      */
     async upsertPoints(collectionName, points) {
         try {
-            console.log(`📝 [Qdrant] Insertando ${points.length} puntos en ${collectionName}`);
+            logger.info('Inserting points', { count: points.length, collectionName });
 
             const response = await fetch(`${this.baseUrl}/collections/${collectionName}/points`, {
                 method: 'PUT',
@@ -121,11 +123,11 @@ class QdrantStorage {
             }
 
             const result = await response.json();
-            console.log(`✅ [Qdrant] ${points.length} puntos insertados exitosamente`);
+            logger.success('Points inserted successfully', { count: points.length });
             return result;
 
         } catch (error) {
-            console.error(`❌ [Qdrant] Error insertando puntos:`, error.message);
+            logger.error('Error inserting points', { error: error.message });
             throw error;
         }
     }
@@ -144,7 +146,7 @@ class QdrantStorage {
             const data = await response.json();
             return data.result;
         } catch (error) {
-            console.error(`❌ [Qdrant] Error obteniendo info de ${collectionName}:`, error.message);
+            logger.error('Error getting collection info', { collectionName, error: error.message });
             throw error;
         }
     }
@@ -167,7 +169,7 @@ class QdrantStorage {
             const data = await response.json();
             return data.result?.count || 0;
         } catch (error) {
-            console.error(`❌ [Qdrant] Error contando puntos en ${collectionName}:`, error.message);
+            logger.error('Error counting points', { collectionName, error: error.message });
             throw error;
         }
     }
@@ -177,7 +179,7 @@ class QdrantStorage {
      */
     async deletePoints(collectionName, pointIds) {
         try {
-            console.log(`🗑️ [Qdrant] Eliminando ${pointIds.length} puntos de ${collectionName}`);
+            logger.info('Deleting points', { count: pointIds.length, collectionName });
 
             const response = await fetch(`${this.baseUrl}/collections/${collectionName}/points/delete`, {
                 method: 'POST',
@@ -193,11 +195,11 @@ class QdrantStorage {
             }
 
             const result = await response.json();
-            console.log(`✅ [Qdrant] ${pointIds.length} puntos eliminados exitosamente`);
+            logger.success('Points deleted successfully', { count: pointIds.length });
             return result;
 
         } catch (error) {
-            console.error(`❌ [Qdrant] Error eliminando puntos:`, error.message);
+            logger.error('Error deleting points', { error: error.message });
             throw error;
         }
     }
@@ -207,7 +209,7 @@ class QdrantStorage {
      */
     async deletePointsByFilter(collectionName, filter) {
         try {
-            console.log(`🗑️ [Qdrant] Eliminando puntos con filtro en ${collectionName}`);
+            logger.info('Deleting points by filter', { collectionName });
 
             const response = await fetch(`${this.baseUrl}/collections/${collectionName}/points/delete`, {
                 method: 'POST',
@@ -223,11 +225,11 @@ class QdrantStorage {
             }
 
             const result = await response.json();
-            console.log(`✅ [Qdrant] Puntos eliminados con filtro exitosamente`);
+            logger.success('Points deleted by filter successfully');
             return result;
 
         } catch (error) {
-            console.error(`❌ [Qdrant] Error eliminando puntos por filtro:`, error.message);
+            logger.error('Error deleting points by filter', { error: error.message });
             throw error;
         }
     }
@@ -254,7 +256,7 @@ class QdrantStorage {
             const data = await response.json();
             return data.result || [];
         } catch (error) {
-            console.error(`❌ [Qdrant] Error obteniendo puntos:`, error.message);
+            logger.error('Error getting points', { error: error.message });
             throw error;
         }
     }
@@ -290,7 +292,7 @@ class QdrantStorage {
                 next_page_offset: data.result?.next_page_offset
             };
         } catch (error) {
-            console.error(`❌ [Qdrant] Error scrolling puntos:`, error.message);
+            logger.error('Error scrolling points', { error: error.message });
             throw error;
         }
     }
@@ -300,7 +302,7 @@ class QdrantStorage {
      */
     async deleteCollection(collectionName) {
         try {
-            console.log(`🗑️ [Qdrant] Eliminando colección: ${collectionName}`);
+            logger.info('Deleting collection', { collectionName });
 
             const response = await fetch(`${this.baseUrl}/collections/${collectionName}`, {
                 method: 'DELETE'
@@ -311,11 +313,11 @@ class QdrantStorage {
                 throw new Error(`Error eliminando colección: ${error.status?.error || 'Unknown error'}`);
             }
 
-            console.log(`✅ [Qdrant] Colección ${collectionName} eliminada exitosamente`);
+            logger.success('Collection deleted successfully', { collectionName });
             return true;
 
         } catch (error) {
-            console.error(`❌ [Qdrant] Error eliminando colección ${collectionName}:`, error.message);
+            logger.error('Error deleting collection', { collectionName, error: error.message });
             throw error;
         }
     }
@@ -325,7 +327,7 @@ class QdrantStorage {
      */
     async initialize() {
         try {
-            console.log('🚀 [Qdrant] Inicializando storage...');
+            logger.info('Initializing storage');
             
             // Verificar conexión
             const isHealthy = await this.health();
@@ -336,9 +338,9 @@ class QdrantStorage {
             // Crear colección por defecto si no existe
             await this.createCollection();
             
-            console.log('✅ [Qdrant] Storage inicializado exitosamente');
+            logger.success('Storage initialized successfully');
         } catch (error) {
-            console.error('❌ [Qdrant] Error inicializando storage:', error.message);
+            logger.error('Error initializing storage', { error: error.message });
             throw error;
         }
     }
@@ -348,7 +350,7 @@ class QdrantStorage {
      */
     async storeDocument(documentMetadata, chunks) {
         try {
-            console.log(`📚 [Qdrant] Almacenando documento: ${documentMetadata.fileName}`);
+            logger.info('Storing document', { fileName: documentMetadata.fileName });
             
             const collectionName = this.defaultCollection;
             
@@ -393,7 +395,7 @@ class QdrantStorage {
             // Insertar puntos en Qdrant
             await this.upsertPoints(collectionName, points);
             
-            console.log(`✅ [Qdrant] Documento ${documentMetadata.fileName} almacenado con ${points.length} chunks`);
+            logger.success('Document stored successfully', { fileName: documentMetadata.fileName, chunksCount: points.length });
             return {
                 success: true,
                 documentId: documentMetadata.id,
@@ -401,7 +403,7 @@ class QdrantStorage {
             };
 
         } catch (error) {
-            console.error(`❌ [Qdrant] Error almacenando documento:`, error.message);
+            logger.error('Error storing document', { error: error.message });
             throw error;
         }
     }
@@ -442,7 +444,7 @@ class QdrantStorage {
             }));
 
         } catch (error) {
-            console.error(`❌ [Qdrant] Error en búsqueda similar:`, error.message);
+            logger.error('Error in similar search', { error: error.message });
             throw error;
         }
     }
@@ -452,7 +454,7 @@ class QdrantStorage {
      */
     async _performSearch(collectionName, queryVector, limit = 10, scoreThreshold = 0.7, filter = null) {
         try {
-            console.log(`🔍 [Qdrant] Buscando documentos similares en ${collectionName} (limit: ${limit})`);
+            logger.debug('Searching similar documents', { collectionName, limit });
 
             const searchBody = {
                 vector: queryVector,
@@ -480,11 +482,11 @@ class QdrantStorage {
             const result = await response.json();
             const points = result.result || [];
             
-            console.log(`✅ [Qdrant] Encontrados ${points.length} documentos similares`);
+            logger.info('Similar documents found', { count: points.length });
             return points;
 
         } catch (error) {
-            console.error(`❌ [Qdrant] Error en búsqueda interna:`, error.message);
+            logger.error('Error in internal search', { error: error.message });
             throw error;
         }
     }
@@ -534,7 +536,7 @@ class QdrantStorage {
             }));
 
         } catch (error) {
-            console.error(`❌ [Qdrant] Error obteniendo chunks del documento ${documentId}:`, error.message);
+            logger.error('Error getting document chunks', { documentId, error: error.message });
             throw error;
         }
     }
@@ -571,7 +573,7 @@ class QdrantStorage {
             };
 
         } catch (error) {
-            console.error('❌ [Qdrant] Error obteniendo estadísticas:', error.message);
+            logger.error('Error getting statistics', { error: error.message });
             throw error;
         }
     }
@@ -594,7 +596,7 @@ class QdrantStorage {
      */
     async deleteDocument(documentId) {
         try {
-            console.log(`🗑️ [Qdrant] Eliminando documento: ${documentId}`);
+            logger.info('Deleting document', { documentId });
             
             const collectionName = this.defaultCollection;
             
@@ -608,11 +610,11 @@ class QdrantStorage {
 
             await this.deletePointsByFilter(collectionName, filter);
             
-            console.log(`✅ [Qdrant] Documento ${documentId} eliminado exitosamente`);
+            logger.success('Document deleted successfully', { documentId });
             return true;
 
         } catch (error) {
-            console.error(`❌ [Qdrant] Error eliminando documento ${documentId}:`, error.message);
+            logger.error('Error deleting document', { documentId, error: error.message });
             throw error;
         }
     }
@@ -621,7 +623,7 @@ class QdrantStorage {
      * Cierra la conexión (no necesario para Qdrant HTTP)
      */
     async close() {
-        console.log('🔒 [Qdrant] Cerrando conexión (HTTP no requiere cierre)');
+        logger.debug('Closing connection (HTTP does not require closing)');
     }
 
     /**

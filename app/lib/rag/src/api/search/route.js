@@ -45,7 +45,7 @@ async function ensureRAGManager() {
  */
 async function handleSearch(req) {
     try {
-        console.log('[API] Iniciando búsqueda semántica');
+        logger.info('[API] Iniciando búsqueda semántica');
         
         const body = await req.json();
         const { 
@@ -115,7 +115,7 @@ async function handleSearch(req) {
         const rag = await ensureRAGManager();
 
         // 6. Realizar búsqueda semántica
-        console.log(`[API] Ejecutando búsqueda: "${query.substring(0, 50)}..."`);
+        logger.info(`[API] Ejecutando búsqueda: "${query.substring(0, 50)}..."`);
         
         const searchResult = await rag.semanticSearch(
             query.trim(),
@@ -159,7 +159,7 @@ async function handleSearch(req) {
         }));
 
         // 8. Responder con resultados
-        console.log(`[API] Búsqueda completada: ${enrichedResults.length} resultados en ${searchResult.stats.searchTime}ms`);
+        logger.info(`[API] Búsqueda completada: ${enrichedResults.length} resultados en ${searchResult.stats.searchTime}ms`);
         
         return NextResponse.json({
             success: true,

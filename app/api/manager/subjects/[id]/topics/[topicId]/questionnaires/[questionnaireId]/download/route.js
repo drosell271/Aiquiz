@@ -4,6 +4,8 @@ import dbConnect from "@utils/dbconnect";
 import Question from "@app/models/Question";
 import { withAuth, handleError } from "@utils/authMiddleware";
 
+const logger = require('../../../../../../../../utils/logger').create('API:QUESTIONNAIRES:DOWNLOAD');
+
 // Import dinámico para el modelo Questionnaire (CommonJS)
 async function getQuestionnaireModel() {
     const Questionnaire = await import("@app/manager/models/Questionnaire");
@@ -67,7 +69,7 @@ async function getQuestionnaireModel() {
  */
 
 async function downloadQuestionnaire(request, context) {
-    console.log('[Download Questionnaire API] Descargando cuestionario');
+    logger.info('Downloading questionnaire');
     
     try {
         await dbConnect();
@@ -76,7 +78,7 @@ async function downloadQuestionnaire(request, context) {
         const { searchParams } = new URL(request.url);
         const format = searchParams.get('format');
         
-        console.log('[Download Questionnaire API] Parámetros:', {
+        logger.debug('Request parameters', {
             subjectId: id,
             topicId,
             questionnaireId,
@@ -126,7 +128,7 @@ async function downloadQuestionnaire(request, context) {
         }
 
     } catch (error) {
-        console.error('[Download Questionnaire API] Error descargando cuestionario:', error);
+        logger.error('Error downloading questionnaire', { error: error.message, stack: error.stack });
         return handleError(error, "Error descargando cuestionario");
     }
 }
@@ -135,7 +137,7 @@ async function downloadQuestionnaire(request, context) {
  * Genera un archivo PDF real del cuestionario
  */
 function generatePDF(questionnaire) {
-    console.log('[Download Questionnaire API] Generando PDF');
+    logger.info('Generating PDF');
     
     try {
         // Importar jsPDF dinámicamente para evitar problemas de SSR
@@ -254,7 +256,7 @@ function generatePDF(questionnaire) {
         });
         
     } catch (error) {
-        console.error('[Download Questionnaire API] Error generando PDF:', error);
+        logger.error('Error generating PDF', { error: error.message, stack: error.stack });
         // Fallback a formato de texto si falla la generación de PDF
         return generateQuestionnaireFallbackPDF(questionnaire);
     }
@@ -264,7 +266,7 @@ function generatePDF(questionnaire) {
  * Genera un archivo de texto como fallback si falla la generación de PDF
  */
 function generateQuestionnaireFallbackPDF(questionnaire) {
-    console.log('[Download Questionnaire API] Generando PDF fallback (texto)');
+    logger.warn('Generating fallback PDF as text file');
     
     // Contenido del PDF como texto plano (implementación simple)
     let pdfContent = `CUESTIONARIO: ${questionnaire.title}\n\n`;
@@ -316,7 +318,7 @@ function generateQuestionnaireFallbackPDF(questionnaire) {
  * Genera un archivo XML de Moodle del cuestionario
  */
 function generateMoodleXML(questionnaire) {
-    console.log('[Download Questionnaire API] Generando XML de Moodle');
+    logger.info('Generating Moodle XML');
     
     let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
 <quiz>

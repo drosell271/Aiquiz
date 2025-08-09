@@ -11,12 +11,12 @@ import path from 'path';
 import fs from 'fs';
 import chalk from 'chalk';
 
+const logger = require('./logger').create('MODEL_MANAGER');
 
-// console.log("--------------------------------------------------");
-// console.log('[modelManager.js] Connecting to database...');
+
+logger.debug('Initializing model manager...');
 await dbConnect();
-// console.log('[modelManager.js] Database connected successfully');
-// console.log("--------------------------------------------------");
+logger.info('Model manager initialized successfully');
 
 
 // Asignar modelo LLM al Alumno
@@ -41,16 +41,20 @@ export async function assignAIModel(abcTestingConfig, has_abctesting, existingSt
             // Comprobamos si hay algun modelo en el ABC_Testing_List que no esté en models.json
             const invalidModels = abcTestingConfig.models.filter(model => !modelNames.includes(model));
             if (invalidModels.length > 0) {
-                console.log(chalk.bgRedBright.black("--------------------------------------------------------"));
-                console.log(chalk.bgRedBright.black(`Modelos inválidos en ABCTesting para ${studentSubjectData.subjectName}: ${invalidModels.join(", ")}. Asegurese de tener este modelo configurado y con el mismo nombre en el archivo models.json.`));
-                console.log(chalk.bgRedBright.black("--------------------------------------------------------"));
+                logger.error('Invalid models in ABCTesting configuration', {
+                    subject: studentSubjectData.subjectName,
+                    invalidModels: invalidModels,
+                    message: 'Ensure these models are configured with the same name in models.json'
+                });
                 has_abctesting = false;
             } else if (abcTestingConfig.models.length > 1 && arrayPrompts.length > 1) {
                 // ABCTesting activo y mas de un prompt definido: asignar primer modelo del array en caso de haber varios
-                console.log(chalk.bgRedBright.black("-------------------------------------------------------------------------------------------------------------------------------"));
-                console.log(chalk.bgRedBright.black("¡Varios modelos definidos en el ABCTesting con varios prompts de estudio!"));
-                console.log(chalk.bgRedBright.black("Eliminar prompts adicionales o asignar un unico modelo al ABCTesting, no se puede hacer un estudio con dos variables diferentes"));
-                console.log(chalk.bgRedBright.black("-------------------------------------------------------------------------------------------------------------------------------"));
+                logger.error('Multiple models defined in ABCTesting with multiple study prompts', {
+                    subject: studentSubjectData.subjectName,
+                    modelCount: abcTestingConfig.models.length,
+                    promptCount: arrayPrompts.length,
+                    message: 'Remove additional prompts or assign a single model to ABCTesting - cannot study with two different variables'
+                });
             }
         }
 
@@ -70,37 +74,39 @@ export async function assignAIModel(abcTestingConfig, has_abctesting, existingSt
         if (!shouldReassignModel) {
             // Si el modelo ya asignado al alumno es válido, siendo ABCTesting activo o no, y keepmodel es true
             // Se mantiene el modelo asignado
-            console.log("-------------------------------------------------");
-            console.log("El modelo ya asignado cumple todos los requisitos");
-            if (aiquizConfig.keepmodel == true) {
-                console.log("(keepmodel: ", aiquizConfig.keepmodel, ") No se tienen en cuenta el resto de prioridades de asignación de aiquiz.config.js");
-            }
-            console.log("-------------------------------------------------");
+            logger.info('Assigned model meets all requirements', {
+                assignedModel: assignedModel,
+                subject: studentSubjectData.subjectName,
+                keepModel: aiquizConfig.keepmodel,
+                message: aiquizConfig.keepmodel ? 'keepmodel is true - other assignment priorities ignored' : 'Model assignment validated'
+            });
 
             return assignedModel;
 
         } else {
             // Si el modelo asignado no es válido, reasignar modelo
-            console.log(chalk.bgYellow.black("--------------------------------------------------------------------------------------------------------------"));
+            let reason = 'Unknown reason';
             if (assignedModel === "Nuevo estudiante") {
-                console.log(chalk.bgYellow.black("El estudiante es nuevo en", studentSubjectData.subjectName, "y no tiene modelo asignado, asignando modelo..."));
+                reason = 'New student with no assigned model';
+            } else if (!modelNames.includes(assignedModel)) {
+                reason = 'Assigned model not found in models.json';
+            } else if (has_abctesting && !abcTestingConfig.models.includes(assignedModel)) {
+                reason = 'Subject has ABCTesting but assigned model not in ABCTesting models';
+            } else if (!has_abctesting && existingStudent.subjects[subjectIndex].ABC_Testing) {
+                reason = 'ABCTesting disabled but student has ABCTesting enabled from previous configuration';
+            } else if (arrayPrompts.length > 1 && abcTestingConfig.models.length > 1 && abcTestingConfig.models[0] !== assignedModel) {
+                reason = 'ABCTesting active with multiple prompts and models, but assigned model is not first in array';
+            } else if (!has_abctesting && aiquizConfig.keepmodel === false) {
+                reason = 'ABCTesting disabled and keepmodel is false';
             }
-            else if (!modelNames.includes(assignedModel)) {
-                console.log(chalk.bgYellow.black("Modelo asignado", assignedModel, "no se encuentra en models.json, reasignando modelo..."));
-            }
-            else if (has_abctesting && !abcTestingConfig.models.includes(assignedModel)) {
-                console.log(chalk.bgYellow.black("La asignatura tiene ABCTesting y el modelo asignado al alumno", assignedModel, " no está entre los modelos de ABCTesting, reasignando modelo..."));
-            }
-            else if (!has_abctesting && existingStudent.subjects[subjectIndex].ABC_Testing) {
-                console.log(chalk.bgYellow.black("ABCTesting desactivado y el estudiante tiene ABCTesting activado con modelo", assignedModel, "de la configuración anterior, reasignando modelo..."));
-            }
-            else if (arrayPrompts.length > 1 && abcTestingConfig.models.length > 1 && abcTestingConfig.models[0] !== assignedModel) {
-                console.log(chalk.bgYellow.black("ABCTesting de la asignatura está activado, hay varios prompts de estudio, hay varios modelos definidos y el modelo asignado no es el primero del array. Reasignando modelo..."));
-            }
-            else if (!has_abctesting && aiquizConfig.keepmodel === false) {
-                console.log(chalk.bgYellow.black("ABCTesting de la asignatura está desactivado y propiedad (keepmodel: ", aiquizConfig.keepmodel, "), reasignando modelo..."));
-            }
-            console.log(chalk.bgYellow.black("--------------------------------------------------------------------------------------------------------------"));
+            
+            logger.warn('Reassigning model', {
+                currentModel: assignedModel,
+                subject: studentSubjectData.subjectName,
+                reason: reason,
+                hasAbcTesting: has_abctesting,
+                keepModel: aiquizConfig.keepmodel
+            });
 
             assignedModel = await getProperModel(modelNames, studentSubjectData.subjectName, has_abctesting);
 
@@ -115,7 +121,7 @@ export async function assignAIModel(abcTestingConfig, has_abctesting, existingSt
         return assignedModel;
 
     } catch (error) {
-        console.error("Error assigning the model:", error);
+        logger.error('Error assigning the model', { error: error.message, stack: error.stack });
         throw new Error('Could not assign the model');
     }
 
@@ -138,30 +144,46 @@ const getProperModel = async (modelNames, subjectName, has_abctesting) => {
         // ABCTesting activo y mas de un prompt definido: asignar primer modelo del array en caso de haber varios
         if (abcTestingConfig.models.length > 1 && arrayPrompts.length > 1) {
             assignedModel = abcTestingConfig.models[0];
-            console.log(chalk.bgRedBright.black("-------------------------------------------------------------------------------------------------------------------------------"));
-            console.log(chalk.bgRedBright.black("¡Varios modelos definidos en el ABCTesting con varios prompts de estudio!"));
-            console.log(chalk.bgRedBright.black("Asignando primer modelo del array:", assignedModel));
-            console.log(chalk.bgRedBright.black("Eliminar prompts adicionales o asignar un unico modelo al ABCTesting, no se puede hacer un estudio con dos variables diferentes"));
-            console.log(chalk.bgRedBright.black("-------------------------------------------------------------------------------------------------------------------------------"));
+            logger.error('Multiple models with multiple prompts in ABCTesting - assigning first model', {
+                subject: subjectName,
+                assignedModel: assignedModel,
+                modelCount: abcTestingConfig.models.length,
+                promptCount: arrayPrompts.length,
+                message: 'Remove additional prompts or assign single model - cannot study with two different variables'
+            });
 
         } else {
             // ABCTesting activo y un único prompt definido o ninguno: asignar modelo equitativo entre los definidos 
             // en el array si hay varios o asignar el unico modelo definido si solo hay uno
             assignedModel = await getEquitableModel(abcTestingConfig.models, subjectName);
-            console.log("Asignando modelo equitativo con ABCTesting activo:", assignedModel);
+            logger.info('Assigning equitable model with active ABCTesting', {
+                subject: subjectName,
+                assignedModel: assignedModel,
+                availableModels: abcTestingConfig.models
+            });
         }
 
     } else {
         // ABCTesting no activo: asignar modelo teniendo en cuenta la prioridad de asignación de aiquiz.config.js
         if (aiquizConfig.costPriority === true) {
             assignedModel = await getLowerCostModel(subjectName);
-            console.log("Asignando modelo con menor coste:", assignedModel);
+            logger.info('Assigning lowest cost model', {
+                subject: subjectName,
+                assignedModel: assignedModel
+            });
         } else if (aiquizConfig.fewerReportedPriority === true) {
             assignedModel = await getFewerReportedModel(subjectName);
-            console.log("Asignando modelo con menos fallos reportados:", assignedModel);
+            logger.info('Assigning model with fewer reported issues', {
+                subject: subjectName,
+                assignedModel: assignedModel
+            });
         } else {
             assignedModel = await getEquitableModel(modelNames, subjectName);
-            console.log("Asignando modelo equitativo:", assignedModel);
+            logger.info('Assigning equitable model', {
+                subject: subjectName,
+                assignedModel: assignedModel,
+                availableModels: modelNames
+            });
         }
     }
     return assignedModel;
@@ -227,7 +249,11 @@ const getFewerReportedModel = async (subjectName) => {
             fewerReportsModel = model.name;
         }
     }
-    console.log("Fewer reported model for", subjectName, "is", fewerReportsModel);
+    logger.debug('Found model with fewer reports', {
+        subject: subjectName,
+        model: fewerReportsModel,
+        reportCount: minReports
+    });
 
     return fewerReportsModel;
 };
@@ -256,7 +282,10 @@ const getAvailableModels = async () => {
 
         return parsedModels.models;
     } catch (error) {
-        console.error("Error reading or parsing models.json:", error);
+        logger.error('Error reading or parsing models.json', {
+            error: error.message,
+            modelsPath: path.resolve('models.json')
+        });
         return [];
     }
 };

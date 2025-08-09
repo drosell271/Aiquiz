@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import dbConnect from "./dbconnect";
 import User from "../manager/models/User";
 
+const logger = require('./logger').create('AUTH');
+
 /**
  * Middleware para verificar token JWT
  * @param {Request} request - La petición HTTP
@@ -75,7 +77,7 @@ export async function verifyToken(request) {
 		};
 
 	} catch (error) {
-		console.error("Error en verificación de token:", error);
+		logger.error("Error en verificación de token", { error: error.message, stack: error.stack });
 		
 		if (error.name === "JsonWebTokenError") {
 			return {
@@ -199,7 +201,7 @@ export function withAuth(handler, options = {}) {
  * @returns {NextResponse} - Respuesta de error
  */
 export function handleError(error, message = "Error interno del servidor") {
-	console.error("Error en API:", error);
+	logger.error("Error en API", { error: error.message, stack: error.stack });
 	
 	return NextResponse.json(
 		{

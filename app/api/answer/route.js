@@ -1,6 +1,7 @@
 import dbConnect from "../../utils/dbconnect.js";
 import Question from "../../models/Question.js";
 import { NextResponse } from "next/server";
+const logger = require("../../utils/logger").create("API:ANSWER");
 
 await dbConnect();
 
@@ -117,14 +118,11 @@ export async function POST(request) {
 			md5Prompt,
 			prompt,
 		} = await request.json();
-		//console.log("received params: ",id, subject, language, difficulty, topic, query, choices, answer, explanation, studentEmail, studentAnswer, studentReport, llmModel, ABC_Testing, prompt);
 
 		//check if question exists in database by id
 		const questions = await Question.find({ id: id });
 		if (questions.length > 0) {
-			console.log(
-				"Question already exists, we update it (maybe it was answered or reported)"
-			);
+			logger.info("Question already exists, updating it");
 			const questionUpdate = await Question.updateOne(
 				{
 					id: id,
@@ -135,7 +133,7 @@ export async function POST(request) {
 					studentReport: studentReport,
 				}
 			);
-			console.log("question updated: ", questionUpdate);
+			logger.success("Question updated", { questionId: id });
 		} else {
 			const newQuestion = new Question({
 				id,
@@ -156,11 +154,19 @@ export async function POST(request) {
 				prompt,
 			});
 			const savedQuestion = await newQuestion.save();
-			console.log("Question created: ", savedQuestion);
+			logger.success("Question created", {
+				questionId: savedQuestion._id,
+			});
 		}
 		return NextResponse.json({ msg: "question created" });
 	} catch (error) {
-		console.error("Error during request:", error.message);
+		logger.error("Error processing answer request", {
+			error: error.message,
+			stack:
+				process.env.NODE_ENV === "development"
+					? error.stack
+					: undefined,
+		});
 		return new Response("Error during request", { status: 500 });
 	}
 }

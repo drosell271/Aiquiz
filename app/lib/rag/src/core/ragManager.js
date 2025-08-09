@@ -18,6 +18,7 @@
  */
 
 const PDFProcessor = require('./pdfProcessor');
+const logger = require('../../../../utils/logger').create('RAG:MANAGER');
 const TextChunker = require('./textChunker');
 const EmbeddingService = require('./embeddingService');
 const QdrantStorage = require('../storage/qdrantStorage');
@@ -59,7 +60,7 @@ class RAGManager {
             }
         };
 
-        console.log('[RAG-PDF] RAGManager inicializado para PDFs con Qdrant');
+        logger.info('[RAG-PDF] RAGManager inicializado para PDFs con Qdrant');
     }
 
     /**
@@ -73,14 +74,14 @@ class RAGManager {
         }
 
         try {
-            console.log('[RAG-PDF] Inicializando sistema RAG para PDFs...');
+            logger.info('[RAG-PDF] Inicializando sistema RAG para PDFs...');
 
             // Inicializar servicios en orden
             await this.embeddingService.initialize();
             await this.qdrantStorage.initialize();
 
             this.state.isInitialized = true;
-            console.log('[RAG-PDF] Sistema RAG inicializado exitosamente');
+            logger.info('[RAG-PDF] Sistema RAG inicializado exitosamente');
 
         } catch (error) {
             console.error('[RAG-PDF] Error inicializando sistema RAG:', error.message);
@@ -103,7 +104,7 @@ class RAGManager {
         const startTime = Date.now();
 
         try {
-            console.log(`[RAG-PDF] Iniciando procesamiento de PDF: ${file.originalname}`);
+            logger.info(`[RAG-PDF] Iniciando procesamiento de PDF: ${file.originalname}`);
             this.state.isProcessing = true;
 
             // 1. Validar que es un PDF
@@ -113,7 +114,7 @@ class RAGManager {
             }
 
             // 2. Procesar PDF (extraer texto y metadatos estructurales)
-            console.log('[RAG-PDF] Paso 1/5: Procesando PDF...');
+            logger.info('[RAG-PDF] Paso 1/5: Procesando PDF...');
             const processedPDF = await this.pdfProcessor.processDocument(file);
 
             // Log de calidad del procesamiento
@@ -122,7 +123,7 @@ class RAGManager {
             }
 
             // 3. Dividir en chunks semánticos optimizados para PDF
-            console.log('[RAG-PDF] Paso 2/5: Creando chunks semánticos...');
+            logger.info('[RAG-PDF] Paso 2/5: Creando chunks semánticos...');
             const chunks = await this.textChunker.chunkDocument(processedPDF, {
                 ...context,
                 sourceType: 'pdf',
@@ -130,9 +131,9 @@ class RAGManager {
             });
 
             // 4. Generar embeddings
-            console.log('[RAG-PDF] Paso 3/5: Generando embeddings...');
+            logger.info('[RAG-PDF] Paso 3/5: Generando embeddings...');
             const estimatedTime = this.embeddingService.estimateProcessingTime(chunks.length);
-            console.log(`[RAG-PDF] Tiempo estimado: ${estimatedTime.estimatedMinutes} minutos para ${chunks.length} chunks`);
+            logger.info(`[RAG-PDF] Tiempo estimado: ${estimatedTime.estimatedMinutes} minutos para ${chunks.length} chunks`);
             
             const chunksWithEmbeddings = await this.embeddingService.processChunks(chunks);
 
@@ -167,7 +168,7 @@ class RAGManager {
             };
 
             // 6. Almacenar en Chroma DB
-            console.log('[RAG-PDF] Paso 4/5: Almacenando en Chroma DB...');
+            logger.info('[RAG-PDF] Paso 4/5: Almacenando en Chroma DB...');
             
             // Agregar document ID a cada chunk
             const chunksForStorage = chunksWithEmbeddings.map(chunk => ({
@@ -192,7 +193,7 @@ class RAGManager {
             });
 
             const totalTime = Date.now() - startTime;
-            console.log(`[RAG-PDF] PDF procesado exitosamente en ${Math.round(totalTime / 1000)}s`);
+            logger.info(`[RAG-PDF] PDF procesado exitosamente en ${Math.round(totalTime / 1000)}s`);
 
             return {
                 success: true,
@@ -233,7 +234,7 @@ class RAGManager {
         await this.ensureInitialized();
 
         try {
-            console.log(`[RAG-PDF] Búsqueda semántica en PDFs: "${query}"`);
+            logger.info(`[RAG-PDF] Búsqueda semántica en PDFs: "${query}"`);
             const startTime = Date.now();
 
             // Configuración optimizada para PDFs
@@ -279,7 +280,7 @@ class RAGManager {
             this.updateStats({ searchesPerformed: 1 });
 
             const searchTime = Date.now() - startTime;
-            console.log(`[RAG-PDF] Búsqueda completada en ${searchTime}ms. Resultados: ${finalResults.length}`);
+            logger.info(`[RAG-PDF] Búsqueda completada en ${searchTime}ms. Resultados: ${finalResults.length}`);
 
             return {
                 success: true,
@@ -572,14 +573,14 @@ class RAGManager {
 
         try {
             if (this.config.enableLogging) {
-                console.log(`[RAG-PDF] Eliminando documento: ${documentId}`);
+                logger.info(`[RAG-PDF] Eliminando documento: ${documentId}`);
             }
 
             // Eliminar del almacenamiento Qdrant
             await this.qdrantStorage.deleteDocument(documentId);
             
             if (this.config.enableLogging) {
-                console.log(`[RAG-PDF] Documento ${documentId} eliminado exitosamente`);
+                logger.info(`[RAG-PDF] Documento ${documentId} eliminado exitosamente`);
             }
 
             return {
@@ -597,12 +598,12 @@ class RAGManager {
      * Cierra todos los servicios del sistema RAG
      */
     async shutdown() {
-        console.log('[RAG-PDF] Cerrando sistema RAG...');
+        logger.info('[RAG-PDF] Cerrando sistema RAG...');
         
         await this.qdrantStorage.close();
         this.state.isInitialized = false;
         
-        console.log('[RAG-PDF] Sistema RAG cerrado');
+        logger.info('[RAG-PDF] Sistema RAG cerrado');
     }
 }
 

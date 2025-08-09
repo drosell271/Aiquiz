@@ -6,6 +6,7 @@
  */
 
 const crypto = require('crypto');
+const logger = require('../../../../utils/logger').create('RAG:MOCK');
 
 class MockRAGManager {
     constructor(options = {}) {
@@ -13,7 +14,7 @@ class MockRAGManager {
         this.initialized = false;
         
         if (this.enableLogging) {
-            console.log('[Mock RAG] MockRAGManager inicializado para desarrollo (simula Qdrant)');
+            logger.info('MockRAGManager initialized for development (simulates Qdrant)');
         }
     }
 
@@ -23,7 +24,7 @@ class MockRAGManager {
         }
 
         if (this.enableLogging) {
-            console.log('[Mock RAG] Simulando inicialización...');
+            logger.info('Simulating initialization...');
         }
 
         // Simular tiempo de inicialización
@@ -32,7 +33,7 @@ class MockRAGManager {
         this.initialized = true;
         
         if (this.enableLogging) {
-            console.log('[Mock RAG] Inicialización completada (modo desarrollo)');
+            logger.success('Initialization completed (development mode)');
         }
     }
 
@@ -42,7 +43,7 @@ class MockRAGManager {
         }
 
         if (this.enableLogging) {
-            console.log('[Mock RAG] Procesando PDF:', file.originalname);
+            logger.info('Processing PDF', { filename: file.originalname });
         }
 
         // Simular procesamiento
@@ -73,7 +74,7 @@ class MockRAGManager {
         };
 
         if (this.enableLogging) {
-            console.log('[Mock RAG] PDF procesado:', {
+            logger.info('PDF processed', {
                 documentId: documentId,
                 chunks: mockStats.chunks,
                 pages: mockStats.pages
@@ -89,7 +90,7 @@ class MockRAGManager {
         }
 
         if (this.enableLogging) {
-            console.log('[Mock RAG] Búsqueda semántica:', query);
+            logger.info('Semantic search', { query });
         }
 
         // Simular búsqueda
@@ -133,7 +134,7 @@ class MockRAGManager {
 
     async deleteDocument(documentId) {
         if (this.enableLogging) {
-            console.log('[Mock RAG] Eliminando documento:', documentId);
+            logger.info('Deleting document', { documentId });
         }
 
         return {
@@ -144,7 +145,7 @@ class MockRAGManager {
 
     async updateDocument(documentId, newContent) {
         if (this.enableLogging) {
-            console.log('[Mock RAG] Actualizando documento:', documentId);
+            logger.info('Updating document', { documentId });
         }
 
         return {
@@ -159,7 +160,7 @@ class MockRAGManager {
         }
 
         if (this.enableLogging) {
-            console.log('[Mock RAG] Eliminando documento:', documentId);
+            logger.info('Deleting document', { documentId });
         }
 
         // Simular eliminación
