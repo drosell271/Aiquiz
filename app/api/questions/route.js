@@ -1,12 +1,18 @@
-import chalk from "chalk";
+import logger from "@utils/logger.js";
+import { getModelResponse } from "@utils/llmManager.js";
+import { fillPrompt } from "@utils/promptManager.js";
+import { ABC_Testing_List } from "@app/constants/abctesting.js";
+import { assignAIModel } from "@utils/modelManager.js";
+import { getRAGContextForSubtopic, enhancePromptWithRAG } from "@utils/ragContextManager.js";
 
-import { getModelResponse } from "../../utils/llmManager.js";
-import { fillPrompt } from "../../utils/promptManager.js";
-import { ABC_Testing_List } from "../../constants/abctesting.js";
-import { assignAIModel } from "../../utils/modelManager.js";
+import dbConnect from "@utils/dbconnect.js";
+import Student from "@app/models/Student.js";
+import Question from "@app/models/Question.js";
+import Topic from "@app/manager/models/Topic.js";
+import Subtopic from "@app/manager/models/Subtopic.js";
 
-import dbConnect from "../../utils/dbconnect.js";
-import Student from "../../models/Student.js";
+// Logger específico para questions
+const questionsLogger = logger.create('Questions');
 
 /**
  * @swagger
@@ -46,6 +52,9 @@ import Student from "../../models/Student.js";
  *               subject:
  *                 type: string
  *                 description: Subject code (PRG, CORE, etc.)
+ *               subtopicId:
+ *                 type: string
+ *                 description: Optional ID of the subtopic for RAG context
  *     responses:
  *       200:
  *         description: Successfully generated questions
@@ -77,11 +86,9 @@ import Student from "../../models/Student.js";
  *         description: Server error
  */
 
-// console.log("--------------------------------------------------");
-// console.log('[questions/route.js] Connecting to database...');
+questionsLogger.info('Connecting to database...');
 await dbConnect();
-// console.log('[questions/route.js] Database connected successfully');
-// console.log("--------------------------------------------------");
+questionsLogger.success('Database connected successfully');
 
 // Manejar las solicitudes HTTP POST
 export async function POST(request) {
@@ -93,7 +100,19 @@ export async function POST(request) {
 			numQuestions,
 			studentEmail,
 			subject,
+			subtopicId,
 		} = await request.json();
+
+		// DEBUG: Log para verificar el número de preguntas recibido
+		questionsLogger.debug("Parameters received in /api/questions", {
+			numQuestions,
+			numQuestionsType: typeof numQuestions,
+			topic,
+			difficulty,
+			studentEmail,
+			subject,
+			subtopicId
+		});
 
 		// Cargamos variables y objetos de configuración
 
@@ -132,6 +151,18 @@ export async function POST(request) {
 			subjectIndex
 		);
 
+		// 🔍 INTEGRACIÓN RAG: Buscar contexto específico del subtema
+		questionsLogger.progress("Buscando contexto RAG para el subtema", { subtopicId, topic });
+		const ragContext = await getRAGContextForSubtopic(subtopicId, topic, 3);
+		
+		if (ragContext && ragContext.trim() !== "") {
+			questionsLogger.success(`Contexto RAG obtenido: ${ragContext.length} caracteres`);
+			finalPrompt = enhancePromptWithRAG(finalPrompt, ragContext);
+			questionsLogger.info("Prompt enriquecido con contexto RAG");
+		} else {
+			questionsLogger.warn("No se encontró contexto RAG, usando generación estándar");
+		}
+
 		// SOLICITUD A LA API de modelManager para asignar un modelo de LLM al alumno
 		const assignedModel = await assignAIModel(
 			abcTestingConfig,
@@ -141,28 +172,32 @@ export async function POST(request) {
 			subjectIndex
 		);
 
-		// Imprimimos por pantalla todos los parametros necesarios para la asignacion de modelo para controlar que todo ha ido bien
-		console.log(
-			chalk.bgGreen.black(
-				"--------------------------------------------------------------------------------------------------------------"
-			)
-		);
-		console.log(
-			chalk.bgGreen.black(
-				`Assigned Model to ${studentEmail}: ${assignedModel} - Subject: ${subject} - ABCTesting: ${has_abctesting}    `
-			)
-		);
-		console.log(
-			chalk.bgGreen.black(
-				"--------------------------------------------------------------------------------------------------------------"
-			)
-		);
+		// Log de asignación de modelo
+		questionsLogger.separator("ASIGNACIÓN DE MODELO");
+		questionsLogger.info(`Modelo asignado: ${assignedModel}`, {
+			student: studentEmail,
+			subject: subject,
+			abcTesting: has_abctesting
+		});
 
 		// SOLICITUD A LA API del LLM seleccionado para el alumno
-		const responseLlmManager = await getModelResponse(
-			assignedModel,
-			finalPrompt
-		);
+		questionsLogger.debug(`Enviando prompt al modelo ${assignedModel}`);
+		let responseLlmManager;
+		try {
+			responseLlmManager = await getModelResponse(
+				assignedModel,
+				finalPrompt
+			);
+			questionsLogger.success(`Respuesta recibida del modelo ${assignedModel}`);
+		} catch (llmError) {
+			questionsLogger.error(`Error en getModelResponse para ${assignedModel}:`, {
+				message: llmError.message,
+				status: llmError.status,
+				code: llmError.code
+			});
+			// Error already logged above with questionsLogger
+			throw llmError;
+		}
 		// Formatear la respuesta de la API
 		const formattedResponse = responseLlmManager
 			.replace(/^\[|\]$/g, "")
@@ -170,10 +205,33 @@ export async function POST(request) {
 			.replace(/```/g, "")
 			.trim();
 
+		// Guardar preguntas generadas en el manager si tenemos subtopicId
+		if (subtopicId) {
+			try {
+				await saveQuestionsToManager(formattedResponse, assignedModel, finalPrompt, subtopicId, topic, difficulty);
+			} catch (saveError) {
+				questionsLogger.warn("Error guardando preguntas en manager:", saveError.message);
+				// No fallar la respuesta principal por un error de guardado
+			}
+		}
+
 		return new Response(formattedResponse);
 	} catch (error) {
-		console.error("Error during request:", error.message);
-		return new Response("Error during request", { status: 500 });
+		questionsLogger.error("Error general en POST /api/questions:", {
+			message: error.message,
+			stack: error.stack,
+			status: error.status,
+			code: error.code
+		});
+		// Detailed error already logged above with questionsLogger
+		return new Response(JSON.stringify({
+			error: "Error generating questions",
+			message: error.message,
+			details: error.status ? `Status: ${error.status}` : "Unknown error"
+		}), { 
+			status: 500,
+			headers: { 'Content-Type': 'application/json' }
+		});
 	}
 }
 
@@ -184,11 +242,10 @@ const isABCTestingActive = (config) => {
 	const toDate = new Date(config.to_date);
 	const isactive = currentDate >= fromDate && currentDate <= toDate;
 	if (!isactive) {
-		console.log("--------------------------------------------------------");
-		console.log(
-			`ABCTesting fuera de fecha. Modificar o eliminar del archivo de configuración abctesting.js`
-		);
-		console.log("--------------------------------------------------------");
+		questionsLogger.warn("ABCTesting is out of date", {
+			message: "Modify or remove from abctesting.js configuration file",
+			config: config
+		});
 	}
 	return isactive;
 };
@@ -218,15 +275,11 @@ const getAndEnsureStudentAndSubject = async (
 				],
 			});
 			await student.save();
-			console.log(
-				"--------------------------------------------------------"
-			);
-			console.log(
-				`Nuevo estudiante creado: ${studentEmail} con la asignatura ${subject}`
-			);
-			console.log(
-				"--------------------------------------------------------"
-			);
+			questionsLogger.success("New student created", {
+				studentEmail,
+				subject,
+				abcTesting: has_abctesting
+			});
 			return student;
 		}
 
@@ -245,15 +298,76 @@ const getAndEnsureStudentAndSubject = async (
 			prompt: null,
 		});
 		await student.save();
-		console.log("--------------------------------------------------------");
-		console.log(`Asignatura ${subject} añadida a ${studentEmail}`);
-		console.log("--------------------------------------------------------");
+		questionsLogger.success("Subject added to existing student", {
+			subject,
+			studentEmail
+		});
 		return student;
 	} catch (error) {
-		console.error(
-			"Error asegurando la existencia del estudiante y su asignatura:",
-			error.message
-		);
-		console.error(error);
+		questionsLogger.error("Error ensuring student and subject existence", {
+			error: error.message,
+			stack: error.stack,
+			studentEmail,
+			subject
+		});
 	}
 };
+
+// Función para guardar preguntas generadas en el modelo unificado
+async function saveQuestionsToManager(formattedResponse, assignedModel, prompt, subtopicId, topicName, difficulty) {
+	try {
+		questionsLogger.info("Guardando preguntas generadas en modelo unificado");
+		
+		// Parsear la respuesta JSON
+		const questionsData = JSON.parse(formattedResponse);
+		if (!questionsData.questions || !Array.isArray(questionsData.questions)) {
+			throw new Error("Formato de respuesta inválido");
+		}
+
+		// Buscar el subtopic para obtener el topic
+		const subtopic = await Subtopic.findById(subtopicId).populate('topic');
+		if (!subtopic) {
+			throw new Error(`Subtopic no encontrado: ${subtopicId}`);
+		}
+
+		const topicId = subtopic.topic._id;
+
+		// Convertir y guardar cada pregunta usando el modelo unificado
+		const unifiedQuestions = questionsData.questions.map(q => {
+			return {
+				// Generar ID numérico para compatibilidad con quiz
+				id: Math.floor(Math.random() * 1000000000),
+				text: q.query,
+				type: "Opción múltiple",
+				difficulty: difficulty, // Se normalizará automáticamente en el middleware
+				choices: q.choices, // Array simple, se convertirá automáticamente
+				answer: q.answer,
+				explanation: q.explanation || '',
+				
+				// Referencias del manager
+				topicRef: topicId,
+				subtopic: subtopicId,
+				topic: topicName, // String para compatibilidad
+				
+				// Metadatos de generación
+				generated: true,
+				llmModel: assignedModel,
+				generationPrompt: prompt.substring(0, 500) + '...',
+				verified: false,
+				tags: [topicName, 'auto-generated'],
+				source: "generated"
+			};
+		});
+
+		// Guardar en la base de datos usando el modelo unificado
+		const savedQuestions = await Question.insertMany(unifiedQuestions);
+		
+		questionsLogger.success(`${savedQuestions.length} preguntas guardadas en modelo unificado para topic ${topicId}`);
+		
+		return savedQuestions;
+		
+	} catch (error) {
+		questionsLogger.error("Error en saveQuestionsToManager:", error.message);
+		throw error;
+	}
+}

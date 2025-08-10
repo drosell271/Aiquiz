@@ -1,5 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+/.claude
+
 # dependencies
 /node_modules
 /.pnp
@@ -40,3 +42,11 @@ models.json
 errors.log
 
 .vscode
+
+# RAG data and backups
+app/lib/rag/data.backup/
+uploads/
+test-*
+*.backup
+
+.env

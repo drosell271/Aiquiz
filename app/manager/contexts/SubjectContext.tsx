@@ -15,15 +15,21 @@ import useApiRequest from "../hooks/useApiRequest";
 
 // Definimos las interfaces necesarias
 export interface SubTopic {
-	id: string;
+	id?: string;
+	_id?: string;
 	title: string;
+	description?: string;
+	content?: string;
+	order?: number;
 }
 
 export interface Topic {
-	id: string;
+	id?: string;
+	_id?: string;
 	title: string;
 	description: string;
 	subtopics: SubTopic[];
+	order?: number;
 }
 
 export interface Professor {
@@ -33,7 +39,8 @@ export interface Professor {
 }
 
 export interface Subject {
-	id: string;
+	id?: string;
+	_id?: string;
 	title: string;
 	acronym: string;
 	description: string;
@@ -71,7 +78,7 @@ export const SubjectProvider = ({ children }: SubjectProviderProps) => {
 
 	// Única llamada a la API que será compartida
 	const { data, loading, error, makeRequest } = useApiRequest(
-		`/api/subjects/${id}`,
+		`/api/manager/subjects/${id}`,
 		"GET",
 		null,
 		true

@@ -1,6 +1,6 @@
 // /app/manager/components/topic/EditSubtopicModal.tsx
 import { useState, useEffect, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import { Subtopic } from "../../contexts/TopicContext";
 
 interface EditSubtopicModalProps {
@@ -19,7 +19,7 @@ const EditSubtopicModal: React.FC<EditSubtopicModalProps> = ({
 	onSave,
 	isLoading = false,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	// Estado unificado para el formulario
 	const [formData, setFormData] = useState({

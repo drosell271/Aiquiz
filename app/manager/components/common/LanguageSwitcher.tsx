@@ -2,14 +2,14 @@
 "use client";
 
 import { useContext } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import { ClientSideContext } from "../../I18nProvider";
 
 /**
  * Componente para cambiar el idioma de la aplicación
  */
 const LanguageSwitcher: React.FC = () => {
-	const { i18n } = useTranslation();
+	const { i18n } = useManagerTranslation();
 	const isClient = useContext(ClientSideContext);
 
 	// No renderizar nada si no estamos en el cliente

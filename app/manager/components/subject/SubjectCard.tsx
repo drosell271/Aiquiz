@@ -1,7 +1,8 @@
 // /app/manager/components/subject/SubjectCard.tsx
 import Link from "next/link";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import SubjectTags from "./SubjectTags";
+import { AnimatedCard } from "../common/AnimatedComponents";
 
 export interface SubjectCardProps {
 	id: string;
@@ -21,7 +22,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
 	administrator,
 	topics,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	/**
 	 * Obtiene la descripción truncada si es necesario
@@ -36,8 +37,8 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
 	};
 
 	return (
-		<div className="bg-gray-100 rounded-md p-6">
-			<h2 className="text-xl font-bold mb-2">{title}</h2>
+		<AnimatedCard className="bg-gray-100 rounded-md p-6 shadow-md">
+			<h2 className="text-xl font-bold mb-2">{title || "Sin título"}</h2>
 
 			<p className="text-gray-700 mb-2">
 				{getTruncatedDescription(description)}
@@ -60,7 +61,7 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
 
 				<SubjectTags tags={topics} category={t("subjects.topics")} />
 			</div>
-		</div>
+		</AnimatedCard>
 	);
 };
 

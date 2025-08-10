@@ -64,6 +64,7 @@ SubtopicSchema.statics.updateOrder = async function (topicId, subtopicsOrder) {
 SubtopicSchema.index({ topic: 1, order: 1 });
 SubtopicSchema.index({ title: "text", description: "text", content: "text" });
 
-const Subtopic = mongoose.model("Subtopic", SubtopicSchema);
+// Export the model, avoiding OverwriteModelError during development
+const Subtopic = mongoose.models.Subtopic || mongoose.model("Subtopic", SubtopicSchema);
 
 module.exports = Subtopic;

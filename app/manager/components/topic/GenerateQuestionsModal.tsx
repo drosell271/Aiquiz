@@ -1,12 +1,19 @@
 // /app/manager/components/topic/GenerateQuestionsModal.tsx
 import { useState, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
+
+interface Subtopic {
+	_id: string;
+	title: string;
+	description?: string;
+}
 
 interface GenerateQuestionsModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onGenerate: (difficulty: string, count: number) => void;
+	onGenerate: (difficulty: string, count: number, subtopicId?: string) => void;
 	isLoading?: boolean;
+	subtopics?: Subtopic[];
 }
 
 /**
@@ -17,12 +24,14 @@ const GenerateQuestionsModal: React.FC<GenerateQuestionsModalProps> = ({
 	onClose,
 	onGenerate,
 	isLoading = false,
+	subtopics = [],
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	// Estados para el formulario
-	const [difficulty, setDifficulty] = useState<string>("FÁCIL");
-	const [count, setCount] = useState<number>(15);
+	const [difficulty, setDifficulty] = useState<string>("Fácil");
+	const [count, setCount] = useState<number>(10);
+	const [selectedSubtopic, setSelectedSubtopic] = useState<string>("");
 
 	/**
 	 * Maneja el cambio de dificultad
@@ -39,11 +48,18 @@ const GenerateQuestionsModal: React.FC<GenerateQuestionsModalProps> = ({
 	}, []);
 
 	/**
+	 * Maneja el cambio de subtema
+	 */
+	const handleSubtopicChange = useCallback((subtopicId: string) => {
+		setSelectedSubtopic(subtopicId);
+	}, []);
+
+	/**
 	 * Inicia la generación de preguntas
 	 */
 	const handleGenerate = useCallback(() => {
-		onGenerate(difficulty, count);
-	}, [difficulty, count, onGenerate]);
+		onGenerate(difficulty, count, selectedSubtopic || undefined);
+	}, [difficulty, count, selectedSubtopic, onGenerate]);
 
 	// No renderizar nada si el modal no está abierto
 	if (!isOpen) return null;
@@ -52,21 +68,21 @@ const GenerateQuestionsModal: React.FC<GenerateQuestionsModalProps> = ({
 	 * Genera la clase para el botón de dificultad
 	 */
 	const getDifficultyButtonClass = (value: string): string => {
-		if (value === "FÁCIL") {
+		if (value === "Fácil") {
 			return `px-4 py-2 rounded-md flex items-center w-full ${
-				difficulty === "FÁCIL"
+				difficulty === "Fácil"
 					? "bg-green-100 text-green-800 border border-green-300"
 					: "bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200"
 			}`;
-		} else if (value === "INTERMEDIO") {
+		} else if (value === "Medio") {
 			return `px-4 py-2 rounded-md flex items-center w-full ${
-				difficulty === "INTERMEDIO"
+				difficulty === "Medio"
 					? "bg-yellow-100 text-yellow-800 border border-yellow-300"
 					: "bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200"
 			}`;
 		} else {
 			return `px-4 py-2 rounded-md flex items-center w-full ${
-				difficulty === "AVANZADO"
+				difficulty === "Avanzado"
 					? "bg-red-100 text-red-800 border border-red-300"
 					: "bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200"
 			}`;
@@ -77,17 +93,17 @@ const GenerateQuestionsModal: React.FC<GenerateQuestionsModalProps> = ({
 	 * Genera la clase para el indicador de dificultad
 	 */
 	const getIndicatorClass = (value: string): string => {
-		if (value === "FÁCIL") {
+		if (value === "Fácil") {
 			return `w-3 h-3 rounded-full ${
-				difficulty === "FÁCIL" ? "bg-green-500" : "bg-gray-300"
+				difficulty === "Fácil" ? "bg-green-500" : "bg-gray-300"
 			} mr-2`;
-		} else if (value === "INTERMEDIO") {
+		} else if (value === "Medio") {
 			return `w-3 h-3 rounded-full ${
-				difficulty === "INTERMEDIO" ? "bg-yellow-500" : "bg-gray-300"
+				difficulty === "Medio" ? "bg-yellow-500" : "bg-gray-300"
 			} mr-2`;
 		} else {
 			return `w-3 h-3 rounded-full ${
-				difficulty === "AVANZADO" ? "bg-red-500" : "bg-gray-300"
+				difficulty === "Avanzado" ? "bg-red-500" : "bg-gray-300"
 			} mr-2`;
 		}
 	};
@@ -132,38 +148,65 @@ const GenerateQuestionsModal: React.FC<GenerateQuestionsModalProps> = ({
 					</button>
 				</div>
 
+				{/* Selector de subtema */}
+				{subtopics.length > 0 && (
+					<div className="mb-6">
+						<label className="block text-sm font-medium text-gray-700 mb-2">
+							{t("topicDetail.subtopic") || "Subtema (opcional)"}
+						</label>
+						<select
+							value={selectedSubtopic}
+							onChange={(e) => handleSubtopicChange(e.target.value)}
+							className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+							disabled={isLoading}
+						>
+							<option value="">
+								{t("topicDetail.allSubtopics") || "Todos los subtemas"}
+							</option>
+							{subtopics.map((subtopic) => (
+								<option key={subtopic._id} value={subtopic._id}>
+									{subtopic.title}
+								</option>
+							))}
+						</select>
+					</div>
+				)}
+
 				<div className="mb-6">
 					<label className="block text-sm font-medium text-gray-700 mb-2">
 						{t("topicDetail.difficulty") || "Dificultad"}
 					</label>
 					<div className="flex flex-wrap md:flex-nowrap gap-2">
 						<button
-							className={getDifficultyButtonClass("FÁCIL")}
-							onClick={() => handleDifficultyChange("FÁCIL")}
+							className={getDifficultyButtonClass("Fácil")}
+							onClick={() => handleDifficultyChange("Fácil")}
 							aria-label="Dificultad fácil"
+							disabled={isLoading}
 						>
-							<div className={getIndicatorClass("FÁCIL")}></div>
-							{t("topicDetail.easy") || "FÁCIL"}
+							<div className={getIndicatorClass("Fácil")}></div>
+							{t("topicDetail.easy") || "Fácil"}
 						</button>
 						<button
-							className={getDifficultyButtonClass("INTERMEDIO")}
-							onClick={() => handleDifficultyChange("INTERMEDIO")}
+							className={getDifficultyButtonClass("Medio")}
+							onClick={() => handleDifficultyChange("Medio")}
 							aria-label="Dificultad intermedia"
+							disabled={isLoading}
 						>
 							<div
-								className={getIndicatorClass("INTERMEDIO")}
+								className={getIndicatorClass("Medio")}
 							></div>
-							{t("topicDetail.intermediate") || "INTERMEDIO"}
+							{t("topicDetail.intermediate") || "Medio"}
 						</button>
 						<button
-							className={getDifficultyButtonClass("AVANZADO")}
-							onClick={() => handleDifficultyChange("AVANZADO")}
+							className={getDifficultyButtonClass("Avanzado")}
+							onClick={() => handleDifficultyChange("Avanzado")}
 							aria-label="Dificultad avanzada"
+							disabled={isLoading}
 						>
 							<div
-								className={getIndicatorClass("AVANZADO")}
+								className={getIndicatorClass("Avanzado")}
 							></div>
-							{t("topicDetail.advanced") || "AVANZADO"}
+							{t("topicDetail.advanced") || "Avanzado"}
 						</button>
 					</div>
 				</div>
@@ -180,6 +223,7 @@ const GenerateQuestionsModal: React.FC<GenerateQuestionsModalProps> = ({
 								className={getCountButtonClass(num)}
 								onClick={() => handleCountChange(num)}
 								aria-label={`${num} preguntas`}
+								disabled={isLoading}
 							>
 								{num}
 							</button>

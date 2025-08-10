@@ -11,6 +11,7 @@ import {
 } from "react";
 import { useParams } from "next/navigation";
 import useApiRequest from "../hooks/useApiRequest";
+import { useSubject } from "./SubjectContext";
 
 // Definimos las interfaces necesarias
 export interface ContentSection {
@@ -35,18 +36,23 @@ export interface Question {
 }
 
 export interface Subtopic {
-	id: string;
+	id?: string;
+	_id?: string;
 	title: string;
 	description: string;
 	content?: string;
 	createdAt?: string;
 	updatedAt?: string;
-	topicId: string;
-	topicTitle: string;
-	subjectId: string;
-	subjectTitle: string;
+	topicId?: string;
+	topicTitle?: string;
+	subjectId?: string;
+	subjectTitle?: string;
 	contentSections?: ContentSection[];
 	questions?: Question[];
+	topic?: {
+		_id: string;
+		title: string;
+	};
 }
 
 // Definimos la interfaz para el contexto
@@ -80,10 +86,13 @@ export const SubtopicProvider = ({ children }: SubtopicProviderProps) => {
 	const subtopicId = params.subtopicId as string;
 
 	const [subtopic, setSubtopic] = useState<Subtopic | null>(null);
+	
+	// Acceso al contexto de Subject para refrescar la sidebar
+	const { refetchSubject } = useSubject();
 
 	// Única llamada a la API que será compartida
 	const { data, loading, error, makeRequest } = useApiRequest(
-		`/api/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}`,
+		`/api/manager/subjects/${id}/topics/${topicId}/subtopics/${subtopicId}`,
 		"GET",
 		null,
 		true
@@ -94,6 +103,10 @@ export const SubtopicProvider = ({ children }: SubtopicProviderProps) => {
 		const refreshedData = await makeRequest();
 		if (refreshedData) {
 			setSubtopic(refreshedData);
+			// También refrescar el contexto de Subject para actualizar la sidebar
+			if (refetchSubject) {
+				await refetchSubject();
+			}
 			return refreshedData;
 		}
 		return null;

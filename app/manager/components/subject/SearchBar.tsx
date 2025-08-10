@@ -1,6 +1,6 @@
 // /app/manager/components/subject/SearchBar.tsx
 import { useState, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 
 interface SearchBarProps {
 	placeholder: string;
@@ -12,7 +12,7 @@ interface SearchBarProps {
  */
 const SearchBar: React.FC<SearchBarProps> = ({ placeholder, onSearch }) => {
 	const [query, setQuery] = useState<string>("");
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	/**
 	 * Maneja el cambio en el campo de búsqueda

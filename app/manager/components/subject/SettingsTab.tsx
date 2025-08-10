@@ -1,6 +1,6 @@
 // /app/manager/components/subject/SettingsTab.tsx
 import { useState, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import { useRouter } from "next/navigation";
 import { Subject, Topic } from "../../contexts/SubjectContext";
 
@@ -36,7 +36,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 	isLoading = false,
 	isDeletingTopic = false,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const router = useRouter();
 
 	// Estados para edición de temas
@@ -255,7 +255,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 					{t("subjectDetail.topicsList")}
 				</h3>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-					{subject.topics.map((topic) => (
+					{(subject.topics || []).map((topic) => (
 						<div
 							key={topic.id}
 							className="p-4 bg-gray-100 rounded-md"

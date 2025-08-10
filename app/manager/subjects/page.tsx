@@ -1,24 +1,26 @@
 // /app/manager/subjects/page.tsx
 "use client";
 
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../hooks/useManagerTranslation";
 import Link from "next/link";
 import SubjectCard, {
 	SubjectCardProps,
 } from "../components/subject/SubjectCard";
 import useApiRequest from "../hooks/useApiRequest";
+import { LoadingSpinner, FadeIn } from "../components/common/AnimatedComponents";
 
 interface Subject extends SubjectCardProps {}
 
 export default function SubjectsPage() {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	// Usar el hook personalizado para gestionar la petición
 	const {
 		data: subjects = [],
 		loading: isLoading,
 		error,
-	} = useApiRequest("/api/subjects", "GET", [], true);
+	} = useApiRequest("/api/manager/subjects", "GET", [], true);
+
 
 	return (
 		<div>
@@ -51,25 +53,28 @@ export default function SubjectsPage() {
 
 			{isLoading ? (
 				<div className="flex justify-center items-center h-64">
-					<div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+					<LoadingSpinner size="xl" />
 				</div>
 			) : error ? (
 				<div className="text-center py-8 text-red-500">
-					<p>Error al cargar las asignaturas</p>
+					<p>{t("errors.loadSubjects")}</p>
 				</div>
 			) : (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					{subjects.map((subject) => (
-						<SubjectCard
-							key={subject.id}
-							id={subject.id}
-							title={subject.title}
-							description={subject.description}
-							administrator={subject.administrator}
-							topics={subject.topics}
-						/>
-					))}
-				</div>
+				<FadeIn>
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						{subjects.map((subject, index) => (
+							<FadeIn key={subject.id} delay={index * 100}>
+								<SubjectCard
+									id={subject.id}
+									title={subject.title}
+									description={subject.description}
+									administrator={subject.administrator}
+									topics={subject.topics}
+								/>
+							</FadeIn>
+						))}
+					</div>
+				</FadeIn>
 			)}
 		</div>
 	);

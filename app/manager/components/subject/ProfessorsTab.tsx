@@ -1,14 +1,17 @@
 // /app/manager/components/subject/ProfessorsTab.tsx
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 
 interface Professor {
 	id: string;
 	name: string;
 	email: string;
+	role?: string;
 }
 
 interface ProfessorsTabProps {
 	professors: Professor[];
+	administrators: Professor[];
+	currentUser: { role: string; id: string } | null;
 	onRemoveProfessor: (professorId: string) => void;
 	isLoading?: boolean;
 }
@@ -18,15 +21,59 @@ interface ProfessorsTabProps {
  */
 const ProfessorsTab: React.FC<ProfessorsTabProps> = ({
 	professors,
+	administrators,
+	currentUser,
 	onRemoveProfessor,
 	isLoading = false,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
+
+	/**
+	 * Verifica si un profesor puede ser eliminado
+	 */
+	const canRemoveProfessor = (professorId: string): boolean => {
+		// Solo los administradores pueden eliminar profesores
+		if (currentUser?.role !== 'admin') {
+			return false;
+		}
+
+		// Los administradores de la asignatura no pueden ser eliminados
+		const isAdministrator = administrators.some(admin => 
+			(admin.id || admin._id) === professorId
+		);
+		
+		return !isAdministrator;
+	};
+
+	/**
+	 * Verifica si un usuario es administrador de la asignatura
+	 */
+	const isProfessorAdmin = (professorId: string): boolean => {
+		return administrators.some(admin => 
+			(admin.id || admin._id) === professorId
+		);
+	};
 
 	/**
 	 * Renderiza el botón de eliminar profesor
 	 */
 	const renderDeleteButton = (professorId: string): JSX.Element => {
+		const canRemove = canRemoveProfessor(professorId);
+		const isAdmin = isProfessorAdmin(professorId);
+
+		if (!canRemove) {
+			if (isAdmin) {
+				return (
+					<span className="text-gray-400 text-sm flex items-center">
+						<svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+						</svg>
+						Administrador
+					</span>
+				);
+			}
+			return null; // No mostrar botón si no tiene permisos
+		}
 		return (
 			<button
 				className="text-red-500 hover:text-red-700 disabled:opacity-50 flex items-center"
@@ -96,9 +143,9 @@ const ProfessorsTab: React.FC<ProfessorsTabProps> = ({
 			</h3>
 
 			<div className="divide-y divide-gray-200">
-				{professors.map((professor) => (
+				{(professors || []).map((professor, index) => (
 					<div
-						key={professor.id}
+						key={professor.id || professor._id || `professor-${index}`}
 						className="flex items-center justify-between p-4 border-b last:border-b-0"
 					>
 						<div className="flex-grow">
@@ -109,7 +156,7 @@ const ProfessorsTab: React.FC<ProfessorsTabProps> = ({
 						</div>
 
 						<div className="flex items-center">
-							{renderDeleteButton(professor.id)}
+							{renderDeleteButton(professor.id || professor._id)}
 						</div>
 					</div>
 				))}

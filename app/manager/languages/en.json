@@ -101,7 +101,9 @@
 		"copyLink": "Copy link",
 		"copied": "Link copied!",
 		"save": "Save",
-		"confirmDelete": "Confirm"
+		"confirmDelete": "Confirm",
+		"topicTitlePlaceholder": "Enter the topic title",
+		"topicDescriptionPlaceholder": "Enter an optional description"
 	},
 	"common": {
 		"processing": "Processing...",
@@ -111,7 +113,43 @@
 		"cancel": "Cancel",
 		"confirm": "Confirm",
 		"delete": "Delete",
-		"confirmDelete": "Confirm deletion"
+		"confirmDelete": "Confirm deletion",
+		"title": "Title",
+		"description": "Description",
+		"add": "Add"
+	},
+	"resetPassword": {
+		"title": "AIQUIZ",
+		"subtitle": "Reset password",
+		"newPassword": "New password",
+		"confirmPassword": "Confirm password",
+		"resetButton": "Reset password",
+		"backToLogin": "Back to login",
+		"processing": "Processing...",
+		"success": "Password reset successfully",
+		"error": "Error resetting password",
+		"invalidToken": "Invalid or expired recovery token",
+		"passwordsNotMatch": "Passwords do not match",
+		"passwordTooShort": "Password must be at least 8 characters",
+		"tokenRequired": "Recovery token required"
+	},
+	"acceptInvitation": {
+		"title": "AIQUIZ",
+		"subtitle": "Accept invitation",
+		"name": "Full name",
+		"email": "Email address",
+		"password": "Password",
+		"confirmPassword": "Confirm password",
+		"acceptButton": "Accept invitation",
+		"backToLogin": "Back to login",
+		"processing": "Processing...",
+		"success": "Invitation accepted successfully",
+		"error": "Error accepting invitation",
+		"invalidToken": "Invalid or expired invitation token",
+		"passwordsNotMatch": "Passwords do not match",
+		"passwordTooShort": "Password must be at least 8 characters",
+		"emailNotMatch": "Email does not match invitation",
+		"tokenRequired": "Invitation token required"
 	},
 	"confirmation": {
 		"deleteSubject": {
@@ -187,11 +225,24 @@
 		"generateNewQuestions": "Generate new",
 		"settings": "Settings",
 		"generateQuestionsTitle": "Generate questions",
-		"easy": "EASY",
-		"intermediate": "INTERMEDIATE",
-		"advanced": "ADVANCED",
+		"easy": "Easy",
+		"intermediate": "Medium",
+		"advanced": "Advanced", 
 		"numberOfQuestions": "Number of questions",
-		"generateQuestions": "Generate questions"
+		"generateQuestions": "Generate questions",
+		"subtopic": "Subtopic (optional)",
+		"allSubtopics": "All subtopics",
+		"searchQuestionsPlaceholder": "Search questions...",
+		"noQuestionsFound": "No questions found",
+		"generatingQuestions": "Generating {{count}} questions with {{difficulty}} difficulty...",
+		"questionsGeneratedSuccess": "✅ {{count}} questions generated successfully",
+		"questionsGenerationError": "❌ Error generating questions: {{error}}",
+		"downloadingFile": "Downloading file...",
+		"downloadSuccess": "✅ File downloaded successfully",
+		"downloadError": "❌ Download error: {{error}}",
+		"selectAtLeastOneQuestion": "Select at least one question to download",
+		"pdf": "PDF",
+		"moodle": "Moodle XML"
 	},
 	"subtopicDetail": {
 		"documentsAndVideos": "Documents and videos",
@@ -207,7 +258,8 @@
 		"deleteWarning": "This action cannot be undone",
 		"saveChanges": "Save changes",
 		"cancel": "Cancel",
-		"edit": "Editar",
+		"edit": "Edit",
+		"noDescription": "No description",
 		"contentDescription": "The content of documents will be used to generate questions for the subtopic.",
 		"uploadDocument": "Upload document",
 		"enterVideoUrl": "Enter URL",
@@ -215,5 +267,25 @@
 		"allowedFiles": "Accepted formats: pdf, ppt, doc, docx...",
 		"noFiles": "No documents or videos associated with this subtopic.",
 		"deleteFile": "Delete file"
+	},
+	"errors": {
+		"loadSubjects": "Error loading subjects",
+		"validatingToken": "Error validating invitation token",
+		"sendingRecoveryEmail": "Error sending recovery email",
+		"savingChanges": "Error saving changes",
+		"processingFile": "Error processing file",
+		"invalidFile": "Invalid file",
+		"networkError": "Network error",
+		"unauthorized": "Unauthorized",
+		"notFound": "Not found",
+		"serverError": "Server error"
+	},
+	"success": {
+		"accountActivated": "Your account has been activated successfully. You can now log in.",
+		"passwordReset": "Your password has been reset successfully. You can now log in.",
+		"changesSaved": "Changes saved successfully",
+		"fileUploaded": "File uploaded successfully",
+		"emailSent": "Email sent successfully",
+		"copied": "Copied to clipboard"
 	}
 }

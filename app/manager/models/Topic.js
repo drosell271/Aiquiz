@@ -67,6 +67,7 @@ TopicSchema.statics.updateOrder = async function (subjectId, topicsOrder) {
 TopicSchema.index({ subject: 1, order: 1 });
 TopicSchema.index({ title: "text", description: "text" });
 
-const Topic = mongoose.model("Topic", TopicSchema);
+// Export the model, avoiding OverwriteModelError during development
+const Topic = mongoose.models.Topic || mongoose.model("Topic", TopicSchema);
 
 module.exports = Topic;

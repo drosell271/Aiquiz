@@ -1,6 +1,6 @@
 // /app/manager/components/subject/InviteModal.tsx
 import { useState, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 
 interface InviteModalProps {
 	onClose: () => void;
@@ -16,7 +16,7 @@ const InviteModal: React.FC<InviteModalProps> = ({
 	onInvite,
 	isLoading = false,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	// Estado unificado para el formulario
 	const [formData, setFormData] = useState({

@@ -1,6 +1,6 @@
 // /app/manager/components/subtopic/SettingsTab.tsx
 import { useState, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import { useRouter } from "next/navigation";
 import { Subtopic } from "../../contexts/SubtopicContext";
 import { ConfirmationModal } from "../common";
@@ -25,7 +25,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 	onDeleteSubtopic,
 	isLoading = false,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const router = useRouter();
 
 	// Estados para UI
@@ -311,23 +311,6 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 				)}
 			</div>
 
-			<div className="mb-6">
-				<label className="block text-sm font-medium text-gray-700 mb-1">
-					{t("subtopicDetail.topic") || "Tema"}
-				</label>
-				<div className="p-2 bg-gray-100 rounded-md">
-					{subtopic.topicTitle}
-				</div>
-			</div>
-
-			<div className="mb-6">
-				<label className="block text-sm font-medium text-gray-700 mb-1">
-					{t("subtopicDetail.subject") || "Asignatura"}
-				</label>
-				<div className="p-2 bg-gray-100 rounded-md">
-					{subtopic.subjectTitle}
-				</div>
-			</div>
 
 			{renderDeleteSection()}
 

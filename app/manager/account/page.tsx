@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../hooks/useManagerTranslation";
 import Header from "../components/common/Header";
 import useApiRequest from "../hooks/useApiRequest";
 
@@ -17,7 +17,7 @@ const FACULTIES = [
 ];
 
 const AccountPage = () => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const router = useRouter();
 
 	const [profileData, setProfileData] = useState({
@@ -25,6 +25,8 @@ const AccountPage = () => {
 		email: "",
 		faculty: "",
 	});
+
+	const [userRole, setUserRole] = useState("professor");
 
 	const [passwordData, setPasswordData] = useState({
 		currentPassword: "",
@@ -47,13 +49,13 @@ const AccountPage = () => {
 		data: userData,
 		loading: loadingUserData,
 		error: userDataError,
-	} = useApiRequest("/api/account", "GET");
+	} = useApiRequest("/api/manager/auth/me", "GET");
 
 	const {
 		makeRequest: updateProfile,
 		loading: updatingProfile,
 		error: updateProfileError,
-	} = useApiRequest("/api/account", "PUT", null, false);
+	} = useApiRequest("/api/manager/auth/me", "PUT", null, false);
 
 	const {
 		makeRequest: changePassword,
@@ -74,6 +76,7 @@ const AccountPage = () => {
 				email: userData.user.email ?? "",
 				faculty: userData.user.faculty ?? "",
 			});
+			setUserRole(userData.user.role ?? "professor");
 		}
 	}, [userData]);
 
@@ -144,7 +147,13 @@ const AccountPage = () => {
 			return;
 		}
 		setProfileMessage({ type: "", text: "" });
-		const response = await updateProfile(profileData);
+		
+		// Para profesores, excluir email y faculty de la actualización
+		const updateData = userRole === "professor" 
+			? { name: profileData.name }
+			: profileData;
+			
+		const response = await updateProfile(updateData);
 
 		if (response?.success) {
 			setProfileMessage({
@@ -290,6 +299,11 @@ const AccountPage = () => {
 										className="block text-sm font-medium text-gray-700 mb-1"
 									>
 										{t("account.email") ?? "Correo"}
+										{userRole === "professor" && (
+											<span className="text-xs text-gray-500 ml-2">
+												(No editable)
+											</span>
+										)}
 									</label>
 									<input
 										type="email"
@@ -297,48 +311,50 @@ const AccountPage = () => {
 										name="email"
 										value={profileData.email}
 										onChange={handleProfileChange}
-										disabled={!isEditing || updatingProfile}
+										disabled={!isEditing || updatingProfile || userRole === "professor"}
 										className={`w-full p-2 border rounded-md ${
-											!isEditing
+											!isEditing || userRole === "professor"
 												? "bg-gray-100"
 												: "border-gray-300 focus:ring-2 focus:ring-blue-500"
 										}`}
 									/>
 								</div>
 
-								<div>
-									<label
-										htmlFor="faculty"
-										className="block text-sm font-medium text-gray-700 mb-1"
-									>
-										{t("account.faculty") ?? "Facultad"}
-									</label>
-									<select
-										id="faculty"
-										name="faculty"
-										value={profileData.faculty}
-										onChange={handleProfileChange}
-										disabled={!isEditing || updatingProfile}
-										className={`w-full p-2 border rounded-md ${
-											!isEditing
-												? "bg-gray-100"
-												: "border-gray-300 focus:ring-2 focus:ring-blue-500"
-										}`}
-									>
-										<option value="">
-											{t("account.selectFaculty") ??
-												"Selecciona una facultad"}
-										</option>
-										{FACULTIES.map((faculty) => (
-											<option
-												key={faculty}
-												value={faculty}
-											>
-												{faculty}
+								{userRole === "admin" && (
+									<div>
+										<label
+											htmlFor="faculty"
+											className="block text-sm font-medium text-gray-700 mb-1"
+										>
+											{t("account.faculty") ?? "Facultad"}
+										</label>
+										<select
+											id="faculty"
+											name="faculty"
+											value={profileData.faculty}
+											onChange={handleProfileChange}
+											disabled={!isEditing || updatingProfile}
+											className={`w-full p-2 border rounded-md ${
+												!isEditing
+													? "bg-gray-100"
+													: "border-gray-300 focus:ring-2 focus:ring-blue-500"
+											}`}
+										>
+											<option value="">
+												{t("account.selectFaculty") ??
+													"Selecciona una facultad"}
 											</option>
-										))}
-									</select>
-								</div>
+											{FACULTIES.map((faculty) => (
+												<option
+													key={faculty}
+													value={faculty}
+												>
+													{faculty}
+												</option>
+											))}
+										</select>
+									</div>
+								)}
 
 								{userData?.user?.lastLogin && (
 									<div>

@@ -43,7 +43,7 @@ const SubjectLayoutContent = ({ children }: { children: React.ReactNode }) => {
 			{/* Sidebar fijo en el lado izquierdo SIEMPRE visible */}
 			<div className="fixed top-16 left-0 bottom-0 w-64 z-40 hidden md:block">
 				<SubjectDetailSidebar
-					subjectId={subject.id}
+					subjectId={subject.id || subject._id}
 					subjectTitle={subject.title}
 					topics={subject.topics || []}
 				/>

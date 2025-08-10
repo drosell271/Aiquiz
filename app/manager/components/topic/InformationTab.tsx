@@ -1,6 +1,6 @@
 // /app/manager/components/topic/InformationTab.tsx
 import { useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import { Topic } from "../../contexts/TopicContext";
 
 interface InformationTabProps {
@@ -27,7 +27,7 @@ const InformationTab: React.FC<InformationTabProps> = ({
 	onSaveChanges,
 	isLoading = false,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 
 	/**
 	 * Renderiza los botones de acción según el modo edición

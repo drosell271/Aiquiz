@@ -2,12 +2,13 @@ const { createServer } = require("http");
 const { parse } = require("url");
 const next = require("next");
 const nextConfig = require("./next.config");
+const logger = require('./app/utils/logger').create('SERVER');
 
 const basePath = nextConfig.basePath || "";
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = nextConfig.env.HOST_SERVER || "localhost";
-const port = nextConfig.env.PORT_SERVER || 3000;
+const hostname = process.env.HOST_SERVER || "localhost";
+const port = process.env.PORT_SERVER || 3000;
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
@@ -27,17 +28,17 @@ app.prepare().then(() => {
 				await handle(req, res, parsedUrl);
 			}
 		} catch (err) {
-			console.error("Error occurred handling", req.url, err);
+			logger.error("Error occurred handling request", { url: req.url, error: err.message, stack: err.stack });
 			res.statusCode = 500;
 			res.end("internal server error");
 		}
 	})
 		.once("error", (err) => {
-			console.error(err);
+			logger.error("Server startup error", { error: err.message, stack: err.stack });
 			process.exit(1);
 		})
 		.listen(port, () => {
 			const url = `http://${hostname}:${port}${basePath}`;
-			console.log(`> Ready on ${url}`);
+			logger.success(`Server ready on ${url}`, { hostname, port, basePath, dev });
 		});
 });

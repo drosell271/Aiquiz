@@ -74,6 +74,7 @@ QuestionnaireSchema.index({ topic: 1 });
 QuestionnaireSchema.index({ createdBy: 1 });
 QuestionnaireSchema.index({ title: "text", description: "text" });
 
-const Questionnaire = mongoose.model("Questionnaire", QuestionnaireSchema);
+// Export the model, avoiding OverwriteModelError during development
+const Questionnaire = mongoose.models.Questionnaire || mongoose.model("Questionnaire", QuestionnaireSchema);
 
 module.exports = Questionnaire;

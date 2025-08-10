@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+const logger = require('../../utils/logger').create('API:ERROR_LOG');
+
 /**
  * @swagger
  * /error-log:
@@ -78,8 +80,7 @@ export async function POST(request) {
 		} = await request.json();
 		//get request body
 		//const body = await request.text();
-		console.log(
-			"received params: ",
+		logger.info('Error log request received', {
 			error,
 			date,
 			studentEmail,
@@ -87,7 +88,7 @@ export async function POST(request) {
 			difficulty,
 			topic,
 			numQuestions
-		);
+		});
 		//save error to file
 		const fs = require("fs");
 		const path = require("path");
@@ -104,11 +105,11 @@ export async function POST(request) {
 		};
 		fs.appendFile(filePath, JSON.stringify(errorFull), (err) => {
 			if (err) throw err;
-			console.log("Error saved to file");
+			logger.info('Error saved to file', { filePath });
 		});
 		return NextResponse.json({ msg: "error saved to file" });
 	} catch (error) {
-		console.error("Error during request:", error.message);
+		logger.error('Error during error logging request', { error: error.message, stack: error.stack });
 		return new Response("Error during request", { status: 500 });
 	}
 }

@@ -1,6 +1,8 @@
 import Student from "../../models/Student.js";
 import dbConnect from "../../utils/dbconnect.js";
 
+const logger = require('../../utils/logger').create('API:STUDENT');
+
 /**
  * @swagger
  * /student:
@@ -69,7 +71,10 @@ export async function POST(req) {
 		const body = await req.json(); // Extrae el cuerpo del request
 		const { email } = body;
 
+		logger.debug('Student data request received', { email });
+
 		if (!email) {
+			logger.warn('Student request missing email parameter');
 			return new Response(
 				JSON.stringify({ message: "Email is required" }),
 				{
@@ -83,6 +88,7 @@ export async function POST(req) {
 		const student = await Student.findOne({ studentEmail: email });
 
 		if (!student) {
+			logger.info('Student not found', { email });
 			return new Response(
 				JSON.stringify({ message: "Student not found" }),
 				{
@@ -92,12 +98,21 @@ export async function POST(req) {
 			);
 		}
 
+		logger.info('Student data retrieved successfully', { 
+			email, 
+			studentId: student._id,
+			subjectCount: student.subjects?.length || 0
+		});
+
 		return new Response(JSON.stringify(student), {
 			status: 200,
 			headers: { "Content-Type": "application/json" },
 		});
 	} catch (error) {
-		console.error("Error fetching student data:", error);
+		logger.error("Error fetching student data", { 
+			error: error.message, 
+			stack: error.stack 
+		});
 		return new Response(JSON.stringify({ message: "Server error" }), {
 			status: 500,
 			headers: { "Content-Type": "application/json" },

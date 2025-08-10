@@ -1,6 +1,6 @@
 // /app/manager/components/topic/SubtopicsTab.tsx
 import { useState, useCallback, useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import { Subtopic } from "../../contexts/TopicContext";
 import SearchBar from "../subject/SearchBar";
 
@@ -22,7 +22,7 @@ const SubtopicsTab: React.FC<SubtopicsTabProps> = ({
 	handleAddSubtopic,
 	isLoading = false,
 }) => {
-	const { t } = useTranslation();
+	const { t } = useManagerTranslation();
 	const [filteredSubtopics, setFilteredSubtopics] =
 		useState<Subtopic[]>(subtopics);
 
