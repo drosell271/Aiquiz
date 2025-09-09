@@ -83,6 +83,61 @@ class MockRAGManager {
         return result;
     }
 
+    async processDocument(document, contextId, uploadedBy) {
+        if (!this.initialized) {
+            await this.initialize();
+        }
+
+        if (this.enableLogging) {
+            console.log('[Mock RAG] Procesando documento de texto:', document.title || 'Sin título');
+        }
+
+        // Simular procesamiento
+        await new Promise(resolve => setTimeout(resolve, 150));
+
+        // Simular datos de procesamiento para texto
+        const documentId = crypto.randomUUID();
+        const textLength = document.content ? document.content.length : 0;
+        const wordsCount = document.content ? document.content.split(/\s+/).length : 0;
+        
+        const mockStats = {
+            chunks: Math.floor(textLength / 300) + 1, // ~300 chars por chunk
+            textLength: textLength,
+            wordsCount: wordsCount,
+            processingTime: 100 + Math.random() * 50,
+            embeddingsGenerated: Math.floor(textLength / 300) + 1,
+            quality: 'good'
+        };
+
+        const result = {
+            success: true,
+            documentId: documentId,
+            chunks: mockStats.chunks,
+            processingTime: mockStats.processingTime,
+            stats: mockStats,
+            metadata: {
+                documentId: documentId,
+                title: document.title,
+                type: document.metadata?.type || 'text_document',
+                contextId: contextId,
+                uploadedBy: uploadedBy,
+                ...mockStats,
+                storedAt: new Date().toISOString()
+            },
+            message: 'Documento procesado exitosamente (modo desarrollo)'
+        };
+
+        if (this.enableLogging) {
+            console.log('[Mock RAG] Documento procesado:', {
+                documentId: documentId,
+                chunks: mockStats.chunks,
+                textLength: textLength
+            });
+        }
+
+        return result;
+    }
+
     async semanticSearch(query, filters = {}, limit = 10) {
         if (!this.initialized) {
             await this.initialize();

@@ -6,54 +6,75 @@ import File from "@models/File";
 import User from "@models/User";
 import { withAuth, handleError } from "@utils/authMiddleware";
 
+// Importaciones estáticas de RAG Managers
+let RAGManagerV2, RAGManager, MockRAGManager;
+
 // Función para cargar RAG Manager dinámicamente (con fallback a Mock)
 async function loadRAGManager() {
-	// Intentar primero con RAG real si Qdrant está disponible
-	console.log('[Files API] Verificando disponibilidad de Qdrant...');
+	console.log('[Files API] 🚀 Intentando cargar RAG Manager real...');
 	
 	// Verificar si Qdrant está corriendo
 	try {
 		const qdrantResponse = await fetch('http://localhost:6333/').catch(() => null);
 		if (qdrantResponse && qdrantResponse.ok) {
-			console.log('[Files API] Qdrant available, loading RAG Manager V2');
+			console.log('[Files API] ✅ Qdrant disponible, cargando RAG Manager V2...');
 			
 			try {
-				const RAGManagerV2 = require("@rag/core/ragManagerV2");
+				if (!RAGManagerV2) {
+					console.log('[Files API] 📦 Importando RAG Manager V2...');
+					const ragModule = await import("@rag/core/ragManagerV2");
+					RAGManagerV2 = ragModule.default || ragModule;
+				}
+				
+				console.log('[Files API] 🔧 Creando instancia de RAG Manager V2...');
 				const ragManager = new RAGManagerV2({
 					enableLogging: true,
 					chunkSize: 512,
 					overlap: 50,
 					embeddingModel: 'Xenova/all-MiniLM-L6-v2'
 				});
+				
+				console.log('[Files API] ✅ RAG Manager V2 creado exitosamente');
 				return { ragManager, isMock: false };
+				
 			} catch (realError) {
-				console.warn('[Files API] Error cargando RAG Manager V2:', realError.message);
+				console.warn('[Files API] ⚠️ Error con RAG Manager V2:', realError.message);
+				console.warn('[Files API] Stack trace:', realError.stack);
 				
 				// Fallback al RAG Manager original
 				try {
-					const RAGManager = require("@rag/core/ragManager");
+					console.log('[Files API] 🔄 Intentando RAG Manager original...');
+					if (!RAGManager) {
+						const ragModule = await import("@rag/core/ragManager");
+						RAGManager = ragModule.default || ragModule;
+					}
 					const ragManager = new RAGManager();
+					console.log('[Files API] ✅ RAG Manager original cargado');
 					return { ragManager, isMock: false };
 				} catch (fallbackError) {
-					console.warn('[Files API] Error cargando RAG Manager original:', fallbackError.message);
+					console.warn('[Files API] ⚠️ Error con RAG Manager original:', fallbackError.message);
 				}
 			}
 		} else {
-			console.log('[Files API] Qdrant no disponible, usando Mock');
+			console.log('[Files API] ❌ Qdrant no disponible, usando Mock');
 		}
 	} catch (healthError) {
-		console.log('[Files API] Error verificando Qdrant:', healthError.message);
+		console.log('[Files API] ❌ Error verificando Qdrant:', healthError.message);
 	}
 	
-	// Fallback a Mock si Qdrant no está disponible o hay errores
-	console.log('[Files API] Usando Mock RAG Manager como fallback');
+	// Fallback a Mock si todo falla
+	console.log('[Files API] 🛠️ Usando Mock RAG Manager como fallback');
 	try {
-		const MockRAGManager = require("@rag/core/mockRAGManager");
+		if (!MockRAGManager) {
+			const mockModule = await import("@rag/core/mockRAGManager");
+			MockRAGManager = mockModule.default || mockModule;
+		}
 		const ragManager = new MockRAGManager();
+		console.log('[Files API] ✅ Mock RAG Manager cargado');
 		return { ragManager, isMock: true };
 	} catch (mockError) {
-		console.error('[Files API] Error cargando Mock RAG Manager:', mockError.message);
-		throw new Error(`Mock RAG Manager no disponible: ${mockError.message}`);
+		console.error('[Files API] ❌ Error crítico cargando Mock RAG Manager:', mockError.message);
+		throw new Error(`Sistema RAG completamente no disponible: ${mockError.message}`);
 	}
 }
 
@@ -310,7 +331,10 @@ async function uploadFile(request, context) {
 			
 			// Fallback final a Mock si todo falla
 			try {
-				const MockRAGManager = require("@rag/core/mockRAGManager");
+				if (!MockRAGManager) {
+					const mockModule = await import("@rag/core/mockRAGManager");
+					MockRAGManager = mockModule.default || mockModule;
+				}
 				const mockRagManager = new MockRAGManager();
 				await mockRagManager.initialize();
 				ragResult = await mockRagManager.processPDF(fileForRAG, context_rag, context.user.id);

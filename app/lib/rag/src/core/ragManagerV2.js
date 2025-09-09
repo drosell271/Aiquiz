@@ -254,6 +254,143 @@ class RAGManagerV2 {
     }
 
     /**
+     * Procesa un documento de texto (ej: transcripciones de video)
+     * 
+     * @param {Object} document - Documento con contenido textual
+     * @param {string} document.content - Texto a procesar
+     * @param {string} document.title - Título del documento
+     * @param {Object} document.metadata - Metadatos adicionales
+     * @param {string} contextId - ID del contexto
+     * @param {string} uploadedBy - ID del usuario
+     * @returns {Promise<Object>} Resultado del procesamiento
+     */
+    async processDocument(document, contextId, uploadedBy) {
+        await this.ensureInitialized();
+
+        if (this.state.isProcessing) {
+            throw new Error('RAG Manager está procesando otro documento. Intente más tarde.');
+        }
+
+        this.state.isProcessing = true;
+
+        try {
+            if (this.config.enableLogging) {
+                console.log(`[RAG Manager V2] Procesando documento: ${document.title || 'Sin título'}`);
+            }
+
+            const startTime = Date.now();
+
+            // Validar entrada
+            if (!document.content || typeof document.content !== 'string') {
+                throw new Error('El documento debe tener contenido textual válido');
+            }
+
+            // 1. Generar ID único del documento
+            const documentId = uuidv4();
+
+            // 2. Crear chunks del texto
+            const chunks = await this.textChunker.chunkDocument(document.content, {
+                documentId: documentId,
+                title: document.title,
+                type: document.metadata?.type || 'text_document',
+                contextId: contextId,
+                uploadedBy: uploadedBy,
+                ...document.metadata
+            });
+
+            if (this.config.enableLogging) {
+                console.log(`[RAG Manager V2] Generados ${chunks.length} chunks de texto`);
+            }
+
+            // 3. Generar embeddings para cada chunk
+            const chunksWithEmbeddings = [];
+            for (let i = 0; i < chunks.length; i++) {
+                const chunk = chunks[i];
+                
+                try {
+                    const embedding = await this.embeddingService.generateEmbedding(chunk.text);
+                    
+                    chunksWithEmbeddings.push({
+                        id: chunk.id || uuidv4(),
+                        text: chunk.text, // Usar 'text' para consistencia con storage
+                        embedding: embedding,
+                        metadata: {
+                            ...chunk.metadata,
+                            chunkIndex: i,
+                            documentId: documentId
+                        }
+                    });
+                } catch (embeddingError) {
+                    console.error(`[RAG Manager V2] Error generando embedding para chunk ${i}:`, embeddingError);
+                }
+            }
+
+            if (this.config.enableLogging) {
+                console.log(`[RAG Manager V2] Generados ${chunksWithEmbeddings.length} embeddings`);
+            }
+
+            // 4. Almacenar en Qdrant
+            const storageResult = await this.qdrantStorage.storeDocument({
+                id: documentId,
+                title: document.title,
+                type: document.metadata?.type || 'text_document',
+                contextId: contextId,
+                uploadedBy: uploadedBy,
+                metadata: document.metadata
+            }, chunksWithEmbeddings);
+
+            // 5. Actualizar estadísticas
+            this.state.stats.documentsProcessed++;
+            this.state.stats.chunksGenerated += chunks.length;
+            this.state.stats.embeddingsCreated += chunksWithEmbeddings.length;
+            
+            const processingTime = Date.now() - startTime;
+            this.state.stats.avgProcessingTime = 
+                (this.state.stats.avgProcessingTime + processingTime) / 2;
+
+            const documentMetadata = {
+                documentId: documentId,
+                title: document.title,
+                type: document.metadata?.type || 'text_document',
+                contextId: contextId,
+                uploadedBy: uploadedBy,
+                chunks: chunks.length,
+                embeddingsGenerated: chunksWithEmbeddings.length,
+                textLength: document.content.length,
+                wordsCount: document.content.split(/\s+/).length,
+                processingTime: processingTime,
+                storedAt: new Date().toISOString(),
+                ...document.metadata
+            };
+
+            if (this.config.enableLogging) {
+                console.log(`[RAG Manager V2] Documento procesado: ${chunks.length} chunks, ${processingTime}ms`);
+            }
+
+            return {
+                success: true,
+                documentId: documentId,
+                chunks: chunks.length,
+                processingTime: processingTime,
+                stats: {
+                    chunks: chunks.length,
+                    textLength: document.content.length,
+                    wordsCount: documentMetadata.wordsCount,
+                    embeddingsGenerated: chunksWithEmbeddings.length,
+                    quality: 'good'
+                },
+                metadata: documentMetadata
+            };
+
+        } catch (error) {
+            console.error(`[RAG Manager V2] Error procesando documento:`, error);
+            throw error;
+        } finally {
+            this.state.isProcessing = false;
+        }
+    }
+
+    /**
      * Realiza búsqueda semántica
      */
     async semanticSearch(query, filters = {}, options = {}) {

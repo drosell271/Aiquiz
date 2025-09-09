@@ -11,8 +11,130 @@ import logger from "@utils/logger.js";
 import fs from 'fs';
 import path from 'path';
 
+// RAG Integration
+let RAGManagerV2, MockRAGManager;
+
 // Logger específico para generación de preguntas
 const questionsLogger = logger.create('ManagerQuestions');
+
+/**
+ * Inicializa el sistema RAG
+ * @returns {Object|null} RAG Manager instance o null si no está disponible
+ */
+async function initializeRAG() {
+    try {
+        // Verificar si Qdrant está disponible
+        const qdrantResponse = await fetch('http://localhost:6333/').catch(() => null);
+        
+        if (qdrantResponse && qdrantResponse.ok) {
+            questionsLogger.debug('Inicializando RAG Manager V2 para generación de preguntas');
+            
+            if (!RAGManagerV2) {
+                const ragModule = await import("@rag/core/ragManagerV2");
+                RAGManagerV2 = ragModule.default || ragModule;
+            }
+            
+            const ragManager = new RAGManagerV2({ enableLogging: true });
+            await ragManager.initialize();
+            
+            questionsLogger.info('RAG Manager V2 inicializado para generación de preguntas');
+            return ragManager;
+        } else {
+            questionsLogger.debug('Qdrant no disponible, usando Mock RAG para generación de preguntas');
+            
+            if (!MockRAGManager) {
+                const mockModule = await import("@rag/core/mockRAGManager");
+                MockRAGManager = mockModule.default || mockModule;
+            }
+            
+            const mockManager = new MockRAGManager();
+            await mockManager.initialize();
+            return mockManager;
+        }
+    } catch (error) {
+        questionsLogger.warn('Error inicializando RAG, continuando sin RAG:', error.message);
+        return null;
+    }
+}
+
+/**
+ * Busca contenido relevante en el RAG para un tema/subtema
+ * @param {Object} ragManager - Instancia del RAG Manager
+ * @param {string} topicTitle - Título del tema
+ * @param {string} subtopicTitle - Título del subtema (opcional)
+ * @param {string} topicId - ID del tema
+ * @param {string} subtopicId - ID del subtema (opcional)
+ * @returns {Object} Contenido encontrado y estadísticas
+ */
+async function searchRAGContent(ragManager, topicTitle, subtopicTitle, topicId, subtopicId) {
+    try {
+        // Preparar términos de búsqueda
+        let searchQuery = topicTitle;
+        if (subtopicTitle) {
+            searchQuery += ` ${subtopicTitle}`;
+        }
+        
+        // Preparar filtros
+        const filters = {
+            topic_id: topicId
+        };
+        
+        if (subtopicId) {
+            filters.subtopic_id = subtopicId;
+        }
+        
+        // Configurar opciones de búsqueda
+        const searchOptions = {
+            limit: 10, // Máximo 10 chunks más relevantes
+            threshold: 0.3, // Umbral de relevancia más permisivo
+            includeMetadata: true,
+            rerankResults: true
+        };
+        
+        questionsLogger.debug(`Buscando contenido RAG para: "${searchQuery}"`);
+        
+        const searchResult = await ragManager.semanticSearch(
+            searchQuery,
+            filters,
+            searchOptions
+        );
+        
+        if (searchResult.success && searchResult.results.length > 0) {
+            questionsLogger.info(`Encontrados ${searchResult.results.length} chunks relevantes en RAG`);
+            
+            // Combinar el contenido de los chunks más relevantes
+            const relevantContent = searchResult.results
+                .slice(0, 5) // Top 5 chunks más relevantes
+                .map(result => result.text || result.content)
+                .join('\n\n');
+            
+            return {
+                hasContent: true,
+                content: relevantContent,
+                stats: {
+                    totalFound: searchResult.results.length,
+                    contentLength: relevantContent.length,
+                    avgSimilarity: searchResult.results.reduce((sum, r) => sum + (r.similarity || 0), 0) / searchResult.results.length
+                }
+            };
+        } else {
+            questionsLogger.debug('No se encontró contenido relevante en RAG');
+            return {
+                hasContent: false,
+                content: '',
+                stats: { totalFound: 0, contentLength: 0, avgSimilarity: 0 }
+            };
+        }
+        
+    } catch (error) {
+        questionsLogger.error('Error buscando contenido en RAG:', error);
+        return {
+            hasContent: false,
+            content: '',
+            stats: { totalFound: 0, contentLength: 0, avgSimilarity: 0 }
+        };
+    }
+}
 
 /**
  * @swagger
@@ -186,6 +308,27 @@ async function generateQuestions(request, context) {
             }
         }
 
+        // Integración RAG: Buscar contenido relevante
+        questionsLogger.info('Iniciando búsqueda de contenido RAG para generación de preguntas');
+        const ragManager = await initializeRAG();
+        let ragContent = { hasContent: false, content: '', stats: {} };
+        
+        if (ragManager) {
+            ragContent = await searchRAGContent(
+                ragManager,
+                topic.title,
+                subtopic?.title,
+                topicId,
+                subtopicId
+            );
+            
+            questionsLogger.info('Búsqueda RAG completada:', {
+                hasContent: ragContent.hasContent,
+                contentLength: ragContent.stats.contentLength,
+                chunksFound: ragContent.stats.totalFound
+            });
+        }
+
         // Preparar prompt para generar preguntas
         const promptManager = getPromptManager();
 
@@ -196,13 +339,31 @@ async function generateQuestions(request, context) {
             difficulty: difficulty, // Mantener capitalización original
             count: count,
             type: type === "Verdadero/Falso" ? "true_false" : "multiple_choice",
-            includeExplanations
+            includeExplanations,
+            // Integración RAG
+            hasRAGContent: ragContent.hasContent,
+            ragContent: ragContent.content,
+            ragStats: ragContent.stats
         };
 
-        console.log('[Generate Questions API] Context info para prompt:', context_info);
+        console.log('[Generate Questions API] Context info para prompt:', {
+            ...context_info,
+            ragContent: context_info.ragContent ? `${context_info.ragContent.length} caracteres` : 'Sin contenido RAG'
+        });
 
         // Generar prompt específico para creación de preguntas
         const prompt = promptManager.buildPrompt('GENERATE_MANAGER_QUESTIONS', context_info);
+        
+        // Log sobre el uso de RAG
+        if (context_info.hasRAGContent) {
+            questionsLogger.info(`Generando preguntas con contenido RAG específico del tema`, {
+                ragChunks: context_info.ragStats.totalFound,
+                contentLength: context_info.ragStats.contentLength,
+                avgSimilarity: context_info.ragStats.avgSimilarity?.toFixed(3)
+            });
+        } else {
+            questionsLogger.info('Generando preguntas con conocimiento general de IA (sin contenido RAG específico)');
+        }
         
         console.log('[Generate Questions API] Prompt generado completo:', prompt);
 
@@ -361,7 +522,17 @@ async function generateQuestions(request, context) {
                 verified: q.verified,
                 generated: q.generated,
                 createdAt: q.createdAt
-            }))
+            })),
+            // Información sobre el uso de RAG
+            ragInfo: {
+                usedRAG: ragContent.hasContent,
+                source: ragContent.hasContent ? 'contenido_específico_tema' : 'conocimiento_general_ia',
+                ragStats: ragContent.hasContent ? {
+                    chunksFound: ragContent.stats.totalFound,
+                    contentLength: ragContent.stats.contentLength,
+                    avgSimilarity: ragContent.stats.avgSimilarity
+                } : null
+            }
         }, { status: 201 });
 
     } catch (error) {

@@ -15,6 +15,8 @@ await dbConnect();
 const MANAGER_PROMPTS = {
     GENERATE_MANAGER_QUESTIONS: `Genera exactamente {count} preguntas de opción múltiple sobre el tema "{topic}"{subtopic} con nivel de dificultad {difficulty}.
 
+{content_source}
+
 Requisitos:
 - Cada pregunta debe tener 4 opciones de respuesta
 - Solo una opción debe ser correcta
@@ -81,6 +83,32 @@ class PromptManager {
             prompt = prompt.replace('{explanations}', 'Incluye explicaciones detalladas para cada respuesta correcta');
         } else {
             prompt = prompt.replace('{explanations}', 'Las explicaciones son opcionales');
+        }
+
+        // Procesar contenido RAG
+        if (variables.hasRAGContent && variables.ragContent) {
+            const ragContentSection = `IMPORTANTE: Utiliza el siguiente contenido específico del tema para generar las preguntas:
+
+--- CONTENIDO DEL TEMA ---
+${variables.ragContent}
+--- FIN DEL CONTENIDO ---
+
+Instrucciones adicionales:
+- Las preguntas DEBEN basarse principalmente en el contenido proporcionado arriba
+- Utiliza datos, conceptos y ejemplos específicos del material de clase
+- Si necesitas complementar con conocimiento general, hazlo de manera coherente con el contenido
+- Las preguntas deben demostrar comprensión del material específico del curso`;
+            
+            prompt = prompt.replace('{content_source}', ragContentSection);
+        } else {
+            const generalContentSection = `Genera preguntas utilizando tu conocimiento general sobre el tema.
+            
+Las preguntas deben ser:
+- Académicamente apropiadas para el nivel educativo
+- Coherentes con conceptos fundamentales del tema
+- Variadas en enfoque (conceptos, aplicación, análisis)`;
+            
+            prompt = prompt.replace('{content_source}', generalContentSection);
         }
 
         // Reemplazar variables restantes

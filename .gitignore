@@ -47,4 +47,8 @@ uploads/
 test-*
 *.backup
 
+# pdf-parse dependency test file (required for library to work)
+/test/
+
+/transcriptions/
 .env

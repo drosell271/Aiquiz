@@ -3,7 +3,8 @@ import { getModelResponse } from "@utils/llmManager.js";
 import { fillPrompt } from "@utils/promptManager.js";
 import { ABC_Testing_List } from "@app/constants/abctesting.js";
 import { assignAIModel } from "@utils/modelManager.js";
-import { getRAGContextForSubtopic, enhancePromptWithRAG } from "@utils/ragContextManager.js";
+// Importaciones para RAG unificado (mismo sistema que profesores)
+let RAGManagerV2, MockRAGManager;
 
 import dbConnect from "@utils/dbconnect.js";
 import Student from "@app/models/Student.js";
@@ -94,16 +95,17 @@ await dbConnect();
 
 // Manejar las solicitudes HTTP POST
 export async function POST(request) {
+	let language, difficulty, topic, numQuestions, studentEmail, subject, subtopicId;
+	
 	try {
-		const {
-			language,
-			difficulty,
-			topic,
-			numQuestions,
-			studentEmail,
-			subject,
-			subtopicId,
-		} = await request.json();
+		const requestData = await request.json();
+		language = requestData.language;
+		difficulty = requestData.difficulty;
+		topic = requestData.topic;
+		numQuestions = requestData.numQuestions;
+		studentEmail = requestData.studentEmail;
+		subject = requestData.subject;
+		subtopicId = requestData.subtopicId;
 
 		// DEBUG: Log para verificar el número de preguntas recibido
 		console.log("[DEBUG] Parámetros recibidos en /api/questions:");
@@ -150,16 +152,33 @@ export async function POST(request) {
 			subjectIndex
 		);
 
-		// 🔍 INTEGRACIÓN RAG: Buscar contexto específico del subtema
-		questionsLogger.progress("Buscando contexto RAG para el subtema", { subtopicId, topic });
-		const ragContext = await getRAGContextForSubtopic(subtopicId, topic, 3);
+		// 🔍 INTEGRACIÓN RAG UNIFICADA: Usar el mismo sistema que los profesores
+		questionsLogger.progress("Iniciando búsqueda RAG unificada", { subtopicId, topic });
+		const ragManager = await initializeUnifiedRAG();
+		let ragContent = { hasContent: false, content: '', stats: {} };
 		
-		if (ragContext && ragContext.trim() !== "") {
-			questionsLogger.success(`Contexto RAG obtenido: ${ragContext.length} caracteres`);
-			finalPrompt = enhancePromptWithRAG(finalPrompt, ragContext);
-			questionsLogger.info("Prompt enriquecido con contexto RAG");
+		if (ragManager && subtopicId) {
+			ragContent = await searchUnifiedRAGContent(
+				ragManager,
+				topic,
+				null, // No tenemos subtopic title desde estudiantes
+				null, // No tenemos topicId desde estudiantes  
+				subtopicId
+			);
+			
+			questionsLogger.info('Búsqueda RAG unificada completada:', {
+				hasContent: ragContent.hasContent,
+				contentLength: ragContent.stats.contentLength,
+				chunksFound: ragContent.stats.totalFound
+			});
+		}
+
+		if (ragContent.hasContent) {
+			questionsLogger.success(`Contexto RAG unificado obtenido: ${ragContent.stats.contentLength} caracteres`);
+			finalPrompt = enhancePromptWithUnifiedRAG(finalPrompt, ragContent.content);
+			questionsLogger.info("Prompt enriquecido con RAG unificado");
 		} else {
-			questionsLogger.warn("No se encontró contexto RAG, usando generación estándar");
+			questionsLogger.warn("No se encontró contexto en RAG unificado, usando generación estándar");
 		}
 
 		// SOLICITUD A LA API de modelManager para asignar un modelo de LLM al alumno
@@ -195,14 +214,125 @@ export async function POST(request) {
 				code: llmError.code
 			});
 			console.error("[LLM Manager Error]:", llmError);
-			throw llmError;
+			
+			// Determinar el tipo de error y devolver respuesta apropiada al usuario
+			let errorMessage = "Error generando preguntas";
+			let errorDetails = "Error desconocido del sistema";
+			
+			if (llmError.status === 401) {
+				errorMessage = "Error de autenticación";
+				errorDetails = "Hay un problema con la configuración de las claves de API. Por favor, contacta al administrador del sistema.";
+			} else if (llmError.status === 429) {
+				errorMessage = "Límite de uso excedido";
+				errorDetails = "Se ha alcanzado el límite de uso de la API. Por favor, inténtalo más tarde.";
+			} else if (llmError.status === 500) {
+				errorMessage = "Error del servidor de IA";
+				errorDetails = "El servicio de inteligencia artificial está temporalmente no disponible. Por favor, inténtalo más tarde.";
+			} else if (llmError.code === 'invalid_api_key') {
+				errorMessage = "Configuración de API incorrecta";
+				errorDetails = "Las claves de API están mal configuradas. Por favor, contacta al administrador del sistema.";
+			} else if (llmError.message?.includes('timeout')) {
+				errorMessage = "Tiempo de espera agotado";
+				errorDetails = "La generación de preguntas está tardando más de lo esperado. Por favor, inténtalo nuevamente.";
+			} else {
+				errorDetails = llmError.message || "Error interno del sistema";
+			}
+			
+			return new Response(JSON.stringify({
+				error: errorMessage,
+				message: errorDetails,
+				code: llmError.code || 'unknown_error',
+				status: llmError.status || 500,
+				timestamp: new Date().toISOString(),
+				// Información adicional para debugging (solo en desarrollo)
+				...(process.env.NODE_ENV === 'development' && {
+					debug: {
+						model: assignedModel,
+						originalError: llmError.message,
+						student: studentEmail,
+						subject: subject
+					}
+				})
+			}), { 
+				status: llmError.status || 500,
+				headers: { 'Content-Type': 'application/json' }
+			});
 		}
+		
+		// Si llegamos aquí, el LLM respondió pero puede ser una respuesta corrupta
+		questionsLogger.debug("Validando respuesta del LLM", {
+			hasResponse: !!responseLlmManager,
+			responseType: typeof responseLlmManager,
+			responseLength: responseLlmManager?.length || 0,
+			responsePreview: responseLlmManager?.substring?.(0, 100) + '...' || 'No preview available'
+		});
+		
+		// Validar que recibimos una respuesta válida del LLM
+		if (!responseLlmManager || typeof responseLlmManager !== 'string') {
+			questionsLogger.error("Respuesta del LLM es inválida o vacía");
+			return new Response(JSON.stringify({
+				error: "Error en la respuesta del modelo de IA",
+				message: "El modelo de inteligencia artificial no devolvió una respuesta válida. Por favor, inténtalo nuevamente.",
+				code: 'invalid_llm_response',
+				status: 500,
+				timestamp: new Date().toISOString()
+			}), { 
+				status: 500,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+		
 		// Formatear la respuesta de la API
 		const formattedResponse = responseLlmManager
 			.replace(/^\[|\]$/g, "")
 			.replace(/```json/g, "")
 			.replace(/```/g, "")
 			.trim();
+		
+		// Validar que la respuesta formateada no esté vacía
+		if (!formattedResponse) {
+			questionsLogger.error("Respuesta formateada del LLM está vacía");
+			return new Response(JSON.stringify({
+				error: "Respuesta vacía del modelo de IA",
+				message: "El modelo de inteligencia artificial devolvió una respuesta vacía. Por favor, inténtalo nuevamente.",
+				code: 'empty_llm_response',
+				status: 500,
+				timestamp: new Date().toISOString()
+			}), { 
+				status: 500,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+		
+		// Intentar parsear como JSON para validar la estructura
+		try {
+			const parsedResponse = JSON.parse(formattedResponse);
+			if (!parsedResponse.questions || !Array.isArray(parsedResponse.questions) || parsedResponse.questions.length === 0) {
+				throw new Error("Formato de preguntas inválido");
+			}
+			questionsLogger.success(`Respuesta del LLM válida: ${parsedResponse.questions.length} preguntas generadas`);
+		} catch (parseError) {
+			questionsLogger.error("Error parseando respuesta del LLM:", {
+				error: parseError.message,
+				response: formattedResponse.substring(0, 200) + '...'
+			});
+			return new Response(JSON.stringify({
+				error: "Formato de respuesta inválido",
+				message: "El modelo de IA devolvió una respuesta en formato incorrecto. Por favor, inténtalo nuevamente.",
+				code: 'invalid_json_format',
+				status: 500,
+				timestamp: new Date().toISOString(),
+				...(process.env.NODE_ENV === 'development' && {
+					debug: {
+						parseError: parseError.message,
+						responsePreview: formattedResponse.substring(0, 200)
+					}
+				})
+			}), { 
+				status: 500,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
 
 		// Guardar preguntas generadas en el manager si tenemos subtopicId
 		if (subtopicId) {
@@ -214,6 +344,11 @@ export async function POST(request) {
 			}
 		}
 
+		questionsLogger.success("Devolviendo respuesta exitosa al cliente", {
+			responseLength: formattedResponse.length,
+			responsePreview: formattedResponse.substring(0, 100) + '...'
+		});
+		
 		return new Response(formattedResponse);
 	} catch (error) {
 		questionsLogger.error("Error general en POST /api/questions:", {
@@ -376,4 +511,155 @@ async function saveQuestionsToManager(formattedResponse, assignedModel, prompt, 
 		questionsLogger.error("Error en saveQuestionsToManager:", error.message);
 		throw error;
 	}
+}
+
+/**
+ * Inicializa el sistema RAG unificado (mismo que profesores)
+ * @returns {Object|null} RAG Manager instance o null si no está disponible
+ */
+async function initializeUnifiedRAG() {
+    try {
+        // Verificar si Qdrant está disponible
+        const qdrantResponse = await fetch('http://localhost:6333/').catch(() => null);
+        
+        if (qdrantResponse && qdrantResponse.ok) {
+            questionsLogger.debug('Inicializando RAG Manager V2 unificado para estudiantes');
+            
+            if (!RAGManagerV2) {
+                const ragModule = await import("@rag/core/ragManagerV2");
+                RAGManagerV2 = ragModule.default || ragModule;
+            }
+            
+            const ragManager = new RAGManagerV2({ enableLogging: true });
+            await ragManager.initialize();
+            
+            questionsLogger.info('RAG Manager V2 unificado inicializado para estudiantes');
+            return ragManager;
+        } else {
+            questionsLogger.debug('Qdrant no disponible, usando Mock RAG unificado para estudiantes');
+            
+            if (!MockRAGManager) {
+                const mockModule = await import("@rag/core/mockRAGManager");
+                MockRAGManager = mockModule.default || mockModule;
+            }
+            
+            const mockManager = new MockRAGManager();
+            await mockManager.initialize();
+            return mockManager;
+        }
+    } catch (error) {
+        questionsLogger.warn('Error inicializando RAG unificado, continuando sin RAG:', error.message);
+        return null;
+    }
+}
+
+/**
+ * Busca contenido relevante en el RAG unificado para un tema/subtema
+ * @param {Object} ragManager - Instancia del RAG Manager
+ * @param {string} topicTitle - Título del tema
+ * @param {string} subtopicTitle - Título del subtema (opcional)
+ * @param {string} topicId - ID del tema (opcional)
+ * @param {string} subtopicId - ID del subtema (opcional)
+ * @returns {Object} Contenido encontrado y estadísticas
+ */
+async function searchUnifiedRAGContent(ragManager, topicTitle, subtopicTitle, topicId, subtopicId) {
+    try {
+        // Preparar términos de búsqueda
+        let searchQuery = topicTitle;
+        if (subtopicTitle) {
+            searchQuery += ` ${subtopicTitle}`;
+        }
+        
+        // Preparar filtros
+        const filters = {};
+        
+        if (topicId) {
+            filters.topic_id = topicId;
+        }
+        
+        if (subtopicId) {
+            filters.subtopic_id = subtopicId;
+        }
+        
+        // Configurar opciones de búsqueda
+        const searchOptions = {
+            limit: 10, // Máximo 10 chunks más relevantes
+            threshold: 0.3, // Umbral de relevancia más permisivo
+            includeMetadata: true,
+            rerankResults: true
+        };
+        
+        questionsLogger.debug(`Buscando contenido RAG unificado para: "${searchQuery}"`);
+        
+        const searchResult = await ragManager.semanticSearch(
+            searchQuery,
+            filters,
+            searchOptions
+        );
+        
+        if (searchResult.success && searchResult.results.length > 0) {
+            questionsLogger.info(`Encontrados ${searchResult.results.length} chunks relevantes en RAG unificado`);
+            
+            // Combinar el contenido de los chunks más relevantes
+            const relevantContent = searchResult.results
+                .slice(0, 5) // Top 5 chunks más relevantes
+                .map(result => result.text || result.content)
+                .join('\n\n');
+            
+            return {
+                hasContent: true,
+                content: relevantContent,
+                stats: {
+                    totalFound: searchResult.results.length,
+                    contentLength: relevantContent.length,
+                    avgSimilarity: searchResult.results.reduce((sum, r) => sum + (r.similarity || 0), 0) / searchResult.results.length
+                }
+            };
+        } else {
+            questionsLogger.debug('No se encontró contenido relevante en RAG unificado');
+            return {
+                hasContent: false,
+                content: '',
+                stats: { totalFound: 0, contentLength: 0, avgSimilarity: 0 }
+            };
+        }
+        
+    } catch (error) {
+        questionsLogger.error('Error buscando contenido en RAG unificado:', error);
+        return {
+            hasContent: false,
+            content: '',
+            stats: { totalFound: 0, contentLength: 0, avgSimilarity: 0 }
+        };
+    }
+}
+
+/**
+ * Genera un prompt enriquecido con contexto RAG unificado
+ * @param {string} basePrompt - Prompt base del sistema
+ * @param {string} ragContent - Contenido obtenido del RAG
+ * @returns {string} Prompt combinado
+ */
+function enhancePromptWithUnifiedRAG(basePrompt, ragContent) {
+    if (!ragContent || ragContent.trim() === "") {
+        return basePrompt;
+    }
+
+    const ragEnhancement = `
+IMPORTANTE: Utiliza el siguiente contenido específico del tema para generar las preguntas:
+
+--- CONTENIDO DEL TEMA ---
+${ragContent}
+--- FIN DEL CONTENIDO ---
+
+Instrucciones adicionales:
+- Las preguntas DEBEN basarse principalmente en el contenido proporcionado arriba
+- Utiliza datos, conceptos y ejemplos específicos del material de clase
+- Si necesitas complementar con conocimiento general, hazlo de manera coherente con el contenido
+- Las preguntas deben demostrar comprensión del material específico del curso
+
+PROMPT ORIGINAL:
+${basePrompt}`;
+
+    return ragEnhancement;
 }

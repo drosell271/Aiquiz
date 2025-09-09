@@ -25,13 +25,7 @@ const NewSubjectPage = () => {
 		siglas: "",
 		descripcion: "",
 	});
-	const [profesores, setProfesores] = useState<Professor[]>([
-		{
-			id: "default-admin",
-			name: "Carlos González",
-			email: "cgonzalez@upm.es",
-		},
-	]);
+	const [profesores, setProfesores] = useState<Professor[]>([]);
 
 	const [mostrarModalProfesor, setMostrarModalProfesor] = useState(false);
 	const [nuevoProfesor, setNuevoProfesor] = useState({
@@ -53,12 +47,42 @@ const NewSubjectPage = () => {
 		error: apiError,
 	} = useApiRequest("/api/manager/subjects", "POST", null, false);
 
-	// Comprobar autenticación
+	// Comprobar autenticación y cargar usuario actual
 	useEffect(() => {
 		const token = localStorage.getItem("jwt_token");
 		if (!token) {
 			router.push("/manager/login");
+			return;
 		}
+
+		// Obtener información del usuario actual
+		const fetchCurrentUser = async () => {
+			try {
+				const response = await fetch("/api/manager/auth/me", {
+					method: "GET",
+					headers: {
+						"Authorization": `Bearer ${token}`,
+						"Content-Type": "application/json",
+					},
+				});
+
+				if (response.ok) {
+					const data = await response.json();
+					if (data.success && data.user) {
+						// Agregar el usuario actual como primer profesor
+						setProfesores([{
+							id: data.user._id,
+							name: data.user.name,
+							email: data.user.email,
+						}]);
+					}
+				}
+			} catch (error) {
+				console.error("Error al obtener información del usuario:", error);
+			}
+		};
+
+		fetchCurrentUser();
 	}, [router]);
 
 	// Actualizar mensaje de error si hay error en la API
@@ -298,8 +322,7 @@ const NewSubjectPage = () => {
 												</div>
 											</div>
 											<div className="flex items-center">
-												{profesor.id !==
-													"default-admin" && (
+												{profesores.length > 1 && profesores.indexOf(profesor) !== 0 && (
 													<button
 														type="button"
 														onClick={() =>

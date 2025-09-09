@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import dbConnect from "../../../utils/dbconnect";
 import Subject from "../../../manager/models/Subject";
 import Topic from "../../../manager/models/Topic";
+import User from "../../../manager/models/User";
 import { withAuth, handleError } from "../../../utils/authMiddleware";
+import { sendProfessorInvitation } from "../../../utils/emailService";
+import crypto from "crypto";
 
 /**
  * @swagger
@@ -255,13 +258,92 @@ async function createSubject(request, context) {
 			);
 		}
 
-		// Procesar profesores: puede venir como array de objetos o array de IDs
+		// Obtener información del usuario que crea la asignatura
+		const creatorUser = await User.findById(context.user.id);
+		const creatorName = creatorUser ? creatorUser.name : "Administrador";
+
+		// Procesar profesores: incluir siempre al creador como administrador y profesor
 		let processedProfessors = [context.user.id];
+		let invitationResults = [];
+
 		if (professors && Array.isArray(professors)) {
-			if (professors.length > 0) {
-				// Si vienen como objetos con email, crear solo el usuario actual
-				// En el futuro, aquí se buscarían los usuarios por email
-				processedProfessors = [context.user.id];
+			for (const prof of professors) {
+				// Solo procesar si viene con email (no es el usuario actual)
+				if (prof.email && prof.email !== creatorUser?.email) {
+					// Validar formato del email
+					const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+					if (!emailRegex.test(prof.email)) {
+						return NextResponse.json(
+							{
+								success: false,
+								message: `Formato de email inválido: ${prof.email}`,
+							},
+							{ status: 400 }
+						);
+					}
+
+					// Buscar o crear usuario
+					let user = await User.findOne({ email: prof.email.toLowerCase() });
+					let isNewUser = false;
+					
+					if (!user) {
+						// Generar token de invitación
+						const invitationToken = crypto.randomBytes(32).toString('hex');
+						const hashedToken = crypto.createHash('sha256').update(invitationToken).digest('hex');
+						const invitationExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+
+						// Crear nuevo usuario
+						user = new User({
+							name: prof.name || prof.email.split('@')[0],
+							email: prof.email.toLowerCase(),
+							password: crypto.randomBytes(20).toString('hex'), // Contraseña aleatoria temporal
+							role: "professor",
+							invitationToken: hashedToken, // Guardar token hasheado
+							invitationExpires,
+							isActive: false, // Inactivo hasta que acepte la invitación
+						});
+						await user.save();
+						isNewUser = true;
+						
+						// Mantener el token sin hashear para el email
+						user.invitationToken = invitationToken;
+					} else {
+						// Si el usuario ya existe, verificar si es profesor
+						if (user.role !== 'professor') {
+							return NextResponse.json(
+								{
+									success: false,
+									message: `El usuario ${prof.email} existe pero no es profesor`,
+								},
+								{ status: 400 }
+							);
+						}
+
+						// Si no está activo, regenerar token de invitación
+						if (!user.isActive) {
+							const invitationToken = crypto.randomBytes(32).toString('hex');
+							const hashedToken = crypto.createHash('sha256').update(invitationToken).digest('hex');
+							const invitationExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+							
+							user.invitationToken = hashedToken; // Guardar token hasheado
+							user.invitationExpires = invitationExpires;
+							await user.save();
+							
+							// Mantener el token sin hashear para el email
+							user.invitationToken = invitationToken;
+						}
+					}
+
+					// Agregar a la lista de profesores
+					processedProfessors.push(user._id);
+
+					// Agregar información para envío de emails
+					invitationResults.push({
+						user: user,
+						isNewUser: isNewUser,
+						needsInvitation: isNewUser || !user.isActive
+					});
+				}
 			}
 		}
 
@@ -276,6 +358,33 @@ async function createSubject(request, context) {
 
 		const savedSubject = await subject.save();
 
+		// Enviar emails de invitación si es necesario
+		const emailResults = [];
+		for (const invitation of invitationResults) {
+			if (invitation.needsInvitation) {
+				try {
+					const emailResult = await sendProfessorInvitation({
+						email: invitation.user.email,
+						professorName: invitation.user.name,
+						subjectTitle: subject.title,
+						invitationToken: invitation.user.invitationToken,
+						inviterName: creatorName
+					});
+					emailResults.push({
+						email: invitation.user.email,
+						success: emailResult?.success || false
+					});
+				} catch (emailError) {
+					console.error('Error enviando email de invitación:', emailError);
+					emailResults.push({
+						email: invitation.user.email,
+						success: false,
+						error: emailError.message
+					});
+				}
+			}
+		}
+
 		// Poblar datos para la respuesta
 		const populatedSubject = await Subject.findById(savedSubject._id)
 			.populate("administrators", "name email")
@@ -286,6 +395,13 @@ async function createSubject(request, context) {
 				success: true,
 				message: "Asignatura creada correctamente",
 				data: populatedSubject,
+				invitationResults: invitationResults.map(inv => ({
+					email: inv.user.email,
+					name: inv.user.name,
+					isNewUser: inv.isNewUser,
+					needsInvitation: inv.needsInvitation
+				})),
+				emailResults: emailResults
 			},
 			{ status: 201 }
 		);

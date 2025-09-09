@@ -131,8 +131,11 @@ class PDFProcessor {
 
             const data = await pdfParse(pdfBuffer, options);
 
+            // Normalizar el texto extraído para corregir problemas de codificación
+            const normalizedText = this.normalizeText(data.text);
+
             return {
-                text: data.text,
+                text: normalizedText,
                 numpages: data.numpages,
                 info: data.info,
                 metadata: data.metadata,
@@ -581,6 +584,30 @@ class PDFProcessor {
                 'Metadatos enriquecidos'
             ]
         };
+    }
+
+    /**
+     * Normaliza el texto extraído del PDF para UTF-8 correcto
+     * 
+     * @param {string} text - Texto a normalizar
+     * @returns {string} Texto normalizado en UTF-8
+     */
+    normalizeText(text) {
+        if (!text) return '';
+
+        try {
+            // Normalización Unicode NFC: combina caracteres base + diacríticos
+            // Esto convierte automáticamente "a + ́" → "á", "n + ̃" → "ñ", etc.
+            const normalizedText = text.normalize('NFC');
+            
+            console.log(`[RAG-PDF] UTF-8 normalizado: ${text.length} → ${normalizedText.length} chars`);
+            
+            return normalizedText;
+
+        } catch (error) {
+            console.error('[RAG-PDF] Error en normalización UTF-8:', error);
+            return text; // Fallback al texto original
+        }
     }
 }
 

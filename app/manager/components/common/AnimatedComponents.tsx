@@ -65,10 +65,10 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({
         onClick={onClose}
       />
       
-      {/* Modal con animación de escala y fade */}
-      <div className="flex min-h-full items-center justify-center p-4">
+      {/* Modal con animación de escala y fade - centrado considerando el sidebar */}
+      <div className="fixed inset-0 flex items-center justify-center p-4">
         <div 
-          className={`relative w-full transform transition-all duration-300 ${
+          className={`relative w-full max-w-md mx-auto transform transition-all duration-300 ${
             isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
           } ${className}`}
         >

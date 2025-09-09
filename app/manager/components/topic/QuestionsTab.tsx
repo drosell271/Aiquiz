@@ -1,5 +1,5 @@
 // /app/manager/components/topic/QuestionsTab.tsx
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useManagerTranslation } from "../../hooks/useManagerTranslation";
 import useApiRequest from "../../hooks/useApiRequest";
 import SearchBar from "../subject/SearchBar";
@@ -71,6 +71,10 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 	const [statusFilter, setStatusFilter] =
 		useState<StatusFilter>("unverified");
 	const [searchQuery, setSearchQuery] = useState<string>("");
+
+	// Estados para paginación
+	const [currentPage, setCurrentPage] = useState<number>(1);
+	const [questionsPerPage] = useState<number>(10); // Preguntas por página
 
 	// Estados para modales
 	const [showGenerateModal, setShowGenerateModal] = useState<boolean>(false);
@@ -204,6 +208,49 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 		[]
 	);
 
+	// Calcular preguntas paginadas
+	const paginatedQuestions = React.useMemo(() => {
+		const startIndex = (currentPage - 1) * questionsPerPage;
+		const endIndex = startIndex + questionsPerPage;
+		return filteredQuestions.slice(startIndex, endIndex);
+	}, [filteredQuestions, currentPage, questionsPerPage]);
+
+	/**
+	 * Actualiza el estado de selectAll basándose en las preguntas de la página actual
+	 */
+	useEffect(() => {
+		if (paginatedQuestions.length > 0) {
+			const allCurrentPageSelected = paginatedQuestions.every(q => 
+				selectedQuestions.includes(q.id || q._id)
+			);
+			setSelectAll(allCurrentPageSelected);
+		} else {
+			setSelectAll(false);
+		}
+	}, [paginatedQuestions, selectedQuestions]);
+
+	// Calcular información de paginación
+	const totalPages = Math.ceil(filteredQuestions.length / questionsPerPage);
+	const showingStart = ((currentPage - 1) * questionsPerPage) + 1;
+	const showingEnd = Math.min(currentPage * questionsPerPage, filteredQuestions.length);
+
+	/**
+	 * Maneja el cambio de página
+	 */
+	const handlePageChange = useCallback((page: number) => {
+		setCurrentPage(page);
+		// No limpiar selecciones al cambiar de página para permitir selección multi-página
+		// Actualizar el estado de selectAll basado en las preguntas de la nueva página
+		setSelectAll(false); // Se actualizará automáticamente en el useEffect
+	}, []);
+
+	/**
+	 * Resetea la página actual cuando cambian los filtros
+	 */
+	const resetPagination = useCallback(() => {
+		setCurrentPage(1);
+	}, []);
+
 	/**
 	 * Maneja la búsqueda de preguntas
 	 */
@@ -211,8 +258,12 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 		(query: string) => {
 			setSearchQuery(query);
 			applyFilters(questions, query, statusFilter);
+			resetPagination(); // Resetear a la primera página
+			// Limpiar selecciones cuando cambia la búsqueda para evitar confusión
+			setSelectedQuestions([]);
+			setSelectAll(false);
 		},
-		[questions, statusFilter, applyFilters]
+		[questions, statusFilter, applyFilters, resetPagination]
 	);
 
 	/**
@@ -222,8 +273,12 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 		(filter: StatusFilter) => {
 			setStatusFilter(filter);
 			applyFilters(questions, searchQuery, filter);
+			resetPagination(); // Resetear a la primera página
+			// Limpiar selecciones cuando cambia el filtro para evitar confusión
+			setSelectedQuestions([]);
+			setSelectAll(false);
 		},
-		[questions, searchQuery, applyFilters]
+		[questions, searchQuery, applyFilters, resetPagination]
 	);
 
 	/**
@@ -243,15 +298,24 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 	 * Maneja la selección/deselección de todas las preguntas
 	 */
 	const handleSelectAll = useCallback(() => {
-		setSelectAll(!selectAll);
 		if (!selectAll) {
-			// Seleccionar todas las preguntas filtradas
-			setSelectedQuestions(filteredQuestions.map((q) => q.id || q._id));
+			// Seleccionar todas las preguntas de la página actual (añadir a las ya seleccionadas)
+			const currentPageIds = paginatedQuestions.map((q) => q.id || q._id);
+			setSelectedQuestions(prev => {
+				const newSelections = [...prev];
+				currentPageIds.forEach(id => {
+					if (!newSelections.includes(id)) {
+						newSelections.push(id);
+					}
+				});
+				return newSelections;
+			});
 		} else {
-			// Deseleccionar todas
-			setSelectedQuestions([]);
+			// Deseleccionar todas las preguntas de la página actual (mantener las de otras páginas)
+			const currentPageIds = paginatedQuestions.map((q) => q.id || q._id);
+			setSelectedQuestions(prev => prev.filter(id => !currentPageIds.includes(id)));
 		}
-	}, [selectAll, filteredQuestions]);
+	}, [selectAll, paginatedQuestions]);
 
 	/**
 	 * Alterna la expansión de todas las preguntas
@@ -619,14 +683,14 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 						</tr>
 					</thead>
 					<tbody className="bg-white divide-y divide-gray-200">
-						{filteredQuestions.map((question) =>
+						{paginatedQuestions.map((question) =>
 							renderQuestionRow(question)
 						)}
 					</tbody>
 				</table>
 			</div>
 		);
-	}, [filteredQuestions, selectAll, t, handleSelectAll]);
+	}, [paginatedQuestions, selectAll, t, handleSelectAll]);
 
 	/**
 	 * Renderiza una fila de pregunta
@@ -1094,6 +1158,132 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 		handleGenerateQuestionnaire,
 	]);
 
+	/**
+	 * Renderiza los controles de paginación
+	 */
+	const renderPagination = useCallback(() => {
+		if (totalPages <= 1) return null;
+
+		const pages = [];
+		const maxVisiblePages = 5;
+		let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+		let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+		// Ajustar startPage si endPage es menor que maxVisiblePages
+		if (endPage - startPage + 1 < maxVisiblePages) {
+			startPage = Math.max(1, endPage - maxVisiblePages + 1);
+		}
+
+		// Botón "Primera página"
+		if (startPage > 1) {
+			pages.push(
+				<button
+					key="first"
+					onClick={() => handlePageChange(1)}
+					className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50"
+					aria-label="Primera página"
+				>
+					«
+				</button>
+			);
+		}
+
+		// Botón "Anterior"
+		pages.push(
+			<button
+				key="prev"
+				onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+				disabled={currentPage === 1}
+				className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+				aria-label="Página anterior"
+			>
+				‹
+			</button>
+		);
+
+		// Páginas numeradas
+		for (let i = startPage; i <= endPage; i++) {
+			pages.push(
+				<button
+					key={i}
+					onClick={() => handlePageChange(i)}
+					className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border ${
+						i === currentPage
+							? 'bg-blue-50 border-blue-500 text-blue-600'
+							: 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+					}`}
+					aria-label={`Página ${i}`}
+					aria-current={i === currentPage ? 'page' : undefined}
+				>
+					{i}
+				</button>
+			);
+		}
+
+		// Botón "Siguiente"
+		pages.push(
+			<button
+				key="next"
+				onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+				disabled={currentPage === totalPages}
+				className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+				aria-label="Página siguiente"
+			>
+				›
+			</button>
+		);
+
+		// Botón "Última página"
+		if (endPage < totalPages) {
+			pages.push(
+				<button
+					key="last"
+					onClick={() => handlePageChange(totalPages)}
+					className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50"
+					aria-label="Última página"
+				>
+					»
+				</button>
+			);
+		}
+
+		return (
+			<div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+				<div className="flex-1 flex justify-between sm:hidden">
+					{/* Versión móvil */}
+					<button
+						onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+						disabled={currentPage === 1}
+						className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						Anterior
+					</button>
+					<button
+						onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+						disabled={currentPage === totalPages}
+						className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						Siguiente
+					</button>
+				</div>
+				<div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+					<div>
+						<p className="text-sm text-gray-700">
+							Mostrando <span className="font-medium">{showingStart}</span> al{' '}
+							<span className="font-medium">{showingEnd}</span> de{' '}
+							<span className="font-medium">{filteredQuestions.length}</span> preguntas
+						</p>
+					</div>
+					<div>
+						<nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Paginación">
+							{pages}
+						</nav>
+					</div>
+				</div>
+			</div>
+		);
+	}, [currentPage, totalPages, filteredQuestions.length, showingStart, showingEnd, handlePageChange]);
+
 	return (
 		<div>
 			{/* Mensajes de estado y feedback */}
@@ -1136,7 +1326,25 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 					/>
 				</div>
 
-				<div className="flex space-x-2">
+				<div className="flex space-x-2 items-center">
+					{/* Indicador de preguntas seleccionadas */}
+					{selectedQuestions.length > 0 && (
+						<div className="flex items-center space-x-2">
+							<div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+								{selectedQuestions.length} pregunta{selectedQuestions.length !== 1 ? 's' : ''} seleccionada{selectedQuestions.length !== 1 ? 's' : ''}
+							</div>
+							<button
+								onClick={() => {
+									setSelectedQuestions([]);
+									setSelectAll(false);
+								}}
+								className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded text-sm"
+								title="Deseleccionar todas"
+							>
+								✕
+							</button>
+						</div>
+					)}
 					{renderActionButtons()}
 					{renderGenerateNewQuestionsButton()}
 				</div>
@@ -1202,7 +1410,10 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ topicId, subjectId }) => {
 						</p>
 					</div>
 				) : (
-					renderQuestionsTable()
+					<>
+						{renderQuestionsTable()}
+						{renderPagination()}
+					</>
 				)}
 			</div>
 

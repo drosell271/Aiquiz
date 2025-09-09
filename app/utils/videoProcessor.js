@@ -26,22 +26,28 @@ class VideoProcessor {
             // Intentar primero con RAG Manager V2 (Qdrant)
             const qdrantResponse = await fetch('http://localhost:6333/').catch(() => null);
             if (qdrantResponse && qdrantResponse.ok) {
-                videoLogger.debug('Usando RAG Manager V2 (Qdrant)');
-                const RAGManagerV2 = require("@rag/core/ragManagerV2");
-                this.ragManager = new RAGManagerV2();
-                await this.ragManager.initialize();
+                videoLogger.debug('Qdrant disponible, inicializando RAG Manager V2...');
+                try {
+                    const RAGManagerV2 = require("@rag/core/ragManagerV2");
+                    this.ragManager = new RAGManagerV2({ enableLogging: true });
+                    await this.ragManager.initialize();
+                    videoLogger.info('RAG Manager V2 (Qdrant) inicializado correctamente');
+                    return;
+                } catch (ragError) {
+                    videoLogger.error('Error inicializando RAG Manager V2:', ragError);
+                    throw ragError;
+                }
             } else {
-                // Fallback a Mock RAG Manager
-                videoLogger.debug('Usando Mock RAG Manager');
+                videoLogger.warn('Qdrant no disponible, usando Mock RAG Manager');
                 const MockRAGManager = require("@rag/core/mockRAGManager");
                 this.ragManager = new MockRAGManager();
                 await this.ragManager.initialize();
             }
             
-            videoLogger.info('RAG Manager initialized for videos');
         } catch (error) {
             videoLogger.error('Error inicializando RAG Manager', error);
             // Usar Mock como fallback final
+            videoLogger.warn('Fallback a Mock RAG Manager');
             const MockRAGManager = require("@rag/core/mockRAGManager");
             this.ragManager = new MockRAGManager();
             await this.ragManager.initialize();
